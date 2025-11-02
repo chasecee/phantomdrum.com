@@ -5,8 +5,8 @@ interface ContainerProps {
 export default function Container({ children }: ContainerProps) {
   return (
     <div
-      className="flex flex-col items-start bg-black px-10"
-      style={{ minHeight: "200svw" }}
+      className="flex flex-col items-start px-10"
+      style={{ minHeight: "300svw" }}
     >
       {children}
     </div>

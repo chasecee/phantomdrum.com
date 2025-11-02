@@ -5,8 +5,8 @@ import Phantom from "../svgs/Phantom";
 import Drum from "../svgs/Drum";
 import Initialize from "../svgs/Initialize";
 
-const aspectRatios = [462 / 84, 271 / 82, 515 / 43];
-const multiplier = 2;
+const aspectRatios = [462 / 100, 462 / 100, 462 / 50];
+const multiplier = 3;
 
 export default function SVGGroup() {
   return (
@@ -17,7 +17,7 @@ export default function SVGGroup() {
       <AnimatedSVG aspectRatio={aspectRatios[1]} multiplier={multiplier}>
         <Drum className="w-full h-full" />
       </AnimatedSVG>
-      <AnimatedSVG aspectRatio={aspectRatios[2]} multiplier={1}>
+      <AnimatedSVG aspectRatio={aspectRatios[2]} multiplier={multiplier}>
         <Initialize className="w-full h-full" />
       </AnimatedSVG>
     </div>
