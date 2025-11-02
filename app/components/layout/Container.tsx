@@ -1,13 +1,12 @@
 interface ContainerProps {
   children: React.ReactNode;
-  scrollHeight?: number;
 }
 
-export default function Container({ children, scrollHeight }: ContainerProps) {
+export default function Container({ children }: ContainerProps) {
   return (
     <div
       className="flex flex-col items-start px-6"
-      style={{ height: scrollHeight ? `${scrollHeight}px` : "300svh" }}
+      style={{ height: "200svh" }}
     >
       {children}
     </div>

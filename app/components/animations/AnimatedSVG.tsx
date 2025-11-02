@@ -29,22 +29,21 @@ export default function AnimatedSVG({
     const content = contentRef.current;
     const containerWidth = container.offsetWidth;
     const finalHeight = containerWidth / aspectRatio;
-    const startHeight = finalHeight * multiplier;
+    const initialHeight = finalHeight * multiplier;
+    const scrollDistance = initialHeight - finalHeight;
 
-    gsap.set(content, { scaleY: multiplier, transformOrigin: "top" });
-    gsap.set(container, { height: startHeight });
+    gsap.set(content, { height: initialHeight });
 
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: container,
         start: "top top",
-        end: () => `+=${startHeight}`,
+        end: () => `+=${scrollDistance}`,
         scrub: 1,
       },
     });
 
-    tl.to(content, { scaleY: 1, ease: "power2.out" }, 0);
-    tl.to(container, { height: finalHeight, ease: "power2.out" }, 0);
+    tl.to(content, { height: finalHeight, ease: "power2.out" });
 
     return () => {
       tl.scrollTrigger?.kill();
