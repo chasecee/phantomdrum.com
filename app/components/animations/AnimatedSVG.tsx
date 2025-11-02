@@ -39,7 +39,7 @@ export default function AnimatedSVG({
         trigger: container,
         start: "top top",
         end: () => `+=${scrollDistance}`,
-        scrub: 1,
+        scrub: 0,
       },
     });
 
