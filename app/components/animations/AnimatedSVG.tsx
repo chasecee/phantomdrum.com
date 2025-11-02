@@ -10,12 +10,14 @@ interface AnimatedSVGProps {
   children: ReactNode;
   order: number;
   aspectRatio: number;
+  multiplier: number;
 }
 
 export default function AnimatedSVG({
   children,
   order,
   aspectRatio,
+  multiplier,
 }: AnimatedSVGProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -27,9 +29,9 @@ export default function AnimatedSVG({
     const content = contentRef.current;
     const containerWidth = container.offsetWidth;
     const finalHeight = containerWidth / aspectRatio;
-    const startHeight = finalHeight * 3;
+    const startHeight = finalHeight * multiplier;
 
-    gsap.set(content, { scaleY: 3, transformOrigin: "top" });
+    gsap.set(content, { scaleY: multiplier, transformOrigin: "top" });
     gsap.set(container, { height: startHeight });
 
     const tl = gsap.timeline({
@@ -37,7 +39,7 @@ export default function AnimatedSVG({
         trigger: container,
         start: "top top",
         end: () => `+=${startHeight}`,
-        scrub: 0.5,
+        scrub: 0.05,
       },
     });
 
@@ -48,7 +50,7 @@ export default function AnimatedSVG({
       tl.scrollTrigger?.kill();
       tl.kill();
     };
-  }, [order, aspectRatio]);
+  }, [order, aspectRatio, multiplier]);
 
   return (
     <div ref={containerRef} className="w-full overflow-hidden">
