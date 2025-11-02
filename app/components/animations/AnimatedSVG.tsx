@@ -8,14 +8,12 @@ gsap.registerPlugin(ScrollTrigger);
 
 interface AnimatedSVGProps {
   children: ReactNode;
-  order: number;
   aspectRatio: number;
   multiplier: number;
 }
 
 export default function AnimatedSVG({
   children,
-  order,
   aspectRatio,
   multiplier,
 }: AnimatedSVGProps) {
@@ -27,33 +25,38 @@ export default function AnimatedSVG({
 
     const container = containerRef.current;
     const content = contentRef.current;
-    const containerWidth = container.offsetWidth;
-    const finalHeight = containerWidth / aspectRatio;
-    const initialHeight = finalHeight * multiplier;
-    const scrollDistance = initialHeight - finalHeight;
 
-    gsap.set(content, { height: initialHeight });
+    const ctx = gsap.context(() => {
+      const containerWidth = container.offsetWidth;
+      const finalHeight = containerWidth / aspectRatio;
+      const initialHeight = finalHeight * multiplier;
+      const scrollDistance = initialHeight - finalHeight;
 
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: container,
-        start: "top top",
-        end: () => `+=${scrollDistance}`,
-        scrub: 0.5,
-      },
-    });
+      gsap.set(content, { height: initialHeight, force3D: true });
 
-    tl.to(content, { height: finalHeight, ease: "power2.out" });
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: container,
+            start: "top top",
+            end: () => `+=${scrollDistance}`,
+            scrub: true,
+            invalidateOnRefresh: true,
+          },
+        })
+        .to(content, {
+          height: finalHeight,
+          ease: "none",
+          force3D: true,
+        });
+    }, containerRef);
 
-    return () => {
-      tl.scrollTrigger?.kill();
-      tl.kill();
-    };
-  }, [order, aspectRatio, multiplier]);
+    return () => ctx.revert();
+  }, [aspectRatio, multiplier]);
 
   return (
     <div ref={containerRef} className="w-full overflow-hidden">
-      <div ref={contentRef} className="w-full">
+      <div ref={contentRef} className="w-full will-change-[height]">
         {children}
       </div>
     </div>
