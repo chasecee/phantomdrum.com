@@ -2,7 +2,7 @@ export default function DevBreakpoint() {
   if (process.env.NODE_ENV !== "development") return null;
 
   return (
-    <div className="fixed bottom-4 left-4 z-50 bg-black border border-white/20 px-3 py-1 text-xs font-mono text-white/60">
+    <div className="fixed top-0 right-0 z-50 bg-black border border-white/20 px-3 py-1 text-xs font-mono text-white/60">
       <span className="sm:hidden">xs</span>
       <span className="hidden sm:inline md:hidden">sm</span>
       <span className="hidden md:inline lg:hidden">md</span>
@@ -12,4 +12,3 @@ export default function DevBreakpoint() {
     </div>
   );
 }
-

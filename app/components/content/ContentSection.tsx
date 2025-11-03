@@ -4,7 +4,7 @@ import Random from "./Random";
 
 export default function ContentSection() {
   return (
-    <div className="py-20 px-8">
+    <div className="py-20 px-8 pb-[50svw]">
       <div className="max-w-4xl mx-auto space-y-16">
         <SocialLinks />
         <Bio />

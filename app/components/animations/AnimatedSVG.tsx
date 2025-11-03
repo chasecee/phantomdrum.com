@@ -10,12 +10,20 @@ interface AnimatedSVGProps {
   children: ReactNode;
   aspectRatio: number;
   multiplier: number;
+  index: number;
+  gap: number;
+  aspectRatios: number[];
+  className?: string;
 }
 
 export default function AnimatedSVG({
   children,
   aspectRatio,
   multiplier,
+  index,
+  gap,
+  aspectRatios,
+  className,
 }: AnimatedSVGProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -27,36 +35,50 @@ export default function AnimatedSVG({
     const content = contentRef.current;
 
     const ctx = gsap.context(() => {
-      const containerWidth = container.offsetWidth;
-      const finalHeight = containerWidth / aspectRatio;
-      const initialHeight = finalHeight * multiplier;
-      const scrollDistance = initialHeight - finalHeight - 10;
-
-      gsap.set(content, { height: initialHeight, force3D: true });
-
-      gsap
-        .timeline({
-          scrollTrigger: {
-            trigger: container,
-            start: "top top",
-            end: () => `+=${scrollDistance}`,
-            scrub: 1,
-            invalidateOnRefresh: true,
+      gsap.fromTo(
+        content,
+        {
+          scaleY: multiplier,
+          y: () => {
+            const parentWidth =
+              container.parentElement?.offsetWidth || container.offsetWidth;
+            const heights = aspectRatios.map(
+              (ar) => (parentWidth / ar) * multiplier
+            );
+            let offset = 0;
+            for (let i = 0; i < index; i++) {
+              offset += heights[i] + gap / 2;
+            }
+            return offset / 1.9;
           },
-        })
-        .to(content, {
-          height: finalHeight,
+          transformOrigin: "top center",
+        },
+        {
+          scaleY: 1,
+          y: 0,
           ease: "none",
           force3D: true,
-        });
+          scrollTrigger: {
+            trigger: container.parentElement,
+            start: "top top",
+            end: "bottom top",
+            scrub: 0.1,
+            invalidateOnRefresh: true,
+          },
+        }
+      );
     }, containerRef);
 
     return () => ctx.revert();
-  }, [aspectRatio, multiplier]);
+  }, [aspectRatio, multiplier, index, gap, aspectRatios]);
 
   return (
-    <div ref={containerRef} className="w-full overflow-hidden">
-      <div ref={contentRef} className="w-full will-change-[height]">
+    <div
+      ref={containerRef}
+      className={`w-full ${className || ""}`}
+      style={{ aspectRatio: `${aspectRatio.toFixed(2)} / 1` }}
+    >
+      <div ref={contentRef} className="w-full h-full will-change-transform">
         {children}
       </div>
     </div>
