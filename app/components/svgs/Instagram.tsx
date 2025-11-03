@@ -1,4 +1,6 @@
-export default function Instagram({ className }: { className?: string }) {
+import { memo } from "react";
+
+function Instagram({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -11,4 +13,6 @@ export default function Instagram({ className }: { className?: string }) {
     </svg>
   );
 }
+
+export default memo(Instagram);
 

@@ -1,4 +1,6 @@
-export default function Drum({ className }: { className?: string }) {
+import { memo } from "react";
+
+function Drum({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -27,3 +29,5 @@ export default function Drum({ className }: { className?: string }) {
     </svg>
   );
 }
+
+export default memo(Drum);

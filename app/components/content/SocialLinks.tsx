@@ -8,7 +8,7 @@ const links = [
   { name: "Apple Music", url: "#", Icon: AppleMusic, color: "#FF4E6B" },
   { name: "Instagram", url: "#", Icon: Instagram, color: "#C13584" },
   { name: "YouTube", url: "#", Icon: YouTube, color: "#E52D27" },
-];
+] as const;
 
 export default function SocialLinks() {
   return (

@@ -1,4 +1,6 @@
-export default function Initialize({ className }: { className?: string }) {
+import { memo } from "react";
+
+function Initialize({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -66,3 +68,5 @@ export default function Initialize({ className }: { className?: string }) {
     </svg>
   );
 }
+
+export default memo(Initialize);

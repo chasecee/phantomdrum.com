@@ -9,6 +9,7 @@ export default function AlbumArt() {
         width={1080}
         height={1080}
         className="w-full h-full object-cover"
+        priority
       />
     </div>
   );

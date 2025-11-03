@@ -1,4 +1,6 @@
-export default function Phantom({ className }: { className?: string }) {
+import { memo } from "react";
+
+function Phantom({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -39,3 +41,5 @@ export default function Phantom({ className }: { className?: string }) {
     </svg>
   );
 }
+
+export default memo(Phantom);
