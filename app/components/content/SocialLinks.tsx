@@ -6,7 +6,7 @@ import YouTube from "../svgs/YouTube";
 const links = [
   { name: "Spotify", url: "#", Icon: Spotify, color: "#1DB954" },
   { name: "Apple Music", url: "#", Icon: AppleMusic, color: "#FF4E6B" },
-  { name: "Instagram", url: "#", Icon: Instagram, color: "#405DE6" },
+  { name: "Instagram", url: "#", Icon: Instagram, color: "#C13584" },
   { name: "YouTube", url: "#", Icon: YouTube, color: "#E52D27" },
 ];
 
