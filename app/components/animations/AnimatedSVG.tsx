@@ -30,7 +30,7 @@ export default function AnimatedSVG({
       const containerWidth = container.offsetWidth;
       const finalHeight = containerWidth / aspectRatio;
       const initialHeight = finalHeight * multiplier;
-      const scrollDistance = initialHeight - finalHeight;
+      const scrollDistance = initialHeight - finalHeight - 10;
 
       gsap.set(content, { height: initialHeight, force3D: true });
 
