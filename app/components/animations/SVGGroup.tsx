@@ -6,7 +6,7 @@ import Drum from "../svgs/Drum";
 import Initialize from "../svgs/Initialize";
 
 const aspectRatios = [462 / 100, 462 / 100, 462 / 50];
-const multiplier = 1.5;
+const multiplier = 3;
 
 export default function SVGGroup() {
   return (
