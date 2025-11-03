@@ -9,7 +9,7 @@ export default function Home() {
       <DevBreakpoint />
       <div className="flex flex-col items-start  max-w-[1500px]">
         <div className="sticky w-full  top-0 md:grid  gap-10 z-10 mix-blend-difference">
-          <div className="py-6 mx-6">
+          <div className="pb-6 mx-6">
             <SVGGroup />
           </div>
         </div>
@@ -17,7 +17,7 @@ export default function Home() {
           
         </ScrubAnimation> */}
         <div className="w-full top-0 flex flex-col items-end justify-end mx-auto overflow-hidden">
-          <div className="w-full h-[90svw]" />
+          <div className="w-full aspect-[100/52]" />
           <AlbumArt />
         </div>
       </div>

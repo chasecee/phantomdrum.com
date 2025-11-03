@@ -6,12 +6,12 @@ import Drum from "../svgs/Drum";
 import Initialize from "../svgs/Initialize";
 
 const aspectRatios = [886 / 164, 886 / 161, 855 / 72] as const;
-const multiplier = 3;
-const gap = 24;
+const multiplier = 2;
+const gap = 0;
 
 export default function SVGGroup() {
   return (
-    <div className="relative h-[50svw]">
+    <div className="relative w-full aspect-100/50">
       <AnimatedSVG
         aspectRatio={aspectRatios[0]}
         aspectRatios={aspectRatios}
@@ -40,8 +40,8 @@ export default function SVGGroup() {
         multiplier={multiplier}
         index={2}
         gap={gap}
-        heightPercent={20}
-        className="text-[#2F7CAC] mt-4"
+        heightPercent={18}
+        className="text-[#2F7CAC]"
       >
         <Initialize className="w-full h-full" />
       </AnimatedSVG>

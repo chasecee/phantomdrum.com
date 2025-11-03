@@ -71,11 +71,12 @@ export default function AnimatedSVG({
           force3D: true,
           scrollTrigger: {
             trigger: container.parentElement,
-            start: "top top",
+            start: "top 1rem",
             end: "bottom top",
             scrub: true,
             invalidateOnRefresh: true,
             onRefresh: updateHeight,
+            markers: true,
           },
         }
       );
@@ -98,7 +99,7 @@ export default function AnimatedSVG({
       className={`w-full ${className || ""}`}
       style={heightPercent ? { height: `${heightPercent}%` } : undefined}
     >
-      <div ref={contentRef} className="w-full will-change-transform">
+      <div ref={contentRef} className="w-full h-full will-change-transform">
         {children}
       </div>
     </div>
