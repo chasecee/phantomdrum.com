@@ -76,7 +76,7 @@ export default function AnimatedSVG({
             scrub: true,
             invalidateOnRefresh: true,
             onRefresh: updateHeight,
-            markers: true,
+            markers: false,
           },
         }
       );

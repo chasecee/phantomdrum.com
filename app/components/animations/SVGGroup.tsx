@@ -11,7 +11,7 @@ const gap = 0;
 
 export default function SVGGroup() {
   return (
-    <div className="relative w-full aspect-100/50">
+    <div className="relative w-full aspect-100/45">
       <AnimatedSVG
         aspectRatio={aspectRatios[0]}
         aspectRatios={aspectRatios}
