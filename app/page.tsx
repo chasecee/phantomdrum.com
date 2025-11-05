@@ -42,7 +42,7 @@ export default function Home() {
           </ScrubAnimation>
         </div>
       </div>
-      <div className="h-screen w-full mt-[20vw] mix-blend-hard-light">
+      <div className="min-h-screen w-full mt-[20vw] mix-blend-hard-light">
         <div className="text-left font-bold p-2 max-w-[1500px] mx-auto text-white ">
           <div className="grid grid-cols-1 gap-[20vw] mb-12">
             <Quote
