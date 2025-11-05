@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useRef, RefObject, ReactNode } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface ScrubAnimationConfig {
   trigger: RefObject<HTMLElement>;
@@ -49,63 +53,70 @@ export function useScrubAnimation(
     )
       return;
 
-    let stTrigger:
-      | ReturnType<typeof import("gsap/ScrollTrigger").ScrollTrigger.create>
-      | undefined;
+    const element = elementRef.current;
 
-    const initAnimation = async (): Promise<void> => {
-      const { gsap } = await import("gsap");
-      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
+    if (config.from) {
+      gsap.set(element, {
+        ...config.from,
+        force3D: true,
+        willChange: "transform",
+        z: 0,
+      });
+    }
 
-      gsap.registerPlugin(ScrollTrigger);
+    const markerConfig = config.showMarkers
+      ? {
+          markers: {
+            startColor: config.markerColor || "cyan",
+            endColor: config.markerColor || "cyan",
+            fontSize: "12px",
+            fontWeight: "bold",
+          },
+        }
+      : { markers: false };
 
-      if (!elementRef.current) return;
-
-      const markerConfig = config.showMarkers
-        ? {
-            markers: {
-              startColor: config.markerColor || "cyan",
-              endColor: config.markerColor || "cyan",
-              fontSize: "12px",
-              fontWeight: "bold",
-            },
-          }
-        : { markers: false };
-
-      const scrollTriggerConfig: Record<string, unknown> = {
-        trigger: config.trigger.current,
-        start: config.start,
-        end: config.end,
-        pin: config.pin ?? false,
-        invalidateOnRefresh: config.invalidateOnRefresh ?? true,
-        ...markerConfig,
-      };
-
-      if (config.toggleActions) {
-        scrollTriggerConfig.toggleActions = config.toggleActions;
-      } else {
-        scrollTriggerConfig.scrub = config.scrub ?? 1;
-      }
-
-      const animationTarget = config.from
-        ? gsap.fromTo(elementRef.current, config.from, {
-            ...config.to,
-            ease: config.ease || "none",
-            scrollTrigger: scrollTriggerConfig,
-          })
-        : gsap.to(elementRef.current, {
-            ...config.to,
-            ease: config.ease || "none",
-            scrollTrigger: scrollTriggerConfig,
-          });
-
-      stTrigger = animationTarget.scrollTrigger;
+    const scrollTriggerConfig: Record<string, unknown> = {
+      trigger: config.trigger.current,
+      start: config.start,
+      end: config.end,
+      pin: config.pin ?? false,
+      invalidateOnRefresh: config.invalidateOnRefresh ?? true,
+      anticipatePin: 1,
+      ...markerConfig,
     };
 
-    initAnimation();
+    if (config.toggleActions) {
+      scrollTriggerConfig.toggleActions = config.toggleActions;
+    } else {
+      scrollTriggerConfig.scrub =
+        typeof config.scrub === "number"
+          ? config.scrub
+          : config.scrub
+          ? 1
+          : false;
+    }
+
+    const animationTarget = config.from
+      ? gsap.to(element, {
+          ...config.to,
+          ease: config.ease || "none",
+          force3D: true,
+          immediateRender: false,
+          scrollTrigger: scrollTriggerConfig,
+        })
+      : gsap.to(element, {
+          ...config.to,
+          ease: config.ease || "none",
+          force3D: true,
+          immediateRender: false,
+          scrollTrigger: scrollTriggerConfig,
+        });
 
     return () => {
-      if (stTrigger) stTrigger.kill();
+      if (animationTarget.scrollTrigger) {
+        animationTarget.scrollTrigger.kill();
+      }
+      animationTarget.kill();
     };
   }, [
     elementRef,
@@ -160,7 +171,11 @@ function ScrubAnimation({
   });
 
   return (
-    <div ref={elementRef} className={className}>
+    <div
+      ref={elementRef}
+      className={className}
+      style={{ willChange: "transform" }}
+    >
       {children}
     </div>
   );

@@ -37,49 +37,35 @@ export default function AnimatedSVG({
 
     const container = containerRef.current;
     const content = contentRef.current;
-    const ratios = aspectRatios;
+    const trigger = container.closest(".relative");
+
+    if (!trigger) return;
 
     const ctx = gsap.context(() => {
-      const updateHeight = () => {
-        if (!heightPercent) {
-          gsap.set(container, { height: container.offsetWidth / aspectRatio });
-        }
-      };
+      gsap.set(content, {
+        scaleY: multiplier,
+        transformOrigin: "top center",
+        force3D: true,
+        willChange: "transform",
+        z: 0,
+      });
 
-      updateHeight();
-
-      gsap.fromTo(
-        content,
-        {
-          scaleY: multiplier,
-          y: () => {
-            const parentWidth =
-              container.parentElement?.offsetWidth || container.offsetWidth;
-            const heights = ratios.map((ar) => (parentWidth / ar) * multiplier);
-            let offset = 0;
-            for (let i = 0; i < index; i++) {
-              offset += heights[i] + gap / 2;
-            }
-            return offset / 1.6;
-          },
-          transformOrigin: "top center",
+      gsap.to(content, {
+        scaleY: 1,
+        ease: "none",
+        force3D: true,
+        immediateRender: false,
+        scrollTrigger: {
+          trigger: trigger,
+          start: "top 24",
+          end: "bottom 48",
+          scrub: true,
+          invalidateOnRefresh: false,
+          anticipatePin: 1,
+          refreshPriority: -index,
+          markers: false,
         },
-        {
-          scaleY: 1,
-          y: 0,
-          ease: "none",
-          force3D: true,
-          scrollTrigger: {
-            trigger: container.parentElement,
-            start: "top 1rem",
-            end: "bottom top",
-            scrub: true,
-            invalidateOnRefresh: true,
-            onRefresh: updateHeight,
-            markers: false,
-          },
-        }
-      );
+      });
     }, containerRef);
 
     return () => ctx.revert();
@@ -97,9 +83,16 @@ export default function AnimatedSVG({
     <div
       ref={containerRef}
       className={`w-full ${className || ""}`}
-      style={heightPercent ? { height: `${heightPercent}%` } : undefined}
+      style={{
+        ...(heightPercent ? { height: `${heightPercent}%` } : {}),
+        overflow: "visible",
+      }}
     >
-      <div ref={contentRef} className="w-full h-full will-change-transform">
+      <div
+        ref={contentRef}
+        className="w-full h-full"
+        style={{ willChange: "transform" }}
+      >
         {children}
       </div>
     </div>

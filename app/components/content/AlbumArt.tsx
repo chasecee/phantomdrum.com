@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export default function AlbumArt() {
   return (
-    <div className="w-full sticky top-0 mx-auto aspect-square overflow-hidden max-w-svh max-h-svh">
+    <div className="w-full sticky top-0 mx-auto aspect-square overflow-hidden">
       <Image
         src="/img/art2.jpg"
         alt="Album Art"

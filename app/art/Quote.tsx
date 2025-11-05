@@ -8,8 +8,12 @@ interface QuoteProps {
 
 export default function Quote({ text, logo, className }: QuoteProps) {
   return (
-    <div className={` ${className || ""}`}>
-      <blockquote className="text-[6vw] leading-[0.9] tracking-tight mb-4 text-balance">
+    <div
+      className={`flex text-center flex-col items-center justify-center ${
+        className || ""
+      }`}
+    >
+      <blockquote className="text-[6vw] flex text-center flex-col items-center justify-center max-w-[80cqi] leading-[0.9] tracking-tight mb-4 text-balance">
         &quot;{text}&quot;
       </blockquote>
       <div className="max-w-[25vw]">{logo}</div>
