@@ -31,6 +31,7 @@ interface ScrubAnimationProps {
   markerColor?: string;
   toggleActions?: string;
   invalidateOnRefresh?: boolean;
+  className?: string;
 }
 
 export function useScrubAnimation(
@@ -139,6 +140,7 @@ function ScrubAnimation({
   markerColor,
   toggleActions,
   invalidateOnRefresh,
+  className,
 }: ScrubAnimationProps) {
   const elementRef = useRef<HTMLDivElement>(null);
 
@@ -157,7 +159,11 @@ function ScrubAnimation({
     invalidateOnRefresh,
   });
 
-  return <div ref={elementRef}>{children}</div>;
+  return (
+    <div ref={elementRef} className={className}>
+      {children}
+    </div>
+  );
 }
 
 export default ScrubAnimation;

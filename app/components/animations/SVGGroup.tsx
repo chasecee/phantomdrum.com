@@ -11,14 +11,14 @@ const gap = 0;
 
 export default function SVGGroup() {
   return (
-    <div className="relative w-full aspect-100/45">
+    <div className="relative w-full aspect-100/50">
       <AnimatedSVG
         aspectRatio={aspectRatios[0]}
         aspectRatios={aspectRatios}
         multiplier={multiplier}
         index={0}
         gap={gap}
-        heightPercent={40}
+        heightPercent={41}
         className="text-neutral-200"
       >
         <Phantom className="w-full h-full" />
@@ -29,7 +29,7 @@ export default function SVGGroup() {
         multiplier={multiplier}
         index={1}
         gap={gap}
-        heightPercent={40}
+        heightPercent={41}
         className="text-neutral-200"
       >
         <Drum className="w-full h-full" />

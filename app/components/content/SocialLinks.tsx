@@ -17,14 +17,14 @@ export default function SocialLinks() {
         <a
           key={link.name}
           href={link.url}
-          className="group flex items-center gap-2 px-4 py-2 border border-white/20 hover:border-(--brand-color) text-white/60 transition-[color,border-color] duration-200"
+          className="group flex items-center gap-2 px-4 py-2  text-white/60 transition-[color,border-color] duration-200"
           style={
             {
               "--brand-color": link.color,
             } as React.CSSProperties
           }
         >
-          <link.Icon className="w-4 h-4 group-hover:text-(--brand-color) transition-[color] duration-200" />
+          <link.Icon className="w-[10vw] h-[10vw] group-hover:text-(--brand-color) transition-[color] duration-200" />
           <span className="text-sm group-hover:text-(--brand-color) transition-[color] duration-200">
             {link.name}
           </span>
