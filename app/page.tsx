@@ -9,11 +9,11 @@ import SiliconValleyLogo from "./art/SiliconValleyLogo";
 import RoyalAcademyLogo from "./art/RoyalAcademyLogo";
 import Quote from "./art/Quote";
 import SocialLinks from "./components/content/SocialLinks";
-import ScaleText from "./components/content/ScaleText";
+import ListenButton from "./components/content/ListenButton";
+import RippleTextContent from "./components/content/RippleTextContent";
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
-
   return (
     <div
       className="w-full max-w-[1500px] mx-auto body-container "
@@ -48,39 +48,50 @@ export default function Home() {
           </ScrubAnimation>
         </div>
       </div>
-      <div className="min-h-screen w-full mt-[20vw] overflow-hidden mix-blend-hard-light">
+      <div className="w-full flex flex-col items-start justify-center my-[20vw] px-6 gap-4">
+        <p className="text-[5vw] font-mono font-bold uppercase">Listen Now:</p>
+        <div className="grid grid-cols-2 gap-6 w-full ">
+          <ListenButton
+            text=" spotify"
+            href="https://open.spotify.com"
+            color="#1DB954"
+          />
+          <ListenButton
+            text="apple music"
+            href="https://music.apple.com"
+            color="#FA243C"
+          />
+        </div>
+      </div>
+      <div className="w-full  ">
         <div className="text-left font-bold p-2 max-w-[1500px] mx-auto text-white ">
-          <div className="grid grid-cols-1 gap-[20vw] mb-12 px-6">
+          <div className="grid grid-cols-1 gap-[10vw] my-20 px-6">
             <Quote
-              text="IT COULD BE MUSIC!"
+              text="It could be music!"
               logo={<NatGeoLogo className="w-full h-auto" />}
               className="opacity-90"
             />
             <Quote
-              text="WE INVESTED $3M INTO THE PROJECT"
+              text="...couldn't hang with the pro-robot stance"
               logo={<SiliconValleyLogo className="w-full h-auto" />}
               className="opacity-70"
             />
             <Quote
-              text="BOLD, DARING, AND FULL OF LIFE"
+              text="Bold, daring, full of life"
               logo={<RoyalAcademyLogo className="w-full h-auto" />}
               className="opacity-60"
             />
             <Quote
-              text="AVANT GARDE IN THE LIGHTEST SENSE OF THE WORD"
+              text="Avant garde in the lightest sense of the word"
               logo={<RoyalAcademyLogo className="w-full h-auto" />}
               className="opacity-60"
             />
           </div>
-          <div className="flex flex-col items-start gap-2 w-full uppercase overflow-hidden">
-            <ScaleText className="w-full">Pro-Robot</ScaleText>
-            <ScaleText className="w-full">Phantom-Fresh</ScaleText>
-            <ScaleText className="w-full">Feel-Good</ScaleText>
-            <ScaleText className="w-full">Tracks</ScaleText>
-            <ScaleText className="w-full">For All Y&apos;all</ScaleText>
-          </div>
-          <SocialLinks />
         </div>
+        <div>
+          <RippleTextContent />
+        </div>
+        <div className="h-screen w-full bg-black"></div>
       </div>
     </div>
   );

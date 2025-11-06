@@ -36,6 +36,7 @@ interface ScrubAnimationProps {
   toggleActions?: string;
   invalidateOnRefresh?: boolean;
   className?: string;
+  filterStyle?: string;
 }
 
 export function useScrubAnimation(
@@ -152,6 +153,7 @@ function ScrubAnimation({
   toggleActions,
   invalidateOnRefresh,
   className,
+  filterStyle,
 }: ScrubAnimationProps) {
   const elementRef = useRef<HTMLDivElement>(null);
 
@@ -174,7 +176,10 @@ function ScrubAnimation({
     <div
       ref={elementRef}
       className={className}
-      style={{ willChange: "transform" }}
+      style={{
+        willChange: "transform",
+        ...(filterStyle ? { filter: filterStyle } : {}),
+      }}
     >
       {children}
     </div>
