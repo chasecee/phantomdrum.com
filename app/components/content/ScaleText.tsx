@@ -21,12 +21,12 @@ export default function ScaleText({
       className={`scale-text-container w-full ${className}`}
       style={{
         containerType: "inline-size",
-        lineHeight: 1.5,
+        lineHeight: 1,
         ...containerStyle,
       }}
     >
       <div
-        className="scale-text -mt-[5%] flex flex-row justify-between"
+        className="scale-text flex flex-row justify-between"
         style={{
           fontSize: fontSize || calculatedFontSize,
         }}
