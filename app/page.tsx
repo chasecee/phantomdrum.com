@@ -77,7 +77,7 @@ export default function Home() {
               className="opacity-70"
             />
             <Quote
-              text="Bold, daring, full of life"
+              text="Bold, daring, devoid of life"
               logo={<RoyalAcademyLogo className="w-full h-auto" />}
               className="opacity-60"
             />
