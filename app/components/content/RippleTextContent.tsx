@@ -78,7 +78,7 @@ export default function RippleTextContent() {
                   className="origin-[50%_50%]"
                   showMarkers={true}
                 >
-                  <ScaleText className=" text-white [text-shadow:5px_3px_0px_var(--color-amber-600),10px_6px_0px_var(--color-amber-700)]">
+                  <ScaleText className=" text-white [text-shadow:10px_10px_1px_var(--color-amber-600),20px_20px_1px_var(--color-amber-700)]">
                     ENYA POWERED ORCHESTRAL MEGA BEATS
                   </ScaleText>
                 </ScrubAnimation>
