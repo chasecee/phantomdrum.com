@@ -91,7 +91,7 @@ export default function Home() {
         <div>
           <RippleTextContent />
         </div>
-        <div className="h-screen w-full bg-black"></div>
+        <div className="h-[100vw] w-full "></div>
       </div>
     </div>
   );
