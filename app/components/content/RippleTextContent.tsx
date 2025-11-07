@@ -1,9 +1,12 @@
 import Link from "next/link";
 import ScaleText from "./ScaleText";
+import ScrubAnimation from "../animations/ScrubAnimation";
+import { RefObject, useRef } from "react";
 
 export default function RippleTextContent() {
+  const testerRef = useRef<HTMLDivElement>(null);
   return (
-    <>
+    <div className="relative overflow-hidden">
       <svg className="pointer-events-none" style={{ width: 0, height: 0 }}>
         <defs>
           <filter
@@ -26,39 +29,72 @@ export default function RippleTextContent() {
             <feDisplacementMap
               in="SourceGraphic"
               in2="verticalWave"
-              scale="40"
+              scale="10"
               xChannelSelector="R"
               yChannelSelector="G"
             />
           </filter>
         </defs>
       </svg>
-      <div className="relative w-[clamp(200px,80%,900px)] mx-auto py-10">
-        <div className="space-y-16 leading-none relative text-[2vw] bg-fixed bg-linear-to-b font-serif  font-[150] from-transparent via-white to-transparent bg-clip-text text-white/50">
-          <p
-            className="text-[1.25em] text-balance font-mono font-bold uppercase bg-clip-text text-transparent"
-            style={{
-              filter: "url(#rippleDisplacement)",
-              backgroundImage: "url(/img/yellowbg-lg.jpg)",
-              backgroundSize: "900px",
-              backgroundPosition: "center top",
-              backgroundAttachment: "fixed",
-            }}
-          >
-            <ScaleText>Ghost-grade</ScaleText>
-            <ScaleText>farm-fresh</ScaleText>
-            <ScaleText>beats</ScaleText>
-            <ScaleText>designed to delight</ScaleText>
-            <ScaleText>& disturb</ScaleText>
-          </p>
+      <div className="relative px-[10vw] mx-auto ">
+        <div
+          ref={testerRef}
+          className="space-y-16 leading-none relative text-[4vw] font-[150] text-white/50 mix-blend-difference"
+        >
+          <div className="mt-[10vw] mb-[8vw] origin-[50%_50%] skew-x-[-3deg] skew-y-[-3deg]">
+            <div className="tester text-balance font-mono font-bold  uppercase bg-clip-text text-white">
+              <ScrubAnimation
+                trigger={testerRef as RefObject<HTMLElement>}
+                start="50% bottom"
+                end="50% 30%"
+                scrub={2}
+                from={{ xPercent: -2 }}
+                to={{ xPercent: 5 }}
+                className="origin-[50%_50%]"
+                showMarkers={true}
+              >
+                <ScaleText>Ghost-grade farm-fresh</ScaleText>
+              </ScrubAnimation>
+              <ScrubAnimation
+                trigger={testerRef as RefObject<HTMLElement>}
+                start="50% bottom"
+                end="50% 30%"
+                scrub={3}
+                from={{ xPercent: 5 }}
+                to={{ xPercent: -5 }}
+                className="origin-[50%_50%]"
+                showMarkers={true}
+              >
+                <ScaleText>ABSTRACT YET, FAMILIAR</ScaleText>
+              </ScrubAnimation>
+              <div className="w-[220vw] mx-auto">
+                <ScrubAnimation
+                  trigger={testerRef as RefObject<HTMLElement>}
+                  start="50% bottom"
+                  end="50% 30%"
+                  scrub={2}
+                  from={{ xPercent: 40 }}
+                  to={{ xPercent: -66 }}
+                  className="origin-[50%_50%]"
+                  showMarkers={true}
+                >
+                  <ScaleText className=" text-white [text-shadow:5px_3px_0px_var(--color-amber-600),10px_6px_0px_var(--color-amber-700)]">
+                    ENYA POWERED ORCHESTRAL MEGA BEATS
+                  </ScaleText>
+                </ScrubAnimation>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="text-[2.5vw] space-y-8">
           <p className="">
             Phantom Drum is the work of{" "}
             <Link
               href="https://chasecee.com"
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener noreferrer "
             >
-              Chase Cee
+              Chase&nbsp;Cee
             </Link>
             , a producer and technologist playfully blending retro texture with
             modern precision.
@@ -69,6 +105,6 @@ export default function RippleTextContent() {
           </p>
         </div>
       </div>
-    </>
+    </div>
   );
 }
