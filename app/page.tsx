@@ -72,7 +72,7 @@ export default function Home() {
               className="opacity-90"
             />
             <Quote
-              text="...couldn't hang with the pro-robot stance"
+              text="A robot could never replace our Son"
               logo={<SiliconValleyLogo className="w-full h-auto" />}
               className="opacity-70"
             />
