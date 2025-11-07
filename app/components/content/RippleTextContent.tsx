@@ -67,18 +67,18 @@ export default function RippleTextContent() {
               >
                 <ScaleText>ABSTRACT YET, FAMILIAR</ScaleText>
               </ScrubAnimation>
-              <div className="w-[220vw] mx-auto">
+              <div className="w-[300vw] mx-auto">
                 <ScrubAnimation
                   trigger={testerRef as RefObject<HTMLElement>}
                   start="50% bottom"
                   end="50% 30%"
                   scrub={2}
                   from={{ xPercent: 40 }}
-                  to={{ xPercent: -66 }}
+                  to={{ xPercent: -70 }}
                   className="origin-[50%_50%]"
                   showMarkers={true}
                 >
-                  <ScaleText className=" text-white [text-shadow:10px_10px_1px_var(--color-amber-600),20px_20px_1px_var(--color-amber-700)]">
+                  <ScaleText className=" text-white [text-shadow:1vw_1vw_0px_var(--color-amber-600),2vw_2vw_0px_var(--color-amber-700)]">
                     ENYA POWERED ORCHESTRAL MEGA BEATS
                   </ScaleText>
                 </ScrubAnimation>
