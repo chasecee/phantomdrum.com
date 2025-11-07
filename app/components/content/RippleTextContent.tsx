@@ -100,8 +100,8 @@ export default function RippleTextContent() {
             modern precision.
           </p>
           <p>
-            Based in Salt Lake City, Utah, and collaborating with artists across
-            the country and around the world.
+            Based in Salt Lake City, Utah, he collaborates with humans and
+            robots alike.
           </p>
         </div>
       </div>
