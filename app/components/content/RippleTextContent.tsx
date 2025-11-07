@@ -74,7 +74,7 @@ export default function RippleTextContent() {
                   end="0% 30%"
                   scrub={1}
                   from={{ xPercent: 0 }}
-                  to={{ xPercent: -69 }}
+                  to={{ xPercent: -68 }}
                   className="origin-[50%_50%]"
                   showMarkers={false}
                 >
