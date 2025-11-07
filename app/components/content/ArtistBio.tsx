@@ -1,0 +1,24 @@
+import Link from "next/link";
+
+export default function ArtistBio() {
+  return (
+    <div className="text-[clamp(2rem,3vw,4rem)] my-20 space-y-8 px-16">
+      <p>
+        Phantom Drum is the work of{" "}
+        <Link
+          href="https://chasecee.com"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Chase&nbsp;Cee
+        </Link>
+        , a producer and technologist playfully blending retro texture with
+        modern precision.
+      </p>
+      <p>
+        Based in Salt Lake City, Utah, he collaborates with humans and robots
+        alike.
+      </p>
+    </div>
+  );
+}

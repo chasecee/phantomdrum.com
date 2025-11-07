@@ -4,19 +4,18 @@ import { RefObject, useRef } from "react";
 import SVGGroup from "./art/SVGGroup";
 import BackgroundSection from "./art/BackgroundSection";
 import ScrubAnimation from "./components/animations/ScrubAnimation";
-import NatGeoLogo from "./art/NatGeoLogo";
-import SiliconValleyLogo from "./art/SiliconValleyLogo";
-import RoyalAcademyLogo from "./art/RoyalAcademyLogo";
-import Quote from "./art/Quote";
-import SocialLinks from "./components/content/SocialLinks";
-import ListenButton from "./components/content/ListenButton";
-import RippleTextContent from "./components/content/RippleTextContent";
+import ListenSection from "./components/content/ListenSection";
+import QuotesSection from "./components/content/QuotesSection";
+import AnimatedTextSection from "./components/content/AnimatedTextSection";
+import ArtistBio from "./components/content/ArtistBio";
+import AnimatedTextCube from "./components/content/AnimatedTextCube";
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const cubeContainerRef = useRef<HTMLDivElement>(null);
   return (
     <div
-      className="w-full max-w-[1500px] mx-auto body-container "
+      className="w-full max-w-[1500px] mx-auto body-container"
       style={{
         backgroundImage: "url(/img/noise.png)",
         backgroundSize: "100cqi",
@@ -24,7 +23,7 @@ export default function Home() {
         containerType: "inline-size",
       }}
     >
-      <div ref={containerRef} className="relative aspect-1/2 w-full ">
+      <div ref={containerRef} className="relative aspect-1/2 w-full">
         <div
           className="sticky top-6 z-10 mix-blend-difference px-6"
           style={{ contain: "layout style", overflow: "visible" }}
@@ -48,50 +47,39 @@ export default function Home() {
           </ScrubAnimation>
         </div>
       </div>
-      <div className="w-full flex flex-col items-start justify-center my-[20vw] px-6 gap-4">
-        <p className="text-[5vw] font-mono font-bold uppercase">Listen Now:</p>
-        <div className="grid grid-cols-2 gap-6 w-full ">
-          <ListenButton
-            text=" spotify"
-            href="https://open.spotify.com"
-            color="#1DB954"
+      <ListenSection />
+      <div className="w-full">
+        <QuotesSection />
+        <div
+          ref={cubeContainerRef}
+          className="aspect-3/1 w-full relative mix-blend-difference "
+        >
+          <AnimatedTextCube
+            texts={[
+              "GHOST GRADE FARM-FRESH",
+              "ABSTRACT YET, FAMILIAR",
+              "ENYA POWERED SUNDAY DINNER",
+              "MEGA BEATS",
+            ]}
+            trigger={cubeContainerRef as RefObject<HTMLElement>}
+            start="50% 70%"
+            end="50% 30%"
+            scrub={1}
+            from={{ rotation: { x: 0, y: 0, z: 0 }, scale: 1 }}
+            to={{
+              rotation: { x: 0, y: -Math.PI * 1.5, z: 0 },
+              scale: 1,
+            }}
+            showMarkers={true}
+            className="absolute inset-0"
+            heightRatio={0.33}
+            size={2}
+            materialType="basic"
           />
-          <ListenButton
-            text="apple music"
-            href="https://music.apple.com"
-            color="#FA243C"
-          />
         </div>
-      </div>
-      <div className="w-full  ">
-        <div className="text-left font-bold p-2 max-w-[1500px] mx-auto text-white ">
-          <div className="grid grid-cols-1 gap-[10vw] my-20 px-6">
-            <Quote
-              text="It could be music!"
-              logo={<NatGeoLogo className="w-full h-auto" />}
-              className="opacity-90"
-            />
-            <Quote
-              text="A robot could never replace our Son"
-              logo={<SiliconValleyLogo className="w-full h-auto" />}
-              className="opacity-70"
-            />
-            <Quote
-              text="Bold, daring, devoid of life"
-              logo={<RoyalAcademyLogo className="w-full h-auto" />}
-              className="opacity-60"
-            />
-            <Quote
-              text="Avant garde in the lightest sense of the word"
-              logo={<RoyalAcademyLogo className="w-full h-auto" />}
-              className="opacity-60"
-            />
-          </div>
-        </div>
-        <div>
-          <RippleTextContent />
-        </div>
-        <div className="h-[100vw] w-full "></div>
+        <ArtistBio />
+
+        <div className="h-[100vw] w-full" />
       </div>
     </div>
   );
