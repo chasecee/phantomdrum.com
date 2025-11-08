@@ -6,19 +6,18 @@ import BackgroundSection from "./art/BackgroundSection";
 import ScrubAnimation from "./components/animations/ScrubAnimation";
 import ListenSection from "./components/content/ListenSection";
 import QuotesSection from "./components/content/QuotesSection";
-import AnimatedTextSection from "./components/content/AnimatedTextSection";
 import ArtistBio from "./components/content/ArtistBio";
-import AnimatedTextCube from "./components/content/AnimatedTextCube";
+import AnimatedMultiCube from "./components/content/AnimatedMultiCube";
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const cubeContainerRef = useRef<HTMLDivElement>(null);
+  const multiCubeContainerRef = useRef<HTMLDivElement>(null);
   return (
     <div
       className="w-full max-w-[1500px] mx-auto body-container"
       style={{
         backgroundImage: "url(/img/noise.png)",
-        backgroundSize: "100cqi",
+        backgroundSize: "1128px",
         backgroundPosition: "center",
         containerType: "inline-size",
       }}
@@ -51,32 +50,35 @@ export default function Home() {
       <div className="w-full">
         <QuotesSection />
         <div
-          ref={cubeContainerRef}
-          className="aspect-3/1 w-full relative mix-blend-difference "
+          ref={multiCubeContainerRef}
+          className="aspect-[1.5/1] w-full relative mix-blend-difference"
         >
-          <AnimatedTextCube
+          <AnimatedMultiCube
             texts={[
               "GHOST GRADE FARM-FRESH",
-              "ABSTRACT YET, FAMILIAR",
-              "ENYA POWERED SUNDAY DINNER",
+              "ABSTRACT YET FAMILIAR",
+              "ENYA MEETS GORILLAZ",
               "MEGA BEATS",
             ]}
-            trigger={cubeContainerRef as RefObject<HTMLElement>}
-            start="50% 70%"
-            end="50% 30%"
+            trigger={multiCubeContainerRef as RefObject<HTMLElement>}
+            start="40% 80%"
+            end="60% 20%"
             scrub={1}
-            from={{ rotation: { x: 0, y: 0, z: 0 }, scale: 1 }}
+            from={{ rotation: { x: 0.01, y: 0, z: 0 } }}
             to={{
-              rotation: { x: 0, y: -Math.PI * 1.5, z: 0 },
-              scale: 1,
+              rotation: { x: -0.01, y: -Math.PI * 0.5, z: 0 },
             }}
-            showMarkers={true}
+            showMarkers={false}
             className="absolute inset-0"
-            heightRatio={0.33}
-            size={2}
-            materialType="basic"
+            heightRatio={0.15}
+            widthRatio={1.2}
+            size={3}
+            spacing={0.1}
+            stagger={true}
+            staggerDelay={0.15}
           />
         </div>
+
         <ArtistBio />
 
         <div className="h-[100vw] w-full" />

@@ -15,8 +15,14 @@ interface AnimatedTextCubeProps {
   start: string;
   end: string;
   scrub?: number | boolean;
-  from?: { rotation?: { x?: number; y?: number; z?: number }; scale?: number };
-  to: { rotation: { x: number; y: number; z: number }; scale?: number };
+  from?: {
+    rotation?: { x?: number; y?: number; z?: number };
+    scale?: number;
+  };
+  to: {
+    rotation: { x: number; y: number; z: number };
+    scale?: number;
+  };
   ease?: string;
   pin?: boolean;
   showMarkers?: boolean;
@@ -380,8 +386,8 @@ export default function AnimatedTextCube({
   colors = [],
   textColor = "white",
   textSize = 0.4,
-  cameraPosition = [0, 0, 4],
-  cameraFov = 15,
+  cameraPosition = [0, 0, 3],
+  cameraFov = 40,
   className,
   maxWidth,
   font,
