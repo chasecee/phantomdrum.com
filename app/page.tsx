@@ -1,13 +1,21 @@
 "use client";
 
-import { RefObject, useRef } from "react";
+import { RefObject, useRef, Suspense } from "react";
+import dynamic from "next/dynamic";
 import SVGGroup from "./art/SVGGroup";
 import BackgroundSection from "./art/BackgroundSection";
 import ScrubAnimation from "./components/animations/ScrubAnimation";
 import ListenSection from "./components/content/ListenSection";
 import QuotesSection from "./components/content/QuotesSection";
 import ArtistBio from "./components/content/ArtistBio";
-import AnimatedMultiCube from "./components/content/AnimatedMultiCube";
+
+const AnimatedMultiCube = dynamic(
+  () =>
+    import(
+      /* webpackChunkName: "animated-multicube" */ "./components/content/AnimatedMultiCube"
+    ),
+  { ssr: false }
+);
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -16,8 +24,8 @@ export default function Home() {
     <div
       className="w-full max-w-[1500px] mx-auto body-container"
       style={{
-        backgroundImage: "url(/img/noise.png)",
-        backgroundSize: "1128px",
+        backgroundImage: "url(/img/optimized/noise.webp)",
+        backgroundSize: "min(100%, 1128px)",
         backgroundPosition: "center",
         containerType: "inline-size",
       }}
@@ -52,32 +60,34 @@ export default function Home() {
           ref={multiCubeContainerRef}
           className="aspect-[1.5/1] my-[10vw] w-full relative mix-blend-screen"
         >
-          <AnimatedMultiCube
-            texts={[
-              "GHOST GRADE",
-              "FARM-FRESH",
-              "ABSTRACT YET FAMILIAR",
-              "CLASSIC SUNDAY DINNER",
-              "BIG OL BEATS",
-            ]}
-            trigger={multiCubeContainerRef as RefObject<HTMLElement>}
-            start="40% 80%"
-            end="60% 20%"
-            from={{ rotation: { x: 0.01, y: 0, z: 0 } }}
-            to={{
-              rotation: { x: -0.01, y: -Math.PI * 0.5, z: 0 },
-            }}
-            className="absolute inset-0"
-            heightRatio={0.175}
-            widthRatio={1.1}
-            size={3}
-            spacing={0.1}
-            stagger={true}
-            staggerDelay={0.1}
-            fillMode="outline"
-            strokeWidth={10}
-            matchTextColor={true}
-          />
+          <Suspense fallback={<div className="absolute inset-0" />}>
+            <AnimatedMultiCube
+              texts={[
+                "GHOST GRADE",
+                "FARM-FRESH",
+                "ABSTRACT YET FAMILIAR",
+                "CLASSIC SUNDAY DINNER",
+                "BIG OL BEATS",
+              ]}
+              trigger={multiCubeContainerRef as RefObject<HTMLElement>}
+              start="40% 80%"
+              end="60% 20%"
+              from={{ rotation: { x: 0.01, y: 0, z: 0 } }}
+              to={{
+                rotation: { x: -0.01, y: -Math.PI * 0.5, z: 0 },
+              }}
+              className="absolute inset-0"
+              heightRatio={0.175}
+              widthRatio={1.1}
+              size={3}
+              spacing={0.1}
+              stagger={true}
+              staggerDelay={0.1}
+              fillMode="outline"
+              strokeWidth={10}
+              matchTextColor={true}
+            />
+          </Suspense>
         </div>
         <QuotesSection />
         <ListenSection />

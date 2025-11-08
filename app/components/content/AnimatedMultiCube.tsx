@@ -12,10 +12,10 @@ import {
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Text, Edges } from "@react-three/drei";
 import { EffectComposer, DotScreen } from "@react-three/postprocessing";
-import * as THREE from "three";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Group, BoxGeometry } from "three";
+import { ScrollTrigger } from "../../lib/gsap";
 
-type CubeGroupRef = React.MutableRefObject<THREE.Group | null>;
+type CubeGroupRef = React.MutableRefObject<Group | null>;
 type Rotation = { x: number; y: number; z: number };
 
 interface AnimatedMultiCubeProps {
@@ -148,7 +148,7 @@ const SingleTextCube = memo(function SingleTextCube({
   const materialColor = fillMode === "outline" ? "black" : color;
   const finalTextColor = matchTextColor ? color : textColor;
   const boxGeometry = useMemo(
-    () => new THREE.BoxGeometry(cubeWidth, cubeHeight, cubeDepth),
+    () => new BoxGeometry(cubeWidth, cubeHeight, cubeDepth),
     [cubeWidth, cubeHeight, cubeDepth]
   );
 
@@ -444,8 +444,6 @@ export default function AnimatedMultiCube({
           }
         },
       });
-
-      ScrollTrigger.refresh();
     });
 
     return () => {

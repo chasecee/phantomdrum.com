@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useRef, ReactNode, useMemo } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
+import { gsap } from "../../lib/gsap";
 
 interface AnimatedSVGProps {
   children: ReactNode;

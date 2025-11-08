@@ -23,7 +23,7 @@ export default function BackgroundSection({
       <div
         className="h-full w-full bg-cover scale-[1.1]"
         style={{
-          backgroundImage: "url(/img/no-bg.png)",
+          backgroundImage: "url(/img/optimized/no-bg.webp)",
           backgroundPosition: position.replace("_", " "),
         }}
       />

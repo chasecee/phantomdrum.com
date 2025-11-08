@@ -6,7 +6,12 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text, Edges } from "@react-three/drei";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { EffectComposer, DotScreen } from "@react-three/postprocessing";
-import * as THREE from "three";
+import {
+  OrthographicCamera,
+  BufferGeometry,
+  AlwaysStencilFunc,
+  ReplaceStencilOp,
+} from "three";
 
 interface HalftoneButtonProps {
   text: string;
@@ -18,10 +23,10 @@ const BASE_HEIGHT = 1.9;
 
 function CameraController() {
   const { camera, size } = useThree();
-  const camRef = useRef<THREE.OrthographicCamera | null>(null);
+  const camRef = useRef<OrthographicCamera | null>(null);
 
   useEffect(() => {
-    if (camera instanceof THREE.OrthographicCamera) {
+    if (camera instanceof OrthographicCamera) {
       camRef.current = camera;
     }
   }, [camera]);
@@ -47,7 +52,7 @@ function EdgesWithTransition({
   color,
   targetWidth,
 }: {
-  geometry: THREE.BufferGeometry;
+  geometry: BufferGeometry;
   color: string;
   targetWidth: number;
 }) {
@@ -161,10 +166,10 @@ function ButtonScene({
           depthWrite={true}
           stencilWrite={true}
           stencilRef={1}
-          stencilFunc={THREE.AlwaysStencilFunc}
-          stencilFail={THREE.ReplaceStencilOp}
-          stencilZFail={THREE.ReplaceStencilOp}
-          stencilZPass={THREE.ReplaceStencilOp}
+          stencilFunc={AlwaysStencilFunc}
+          stencilFail={ReplaceStencilOp}
+          stencilZFail={ReplaceStencilOp}
+          stencilZPass={ReplaceStencilOp}
           visible={false}
         />
       </mesh>

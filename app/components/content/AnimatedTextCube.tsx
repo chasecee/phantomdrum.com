@@ -4,10 +4,7 @@ import { useRef, useEffect, useState, RefObject } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
+import { gsap, ScrollTrigger } from "../../lib/gsap";
 
 interface AnimatedTextCubeProps {
   texts: string[];
