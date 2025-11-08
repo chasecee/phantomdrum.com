@@ -13,7 +13,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Text, Edges } from "@react-three/drei";
 import { EffectComposer, DotScreen } from "@react-three/postprocessing";
 import { Group, BoxGeometry } from "three";
-import { ScrollTrigger } from "../../lib/gsap";
+import { getScrollTrigger } from "../../lib/gsap";
 
 type CubeGroupRef = React.MutableRefObject<Group | null>;
 type Rotation = { x: number; y: number; z: number };
@@ -388,10 +388,17 @@ export default function AnimatedMultiCube({
     )
       return;
 
-    let masterScrollTrigger: ScrollTrigger | null = null;
+    let masterScrollTrigger: ReturnType<
+      typeof import("gsap/ScrollTrigger").ScrollTrigger.create
+    > | null = null;
+    let isActive = true;
 
-    requestAnimationFrame(() => {
-      if (!containerRef.current || !trigger?.current) return;
+    const initScrollTrigger = async () => {
+      if (!isActive) return;
+
+      const ScrollTrigger = await getScrollTrigger();
+
+      if (!isActive || !containerRef.current || !trigger?.current) return;
 
       const fromRotation = from?.rotation ?? { x: 0, y: 0, z: 0 };
       const fromScale = from?.scale ?? 1;
@@ -444,9 +451,16 @@ export default function AnimatedMultiCube({
           }
         },
       });
-    });
+    };
+
+    if (typeof requestIdleCallback !== "undefined") {
+      requestIdleCallback(() => initScrollTrigger(), { timeout: 2000 });
+    } else {
+      setTimeout(() => initScrollTrigger(), 100);
+    }
 
     return () => {
+      isActive = false;
       masterScrollTrigger?.kill();
     };
   }, [

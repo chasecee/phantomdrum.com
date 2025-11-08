@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, RefObject, ReactNode } from "react";
-import { gsap, ScrollTrigger } from "../../lib/gsap";
+import { getGSAP, getScrollTrigger } from "../../lib/gsap";
 
 interface ScrubAnimationConfig {
   trigger: RefObject<HTMLElement>;
@@ -51,70 +51,91 @@ export function useScrubAnimation(
     )
       return;
 
-    const element = elementRef.current;
+    let animationTarget: ReturnType<typeof import("gsap").gsap.to> | null = null;
+    let isActive = true;
 
-    if (config.from) {
-      gsap.set(element, {
-        ...config.from,
-        force3D: true,
-        willChange: "transform",
-        z: 0,
-      });
-    }
+    const initAnimation = async () => {
+      if (!isActive) return;
 
-    const markerConfig = config.showMarkers
-      ? {
-          markers: {
-            startColor: config.markerColor || "cyan",
-            endColor: config.markerColor || "cyan",
-            fontSize: "12px",
-            fontWeight: "bold",
-          },
-        }
-      : { markers: false };
+      const [gsap, ScrollTrigger] = await Promise.all([
+        getGSAP(),
+        getScrollTrigger(),
+      ]);
 
-    const scrollTriggerConfig: Record<string, unknown> = {
-      trigger: config.trigger.current,
-      start: config.start,
-      end: config.end,
-      pin: config.pin ?? false,
-      invalidateOnRefresh: config.invalidateOnRefresh ?? true,
-      anticipatePin: 1,
-      ...markerConfig,
+      if (!isActive || !elementRef?.current || !config.trigger?.current) return;
+
+      const element = elementRef.current;
+
+      if (config.from) {
+        gsap.set(element, {
+          ...config.from,
+          force3D: true,
+          willChange: "transform",
+          z: 0,
+        });
+      }
+
+      const markerConfig = config.showMarkers
+        ? {
+            markers: {
+              startColor: config.markerColor || "cyan",
+              endColor: config.markerColor || "cyan",
+              fontSize: "12px",
+              fontWeight: "bold",
+            },
+          }
+        : { markers: false };
+
+      const scrollTriggerConfig: Record<string, unknown> = {
+        trigger: config.trigger.current,
+        start: config.start,
+        end: config.end,
+        pin: config.pin ?? false,
+        invalidateOnRefresh: config.invalidateOnRefresh ?? true,
+        anticipatePin: 1,
+        ...markerConfig,
+      };
+
+      if (config.toggleActions) {
+        scrollTriggerConfig.toggleActions = config.toggleActions;
+      } else {
+        scrollTriggerConfig.scrub =
+          typeof config.scrub === "number"
+            ? config.scrub
+            : config.scrub
+            ? 1
+            : false;
+      }
+
+      animationTarget = config.from
+        ? gsap.to(element, {
+            ...config.to,
+            ease: config.ease || "none",
+            force3D: true,
+            immediateRender: false,
+            scrollTrigger: scrollTriggerConfig,
+          })
+        : gsap.to(element, {
+            ...config.to,
+            ease: config.ease || "none",
+            force3D: true,
+            immediateRender: false,
+            scrollTrigger: scrollTriggerConfig,
+          });
     };
 
-    if (config.toggleActions) {
-      scrollTriggerConfig.toggleActions = config.toggleActions;
+    if (typeof requestIdleCallback !== "undefined") {
+      requestIdleCallback(() => initAnimation(), { timeout: 2000 });
     } else {
-      scrollTriggerConfig.scrub =
-        typeof config.scrub === "number"
-          ? config.scrub
-          : config.scrub
-          ? 1
-          : false;
+      setTimeout(() => initAnimation(), 100);
     }
 
-    const animationTarget = config.from
-      ? gsap.to(element, {
-          ...config.to,
-          ease: config.ease || "none",
-          force3D: true,
-          immediateRender: false,
-          scrollTrigger: scrollTriggerConfig,
-        })
-      : gsap.to(element, {
-          ...config.to,
-          ease: config.ease || "none",
-          force3D: true,
-          immediateRender: false,
-          scrollTrigger: scrollTriggerConfig,
-        });
-
     return () => {
-      if (animationTarget.scrollTrigger) {
+      isActive = false;
+      if (animationTarget?.scrollTrigger) {
         animationTarget.scrollTrigger.kill();
       }
-      animationTarget.kill();
+      animationTarget?.kill();
     };
   }, [
     elementRef,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, ReactNode, useMemo } from "react";
-import { gsap } from "../../lib/gsap";
+import { getGSAP, getScrollTrigger } from "../../lib/gsap";
 
 interface AnimatedSVGProps {
   children: ReactNode;
@@ -38,34 +38,57 @@ export default function AnimatedSVG({
 
     if (!trigger) return;
 
-    const ctx = gsap.context(() => {
-      gsap.set(content, {
-        scaleY: multiplier,
-        transformOrigin: "top center",
-        force3D: true,
-        willChange: "transform",
-        z: 0,
-      });
+    let ctx: ReturnType<typeof import("gsap").gsap.context> | null = null;
+    let isActive = true;
 
-      gsap.to(content, {
-        scaleY: 1,
-        ease: "none",
-        force3D: true,
-        immediateRender: false,
-        scrollTrigger: {
-          trigger: trigger,
-          start: "top 24",
-          end: "bottom 48",
-          scrub: true,
-          invalidateOnRefresh: false,
-          anticipatePin: 1,
-          refreshPriority: -index,
-          markers: false,
-        },
-      });
-    }, containerRef);
+    const initAnimation = async () => {
+      if (!isActive) return;
 
-    return () => ctx.revert();
+      const [gsap, ScrollTrigger] = await Promise.all([
+        getGSAP(),
+        getScrollTrigger(),
+      ]);
+
+      if (!isActive || !containerRef.current || !contentRef.current) return;
+
+      ctx = gsap.context(() => {
+        gsap.set(content, {
+          scaleY: multiplier,
+          transformOrigin: "top center",
+          force3D: true,
+          willChange: "transform",
+          z: 0,
+        });
+
+        gsap.to(content, {
+          scaleY: 1,
+          ease: "none",
+          force3D: true,
+          immediateRender: false,
+          scrollTrigger: {
+            trigger: trigger,
+            start: "top 24",
+            end: "bottom 48",
+            scrub: true,
+            invalidateOnRefresh: false,
+            anticipatePin: 1,
+            refreshPriority: -index,
+            markers: false,
+          },
+        });
+      }, containerRef);
+    };
+
+    if (typeof requestIdleCallback !== "undefined") {
+      requestIdleCallback(() => initAnimation(), { timeout: 2000 });
+    } else {
+      setTimeout(() => initAnimation(), 100);
+    }
+
+    return () => {
+      isActive = false;
+      ctx?.revert();
+    };
   }, [
     aspectRatio,
     multiplier,

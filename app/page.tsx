@@ -3,7 +3,6 @@
 import { RefObject, useRef, Suspense } from "react";
 import dynamic from "next/dynamic";
 import SVGGroup from "./art/SVGGroup";
-import BackgroundSection from "./art/BackgroundSection";
 import ScrubAnimation from "./components/animations/ScrubAnimation";
 import ListenSection from "./components/content/ListenSection";
 import QuotesSection from "./components/content/QuotesSection";
@@ -50,7 +49,13 @@ export default function Home() {
             showMarkers={false}
             invalidateOnRefresh={false}
           >
-            <BackgroundSection position="50%_50%" className="aspect-square" />
+            <div
+              className="aspect-square h-full w-full bg-cover scale-[1.1]"
+              style={{
+                backgroundImage: "url(/img/optimized/no-bg.webp)",
+                backgroundPosition: "50% 50%",
+              }}
+            />
           </ScrubAnimation>
         </div>
       </div>
