@@ -8,12 +8,12 @@ const quotes = [
   {
     text: "A robot could never replace our Son",
     logo: SiliconValleyLogo,
-    opacity: "opacity-70",
+    opacity: "opacity-80",
   },
   {
     text: "Bold, daring, devoid of life",
     logo: RoyalAcademyLogo,
-    opacity: "opacity-60",
+    opacity: "opacity-70",
   },
   {
     text: "Avant garde in the lightest sense of the word",
@@ -25,7 +25,7 @@ const quotes = [
 export default function QuotesSection() {
   return (
     <div className="text-left font-bold p-2 max-w-[1500px] mx-auto text-white">
-      <div className="grid grid-cols-1 gap-[10vw] my-20 px-6">
+      <div className="grid grid-cols-1 gap-[10vw] my-[10vw] px-6">
         {quotes.map((quote, i) => (
           <Quote
             key={i}
@@ -38,4 +38,3 @@ export default function QuotesSection() {
     </div>
   );
 }
-

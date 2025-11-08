@@ -46,12 +46,11 @@ export default function Home() {
           </ScrubAnimation>
         </div>
       </div>
-      <ListenSection />
+
       <div className="w-full">
-        <QuotesSection />
         <div
           ref={multiCubeContainerRef}
-          className="aspect-[1.5/1] w-full relative mix-blend-screen"
+          className="aspect-[1.5/1] my-[10vw] w-full relative mix-blend-screen"
         >
           <AnimatedMultiCube
             texts={[
@@ -80,7 +79,8 @@ export default function Home() {
             matchTextColor={true}
           />
         </div>
-
+        <QuotesSection />
+        <ListenSection />
         <ArtistBio />
 
         <div className="h-[100vw] w-full" />

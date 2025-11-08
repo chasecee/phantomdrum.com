@@ -352,10 +352,11 @@ export default function AnimatedMultiCube({
     texts.map(() => 0)
   );
   const isDraggingRef = useRef(false);
-  const dragStartRef = useRef(0);
+  const dragStartRef = useRef({ x: 0, y: 0 });
   const dragStartRotationsRef = useRef<number[]>([]);
   const dragRotationsRef = useRef<number[]>([]);
   const draggedCubeIndexRef = useRef(-1);
+  const isHorizontalDragRef = useRef(false);
 
   useEffect(() => {
     if (size !== undefined) {
@@ -480,16 +481,21 @@ export default function AnimatedMultiCube({
 
     const handleStart = (clientX: number, clientY: number) => {
       isDraggingRef.current = true;
-      dragStartRef.current = clientX;
+      dragStartRef.current = { x: clientX, y: clientY };
       draggedCubeIndexRef.current = getCubeIndexFromY(clientY);
       dragStartRotationsRef.current = [...dragRotationsRef.current];
+      isHorizontalDragRef.current = false;
       container.style.cursor = "grabbing";
     };
 
     const handleMove = (clientX: number) => {
       if (!isDraggingRef.current || draggedCubeIndexRef.current === -1) return;
-      const deltaX = clientX - dragStartRef.current;
-      const rotationDelta = (deltaX / container.offsetWidth) * Math.PI * 2;
+      if (!isHorizontalDragRef.current) return;
+
+      const rotationDelta =
+        ((clientX - dragStartRef.current.x) / container.offsetWidth) *
+        Math.PI *
+        2;
       const cubeIndex = draggedCubeIndexRef.current;
       const newRotations = [...dragRotationsRef.current];
       newRotations[cubeIndex] =
@@ -501,11 +507,14 @@ export default function AnimatedMultiCube({
     const handleEnd = () => {
       isDraggingRef.current = false;
       draggedCubeIndexRef.current = -1;
+      isHorizontalDragRef.current = false;
       container.style.cursor = "grab";
     };
 
-    const handleMouseDown = (e: MouseEvent) =>
+    const handleMouseDown = (e: MouseEvent) => {
       handleStart(e.clientX, e.clientY);
+      isHorizontalDragRef.current = true;
+    };
     const handleMouseMove = (e: MouseEvent) => handleMove(e.clientX);
     const handleTouchStart = (e: TouchEvent) =>
       e.touches.length === 1 &&
@@ -517,6 +526,22 @@ export default function AnimatedMultiCube({
         draggedCubeIndexRef.current === -1
       )
         return;
+
+      const deltaX = Math.abs(e.touches[0].clientX - dragStartRef.current.x);
+      const deltaY = Math.abs(e.touches[0].clientY - dragStartRef.current.y);
+
+      if (!isHorizontalDragRef.current) {
+        if (deltaY > deltaX && deltaY > 10) {
+          handleEnd();
+          return;
+        }
+        if (deltaX > deltaY && deltaX > 10) {
+          isHorizontalDragRef.current = true;
+        } else {
+          return;
+        }
+      }
+
       e.preventDefault();
       handleMove(e.touches[0].clientX);
     };
