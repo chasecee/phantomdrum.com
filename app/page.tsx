@@ -70,8 +70,8 @@ export default function Home() {
             }}
             showMarkers={false}
             className="absolute inset-0"
-            heightRatio={0.15}
-            widthRatio={1.2}
+            heightRatio={0.175}
+            widthRatio={1.1}
             size={3}
             spacing={0.1}
             stagger={true}

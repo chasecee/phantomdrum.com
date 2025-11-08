@@ -32,7 +32,7 @@ body {
     color: var(--foreground);
     line-height: 1.25;
     a {
-      @apply font-semibold text-amber-500 underline underline-offset-4;
+      @apply font-semibold text-amber-400 underline underline-offset-4 hover:text-amber-500;
     }
   }
 }
