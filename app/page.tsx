@@ -16,15 +16,11 @@ export default function Home() {
       }}
     >
       <HeroSection />
-
-      <div className="w-full">
-        <CubeSection />
-        <QuotesSection />
-        <ListenSection />
-        <ArtistBio />
-
-        <div className="h-[100vw] w-full" />
-      </div>
+      <CubeSection />
+      <QuotesSection />
+      <ListenSection />
+      <ArtistBio />
+      <div className="h-[100vw] w-full" />
     </div>
   );
 }
