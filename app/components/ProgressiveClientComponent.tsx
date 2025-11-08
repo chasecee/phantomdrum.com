@@ -1,17 +1,16 @@
 "use client";
 
 import { useEffect, useState, startTransition } from "react";
-import dynamic from "next/dynamic";
 
-const HeroSection = dynamic(() => import("./sections/HeroSection"), {
-  ssr: false,
-});
+interface ProgressiveClientComponentProps {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}
 
-const CubeSection = dynamic(() => import("./sections/CubeSection"), {
-  ssr: false,
-});
-
-export default function ClientSections() {
+function ProgressiveClientComponent({
+  children,
+  fallback = null,
+}: ProgressiveClientComponentProps) {
   const [shouldRender, setShouldRender] = useState(false);
 
   useEffect(() => {
@@ -47,18 +46,10 @@ export default function ClientSections() {
   }, []);
 
   if (!shouldRender) {
-    return (
-      <>
-        <div className="relative aspect-1/2 w-full" />
-        <div className="aspect-[1.5/1] my-[10vw] w-full relative" />
-      </>
-    );
+    return <>{fallback}</>;
   }
 
-  return (
-    <>
-      <HeroSection />
-      <CubeSection />
-    </>
-  );
+  return <>{children}</>;
 }
+
+export default ProgressiveClientComponent;
