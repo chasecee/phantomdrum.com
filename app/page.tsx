@@ -1,8 +1,19 @@
-import HeroSection from "./components/sections/HeroSection";
-import CubeSection from "./components/sections/CubeSection";
-import ListenSection from "./components/content/ListenSection";
+import dynamic from "next/dynamic";
 import QuotesSection from "./components/content/QuotesSection";
 import ArtistBio from "./components/content/ArtistBio";
+
+const HeroSection = dynamic(() => import("./components/sections/HeroSection"), {
+  ssr: false,
+});
+
+const CubeSection = dynamic(() => import("./components/sections/CubeSection"), {
+  ssr: false,
+});
+
+const ListenSection = dynamic(
+  () => import("./components/content/ListenSection"),
+  { ssr: false }
+);
 
 export default function Home() {
   return (

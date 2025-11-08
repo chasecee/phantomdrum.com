@@ -3,19 +3,41 @@
 let gsapInstance: typeof import("gsap").gsap | null = null;
 let scrollTriggerInstance: typeof import("gsap/ScrollTrigger").ScrollTrigger | null = null;
 let isRegistered = false;
+let initPromise: Promise<void> | null = null;
 
 async function initGSAP() {
   if (typeof window === "undefined" || isRegistered) return;
+  if (initPromise) return initPromise;
   
-  const [{ gsap }, { ScrollTrigger }] = await Promise.all([
-    import("gsap"),
-    import("gsap/ScrollTrigger"),
-  ]);
+  initPromise = (async () => {
+    await new Promise((resolve) => {
+      if (document.readyState === "complete") {
+        setTimeout(resolve, 0);
+      } else {
+        window.addEventListener("load", resolve, { once: true });
+      }
+    });
+    
+    await new Promise((resolve) => {
+      if (typeof requestIdleCallback !== "undefined") {
+        requestIdleCallback(() => resolve(undefined), { timeout: 3000 });
+      } else {
+        setTimeout(() => resolve(undefined), 500);
+      }
+    });
+
+    const [{ gsap }, { ScrollTrigger }] = await Promise.all([
+      import("gsap"),
+      import("gsap/ScrollTrigger"),
+    ]);
+    
+    gsap.registerPlugin(ScrollTrigger);
+    gsapInstance = gsap;
+    scrollTriggerInstance = ScrollTrigger;
+    isRegistered = true;
+  })();
   
-  gsap.registerPlugin(ScrollTrigger);
-  gsapInstance = gsap;
-  scrollTriggerInstance = ScrollTrigger;
-  isRegistered = true;
+  return initPromise;
 }
 
 export async function getGSAP() {
@@ -35,11 +57,7 @@ export async function getScrollTrigger() {
 export const gsap = new Proxy({} as typeof import("gsap").gsap, {
   get(_target, prop) {
     if (!gsapInstance && typeof window !== "undefined") {
-      if (typeof requestIdleCallback !== "undefined") {
-        requestIdleCallback(() => initGSAP(), { timeout: 2000 });
-      } else {
-        setTimeout(() => initGSAP(), 100);
-      }
+      initGSAP();
     }
     return gsapInstance?.[prop as keyof typeof gsapInstance];
   },
@@ -48,11 +66,7 @@ export const gsap = new Proxy({} as typeof import("gsap").gsap, {
 export const ScrollTrigger = new Proxy({} as typeof import("gsap/ScrollTrigger").ScrollTrigger, {
   get(_target, prop) {
     if (!scrollTriggerInstance && typeof window !== "undefined") {
-      if (typeof requestIdleCallback !== "undefined") {
-        requestIdleCallback(() => initGSAP(), { timeout: 2000 });
-      } else {
-        setTimeout(() => initGSAP(), 100);
-      }
+      initGSAP();
     }
     return scrollTriggerInstance?.[prop as keyof typeof scrollTriggerInstance];
   },
