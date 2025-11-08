@@ -122,7 +122,7 @@ const SingleTextCube = memo(function SingleTextCube({
   const textFont = font || "/fonts/space-mono-v17-latin-700.ttf";
   const textExtrusion = size * 0.001;
   const fontSize =
-    Math.max(((size * 0.8) / text.length) * (100 / 65), textSize * 0.3) * 1.15;
+    Math.max(((size * 0.8) / text.length) * (100 / 65), textSize * 0.3) * 1.2;
   const textFaces: Array<{
     pos: [number, number, number];
     rot: [number, number, number];
@@ -546,7 +546,7 @@ export default function AnimatedMultiCube({
   }, [dragRotations]);
 
   const defaultColors = useMemo(
-    () => ["#C4A070", "#B88B70", "#B85A4A", "#9A5A5A"],
+    () => ["#C4A070", "#B88B70", "#C85A3D", "#A85A5A"],
     []
   );
 
@@ -603,7 +603,16 @@ export default function AnimatedMultiCube({
       style={{
         transform: `translateY(${targetYPercent}%)`,
       }}
+      role="region"
+      aria-label="Animated text cubes"
     >
+      <div className="sr-only" aria-live="polite">
+        <ul>
+          {texts.map((text, index) => (
+            <li key={index}>{text}</li>
+          ))}
+        </ul>
+      </div>
       <MultiCubeScene
         groupRefs={groupRefs}
         targetRotations={targetRotations}
