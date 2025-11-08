@@ -1,19 +1,7 @@
-import dynamic from "next/dynamic";
+import ClientSections from "./components/ClientSections";
 import QuotesSection from "./components/content/QuotesSection";
+import ListenSection from "./components/content/ListenSection";
 import ArtistBio from "./components/content/ArtistBio";
-
-const HeroSection = dynamic(() => import("./components/sections/HeroSection"), {
-  ssr: false,
-});
-
-const CubeSection = dynamic(() => import("./components/sections/CubeSection"), {
-  ssr: false,
-});
-
-const ListenSection = dynamic(
-  () => import("./components/content/ListenSection"),
-  { ssr: false }
-);
 
 export default function Home() {
   return (
@@ -26,8 +14,7 @@ export default function Home() {
         containerType: "inline-size",
       }}
     >
-      <HeroSection />
-      <CubeSection />
+      <ClientSections />
       <QuotesSection />
       <ListenSection />
       <ArtistBio />
