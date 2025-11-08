@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, RefObject } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
-import { gsap, ScrollTrigger } from "../../lib/gsap";
+import { getGSAP, getScrollTrigger } from "../../lib/gsap";
 
 interface AnimatedTextCubeProps {
   texts: string[];
@@ -473,81 +473,88 @@ export default function AnimatedTextCube({
     )
       return;
 
-    let animation: gsap.core.Tween | null = null;
-    let rafId: number | null = null;
+    let animation: ReturnType<typeof import("gsap").gsap.to> | null = null;
+    let isActive = true;
 
-    // Wait for DOM to be ready using requestAnimationFrame
-    rafId = requestAnimationFrame(() => {
-      rafId = requestAnimationFrame(() => {
-        if (!containerRef.current || !trigger?.current) return;
+    const initAnimation = async () => {
+      if (!isActive) return;
 
-        const markerConfig = showMarkers
-          ? {
-              markers: {
-                startColor: markerColor,
-                endColor: markerColor,
-                fontSize: "12px",
-                fontWeight: "bold",
-              },
-            }
-          : { markers: false };
+      const [gsap, ScrollTrigger] = await Promise.all([
+        getGSAP(),
+        getScrollTrigger(),
+      ]);
 
-        const scrollTriggerConfig: Record<string, unknown> = {
-          trigger: trigger.current,
-          start,
-          end,
-          pin: pin ?? false,
-          invalidateOnRefresh: invalidateOnRefresh ?? true,
-          anticipatePin: 1,
-          ...markerConfig,
-        };
+      if (!isActive || !containerRef.current || !trigger?.current) return;
 
-        if (toggleActions) {
-          scrollTriggerConfig.toggleActions = toggleActions;
-        } else {
-          scrollTriggerConfig.scrub =
-            typeof scrub === "number" ? scrub : scrub ? 1 : false;
-        }
+      const markerConfig = showMarkers
+        ? {
+            markers: {
+              startColor: markerColor,
+              endColor: markerColor,
+              fontSize: "12px",
+              fontWeight: "bold",
+            },
+          }
+        : { markers: false };
 
-        const fromRotation = from?.rotation ?? { x: 0, y: 0, z: 0 };
-        const fromScale = from?.scale ?? 1;
+      const scrollTriggerConfig: Record<string, unknown> = {
+        trigger: trigger.current,
+        start,
+        end,
+        pin: pin ?? false,
+        invalidateOnRefresh: invalidateOnRefresh ?? true,
+        anticipatePin: 1,
+        ...markerConfig,
+      };
 
-        const data = {
-          rotationX: fromRotation.x,
-          rotationY: fromRotation.y,
-          rotationZ: fromRotation.z,
-          scale: fromScale,
-        };
+      if (toggleActions) {
+        scrollTriggerConfig.toggleActions = toggleActions;
+      } else {
+        scrollTriggerConfig.scrub =
+          typeof scrub === "number" ? scrub : scrub ? 1 : false;
+      }
 
-        animation = gsap.to(data, {
-          rotationX: to.rotation.x,
-          rotationY: to.rotation.y,
-          rotationZ: to.rotation.z,
-          scale: to.scale ?? 1,
-          ease: ease,
-          scrollTrigger: scrollTriggerConfig,
-          onUpdate: function () {
-            const progress = this.progress();
-            setScrollProgress(progress);
-            const rotationY = data.rotationY ?? fromRotation.y ?? 0;
-            setTargetRotation({
-              x: (data.rotationX ?? fromRotation.x) as number,
-              y: rotationY,
-              z: (data.rotationZ ?? fromRotation.z) as number,
-            });
-            setTargetScale((data.scale ?? fromScale) as number);
-          },
-        });
+      const fromRotation = from?.rotation ?? { x: 0, y: 0, z: 0 };
+      const fromScale = from?.scale ?? 1;
 
-        // Refresh ScrollTrigger after a short delay to ensure everything is ready
-        ScrollTrigger.refresh();
+      const data = {
+        rotationX: fromRotation.x,
+        rotationY: fromRotation.y,
+        rotationZ: fromRotation.z,
+        scale: fromScale,
+      };
+
+      animation = gsap.to(data, {
+        rotationX: to.rotation.x,
+        rotationY: to.rotation.y,
+        rotationZ: to.rotation.z,
+        scale: to.scale ?? 1,
+        ease: ease,
+        scrollTrigger: scrollTriggerConfig,
+        onUpdate: function () {
+          const progress = this.progress();
+          setScrollProgress(progress);
+          const rotationY = data.rotationY ?? fromRotation.y ?? 0;
+          setTargetRotation({
+            x: (data.rotationX ?? fromRotation.x) as number,
+            y: rotationY,
+            z: (data.rotationZ ?? fromRotation.z) as number,
+          });
+          setTargetScale((data.scale ?? fromScale) as number);
+        },
       });
-    });
+
+      ScrollTrigger.refresh();
+    };
+
+    if (typeof requestIdleCallback !== "undefined") {
+      requestIdleCallback(() => initAnimation(), { timeout: 2000 });
+    } else {
+      setTimeout(() => initAnimation(), 100);
+    }
 
     return () => {
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
+      isActive = false;
       if (animation) {
         if (animation.scrollTrigger) {
           animation.scrollTrigger.kill();

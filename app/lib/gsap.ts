@@ -11,18 +11,18 @@ async function initGSAP() {
   
   initPromise = (async () => {
     await new Promise((resolve) => {
-      if (document.readyState === "complete") {
-        setTimeout(resolve, 0);
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", resolve, { once: true });
       } else {
-        window.addEventListener("load", resolve, { once: true });
+        setTimeout(resolve, 0);
       }
     });
     
     await new Promise((resolve) => {
       if (typeof requestIdleCallback !== "undefined") {
-        requestIdleCallback(() => resolve(undefined), { timeout: 3000 });
+        requestIdleCallback(() => resolve(undefined), { timeout: 500 });
       } else {
-        setTimeout(() => resolve(undefined), 500);
+        setTimeout(() => resolve(undefined), 100);
       }
     });
 

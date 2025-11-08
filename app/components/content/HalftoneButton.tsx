@@ -213,11 +213,38 @@ export default function HalftoneButton({
   color,
 }: HalftoneButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [shouldLoadCanvas, setShouldLoadCanvas] = useState(
+    typeof IntersectionObserver === "undefined"
+  );
+  const containerRef = useRef<HTMLAnchorElement>(null);
   const strokeWidth = isHovered ? 18 : 8;
   const textScale = isHovered ? 1.4 : 1.2;
 
+  useEffect(() => {
+    if (!containerRef.current || typeof IntersectionObserver === "undefined") {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setShouldLoadCanvas(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "50px" }
+    );
+
+    observer.observe(containerRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   return (
     <Link
+      ref={containerRef}
       href={href}
       target="_blank"
       rel="noopener noreferrer"
@@ -229,33 +256,37 @@ export default function HalftoneButton({
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="absolute inset-0">
-        <Canvas
-          orthographic
-          camera={{
-            position: [0, 0, 5],
-            left: -2,
-            right: 2,
-            top: 0.95,
-            bottom: -0.95,
-            near: 0.1,
-            far: 10,
-          }}
-          gl={{
-            antialias: false,
-            alpha: false,
-            depth: true,
-            stencil: true,
-            powerPreference: "high-performance" as const,
-          }}
-          style={{ width: "100%", height: "100%" }}
-        >
-          <ButtonScene
-            text={text}
-            color={color}
-            strokeWidth={strokeWidth}
-            textScale={textScale}
-          />
-        </Canvas>
+        {shouldLoadCanvas ? (
+          <Canvas
+            orthographic
+            camera={{
+              position: [0, 0, 5],
+              left: -2,
+              right: 2,
+              top: 0.95,
+              bottom: -0.95,
+              near: 0.1,
+              far: 10,
+            }}
+            gl={{
+              antialias: false,
+              alpha: false,
+              depth: true,
+              stencil: true,
+              powerPreference: "high-performance" as const,
+            }}
+            style={{ width: "100%", height: "100%" }}
+          >
+            <ButtonScene
+              text={text}
+              color={color}
+              strokeWidth={strokeWidth}
+              textScale={textScale}
+            />
+          </Canvas>
+        ) : (
+          <div className="w-full h-full bg-black" />
+        )}
       </div>
     </Link>
   );
