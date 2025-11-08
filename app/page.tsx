@@ -51,31 +51,33 @@ export default function Home() {
         <QuotesSection />
         <div
           ref={multiCubeContainerRef}
-          className="aspect-[1.5/1] w-full relative mix-blend-difference"
+          className="aspect-[1.5/1] w-full relative mix-blend-screen"
         >
           <AnimatedMultiCube
             texts={[
-              "GHOST GRADE FARM-FRESH",
+              "GHOST GRADE",
+              "FARM-FRESH",
               "ABSTRACT YET FAMILIAR",
-              "ENYA MEETS GORILLAZ",
-              "MEGA BEATS",
+              "CLASSIC SUNDAY DINNER",
+              "BIG OL BEATS",
             ]}
             trigger={multiCubeContainerRef as RefObject<HTMLElement>}
             start="40% 80%"
             end="60% 20%"
-            scrub={1}
             from={{ rotation: { x: 0.01, y: 0, z: 0 } }}
             to={{
               rotation: { x: -0.01, y: -Math.PI * 0.5, z: 0 },
             }}
-            showMarkers={false}
             className="absolute inset-0"
             heightRatio={0.175}
             widthRatio={1.1}
             size={3}
             spacing={0.1}
             stagger={true}
-            staggerDelay={0.15}
+            staggerDelay={0.1}
+            fillMode="outline"
+            strokeWidth={10}
+            matchTextColor={true}
           />
         </div>
 
