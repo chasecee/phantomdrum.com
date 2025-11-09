@@ -528,9 +528,11 @@ export default function AnimatedMultiCube({
       isHorizontalDragRef.current = true;
     };
     const handleMouseMove = (e: MouseEvent) => handleMove(e.clientX);
-    const handleTouchStart = (e: TouchEvent) =>
-      e.touches.length === 1 &&
-      handleStart(e.touches[0].clientX, e.touches[0].clientY);
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        handleStart(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
     const handleTouchMove = (e: TouchEvent) => {
       if (
         !isDraggingRef.current ||
@@ -543,18 +545,20 @@ export default function AnimatedMultiCube({
       const deltaY = Math.abs(e.touches[0].clientY - dragStartRef.current.y);
 
       if (!isHorizontalDragRef.current) {
-        if (deltaY > deltaX && deltaY > 10) {
+        if (deltaY > deltaX && deltaY > 15) {
           handleEnd();
           return;
         }
-        if (deltaX > deltaY && deltaX > 10) {
+        if (deltaX > 5 || (deltaX > deltaY && deltaX > 3)) {
           isHorizontalDragRef.current = true;
+          e.preventDefault();
         } else {
           return;
         }
+      } else {
+        e.preventDefault();
       }
 
-      e.preventDefault();
       handleMove(e.touches[0].clientX);
     };
     container.style.cursor = "grab";

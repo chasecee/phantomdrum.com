@@ -3,6 +3,7 @@
 import { RefObject, useRef } from "react";
 import SVGGroup from "../../art/SVGGroup";
 import ScrubAnimation from "../animations/ScrubAnimation";
+import Image from "next/image";
 
 export default function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,13 +29,17 @@ export default function HeroSection() {
           showMarkers={false}
           invalidateOnRefresh={false}
         >
-          <div
-            className="aspect-square h-full w-full bg-cover scale-[1.1]"
-            style={{
-              backgroundImage: "url(/img/optimized/no-bg.webp)",
-              backgroundPosition: "50% 50%",
-            }}
-          />
+          <div className="aspect-square h-full w-full scale-[1.1] relative">
+            <Image
+              src="/img/optimized/no-bg.webp"
+              alt=""
+              fill
+              className="object-cover object-center"
+              priority
+              fetchPriority="high"
+              sizes="100vw"
+            />
+          </div>
         </ScrubAnimation>
       </div>
     </div>
