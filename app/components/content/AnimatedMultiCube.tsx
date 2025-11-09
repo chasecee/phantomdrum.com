@@ -11,15 +11,9 @@ const AnimatedMultiCubeScene = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center min-h-[200px]">
-        <div className="text-white opacity-50">Loading 3D scene...</div>
-      </div>
-    ),
+    loading: () => null,
   }
 );
-
-type Rotation = { x: number; y: number; z: number };
 
 interface AnimatedMultiCubeProps {
   texts: string[];
@@ -60,13 +54,7 @@ interface AnimatedMultiCubeProps {
 
 export default function AnimatedMultiCube(props: AnimatedMultiCubeProps) {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-[200px]">
-          <div className="text-white opacity-50">Loading 3D scene...</div>
-        </div>
-      }
-    >
+    <Suspense fallback={null}>
       <AnimatedMultiCubeScene {...props} />
     </Suspense>
   );
