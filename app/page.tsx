@@ -1,12 +1,8 @@
-import dynamic from "next/dynamic";
 import HeroSection from "./components/sections/HeroSection";
+import CubeSection from "./components/sections/CubeSection";
 import QuotesSection from "./components/content/QuotesSection";
 import ArtistBio from "./components/content/ArtistBio";
 import ListenSection from "./components/content/ListenSection";
-
-const CubeSection = dynamic(() => import("./components/sections/CubeSection"), {
-  ssr: false,
-});
 
 export default function Home() {
   return (
