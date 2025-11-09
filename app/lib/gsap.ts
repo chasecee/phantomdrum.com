@@ -10,22 +10,6 @@ async function initGSAP() {
   if (initPromise) return initPromise;
   
   initPromise = (async () => {
-    await new Promise((resolve) => {
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", resolve, { once: true });
-      } else {
-        setTimeout(resolve, 0);
-      }
-    });
-    
-    await new Promise((resolve) => {
-      if (typeof requestIdleCallback !== "undefined") {
-        requestIdleCallback(() => resolve(undefined), { timeout: 500 });
-      } else {
-        setTimeout(() => resolve(undefined), 100);
-      }
-    });
-
     const [{ gsap }, { ScrollTrigger }] = await Promise.all([
       import("gsap"),
       import("gsap/ScrollTrigger"),

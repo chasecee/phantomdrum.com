@@ -124,11 +124,7 @@ export function useScrubAnimation(
           });
     };
 
-    if (typeof requestIdleCallback !== "undefined") {
-      requestIdleCallback(() => initAnimation(), { timeout: 2000 });
-    } else {
-      setTimeout(() => initAnimation(), 100);
-    }
+    initAnimation();
 
     return () => {
       isActive = false;
