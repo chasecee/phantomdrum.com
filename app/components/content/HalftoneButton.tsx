@@ -11,7 +11,7 @@ interface HalftoneButtonProps {
 
 // Dynamically import the Three.js scene to prevent upfront bundling
 const HalftoneButtonScene = dynamic(
-  () => import(/* webpackChunkName: "three-components" */ "./HalftoneButtonScene"),
+  () => import("./ThreeScenes").then((mod) => ({ default: mod.HalftoneButtonScene })),
   {
     ssr: false,
     loading: () => (
