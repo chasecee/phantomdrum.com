@@ -4,7 +4,7 @@ import { Suspense, useRef, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 
 const HalftoneButton = dynamic(
-  () => import(/* webpackChunkName: "halftone-button" */ "./HalftoneButton"),
+  () => import(/* webpackChunkName: "three-components" */ "./HalftoneButton"),
   {
     ssr: false,
   }

@@ -5,7 +5,10 @@ import { Suspense } from "react";
 
 // Dynamically import the Three.js scene to prevent upfront bundling
 const AnimatedMultiCubeScene = dynamic(
-  () => import("./AnimatedMultiCubeScene"),
+  () =>
+    import(
+      /* webpackChunkName: "three-components" */ "./AnimatedMultiCubeScene"
+    ),
   {
     ssr: false,
     loading: () => (
