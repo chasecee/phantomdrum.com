@@ -66,15 +66,6 @@ export function useScrubAnimation(
 
       const element = elementRef.current;
 
-      if (config.from) {
-        gsap.set(element, {
-          ...config.from,
-          force3D: true,
-          willChange: "transform",
-          z: 0,
-        });
-      }
-
       const markerConfig = config.showMarkers
         ? {
             markers: {
@@ -91,7 +82,8 @@ export function useScrubAnimation(
         start: config.start,
         end: config.end,
         pin: config.pin ?? false,
-        invalidateOnRefresh: config.invalidateOnRefresh ?? true,
+        invalidateOnRefresh: config.invalidateOnRefresh ?? false,
+        ignoreMobileResize: true,
         anticipatePin: 1,
         ...markerConfig,
       };
@@ -108,13 +100,19 @@ export function useScrubAnimation(
       }
 
       animationTarget = config.from
-        ? gsap.to(element, {
-            ...config.to,
-            ease: config.ease || "none",
-            force3D: true,
-            immediateRender: false,
-            scrollTrigger: scrollTriggerConfig,
-          })
+        ? gsap.fromTo(
+            element,
+            {
+              ...config.from,
+              force3D: true,
+            },
+            {
+              ...config.to,
+              ease: config.ease || "none",
+              force3D: true,
+              scrollTrigger: scrollTriggerConfig,
+            }
+          )
         : gsap.to(element, {
             ...config.to,
             ease: config.ease || "none",
@@ -122,6 +120,8 @@ export function useScrubAnimation(
             immediateRender: false,
             scrollTrigger: scrollTriggerConfig,
           });
+
+      ScrollTrigger.refresh();
     };
 
     initAnimation();
