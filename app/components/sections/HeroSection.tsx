@@ -29,12 +29,12 @@ export default function HeroSection() {
           showMarkers={false}
           invalidateOnRefresh={false}
         >
-          <div className="aspect-square h-full w-full scale-[1.1] relative">
+          <div className="aspect-square h-full w-full relative">
             <Image
               src="/img/optimized/no-bg.webp"
               alt=""
               fill
-              className="object-cover object-center"
+              className="object-cover object-center scale-[1.1]"
               priority
               fetchPriority="high"
               sizes="100vw"
