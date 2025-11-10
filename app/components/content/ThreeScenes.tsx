@@ -17,6 +17,7 @@ import {
   BoxGeometry,
   BufferGeometry,
   ShapeGeometry,
+  DoubleSide,
   OrthographicCamera,
   AlwaysStencilFunc,
   ReplaceStencilOp,
@@ -215,6 +216,7 @@ const SingleTextCube = memo(function SingleTextCube({
                 polygonOffsetFactor={-0.5}
                 polygonOffsetUnits={-0.5}
                 toneMapped={false}
+                side={DoubleSide}
               />
             </mesh>
           ) : null
