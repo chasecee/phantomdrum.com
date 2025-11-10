@@ -121,7 +121,7 @@ function TextCube({
   const cubeColors = colors.length >= 6 ? colors : defaultColors;
   const cubeHeight = size * heightRatio;
   const textMaxWidth = maxWidth ?? size * 0.9;
-  const textFont = font || "/fonts/space-mono-v17-latin-700.ttf";
+  const textFont = font || undefined;
   const textExtrusion = size * 0.05;
 
   const addLineBreaks = (text: string): string => {

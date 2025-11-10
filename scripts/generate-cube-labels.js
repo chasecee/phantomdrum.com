@@ -69,7 +69,7 @@ function generateSvgForLabel(font, text, fontSize) {
   const viewBox = `0 0 ${width.toFixed(2)} ${height.toFixed(2)}`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" role="img" aria-label="${text}">
-  <path d="${pathData}" fill="currentColor" />
+  <path d="${pathData}" fill="#000000" />
 </svg>
 `;
 }

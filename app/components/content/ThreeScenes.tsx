@@ -826,7 +826,6 @@ function TextWithTransition({
       color={color}
       anchorX="center"
       anchorY="middle"
-      font="/fonts/space-mono-v17-latin-700.ttf"
       renderOrder={3}
     >
       {text.toUpperCase()}
