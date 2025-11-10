@@ -6,7 +6,7 @@ const opentype = require("opentype.js");
 
 const ROOT_DIR = path.resolve(__dirname, "..");
 const CONFIG_PATH = path.join(ROOT_DIR, "config", "cube-labels.json");
-const OUTPUT_DIR = path.join(ROOT_DIR, "public", "generated", "cube-labels");
+const OUTPUT_DIR = path.join(ROOT_DIR, "public", "generated");
 
 function loadConfig() {
   if (!fs.existsSync(CONFIG_PATH)) {
@@ -16,8 +16,8 @@ function loadConfig() {
   const raw = fs.readFileSync(CONFIG_PATH, "utf-8");
   const data = JSON.parse(raw);
 
-  if (!Array.isArray(data.labels) || data.labels.length === 0) {
-    throw new Error("Config must include a non-empty \"labels\" array");
+  if (!Array.isArray(data.cubeLabels) || data.cubeLabels.length === 0) {
+    throw new Error('Config must include a non-empty "cubeLabels" array');
   }
 
   if (!data.fontPath) {
@@ -27,7 +27,8 @@ function loadConfig() {
   return {
     fontPath: path.join(ROOT_DIR, data.fontPath),
     fontSize: typeof data.fontSize === "number" ? data.fontSize : 120,
-    labels: data.labels,
+    cubeLabels: data.cubeLabels,
+    buttonLabels: Array.isArray(data.buttonLabels) ? data.buttonLabels : [],
   };
 }
 
@@ -74,23 +75,32 @@ function generateSvgForLabel(font, text, fontSize) {
 `;
 }
 
+function generateGroup(font, labels, groupDir, fontSize) {
+  ensureDir(groupDir);
+  labels.forEach((label) => {
+    const slug = slugify(label);
+    const svgContent = generateSvgForLabel(font, label, fontSize);
+    const outputPath = path.join(groupDir, `${slug}.svg`);
+    fs.writeFileSync(outputPath, svgContent, "utf-8");
+    console.log(`Generated ${path.relative(ROOT_DIR, outputPath)}`);
+  });
+}
+
 function main() {
   const config = loadConfig();
-  ensureDir(OUTPUT_DIR);
-
   if (!fs.existsSync(config.fontPath)) {
     throw new Error(`Font not found at ${config.fontPath}`);
   }
 
   const font = opentype.loadSync(config.fontPath);
 
-  config.labels.forEach((label) => {
-    const slug = slugify(label);
-    const svgContent = generateSvgForLabel(font, label, config.fontSize);
-    const outputPath = path.join(OUTPUT_DIR, `${slug}.svg`);
-    fs.writeFileSync(outputPath, svgContent, "utf-8");
-    console.log(`Generated ${path.relative(ROOT_DIR, outputPath)}`);
-  });
+  const cubeDir = path.join(OUTPUT_DIR, "cube-labels");
+  generateGroup(font, config.cubeLabels, cubeDir, config.fontSize);
+
+  if (config.buttonLabels.length > 0) {
+    const buttonDir = path.join(OUTPUT_DIR, "button-labels");
+    generateGroup(font, config.buttonLabels, buttonDir, config.fontSize);
+  }
 }
 
 main();

@@ -1,13 +1,16 @@
 {
   "fontPath": "assets/fonts/space-mono-v17-latin-700.ttf",
   "fontSize": 120,
-  "baseline": 0,
-  "labels": [
+  "cubeLabels": [
     "GHOST GRADE",
     "FARM-FRESH",
     "ABSTRACT YET FAMILIAR",
     "CLASSIC SUNDAY DINNER",
     "BIG OL BEATS"
+  ],
+  "buttonLabels": [
+    "Spotify",
+    "Apple Music"
   ]
 }
 

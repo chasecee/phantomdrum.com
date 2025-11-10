@@ -1,6 +1,6 @@
 "use client";
 
-import cubeLabels from "@/config/cubeLabels";
+import { cubeLabels, buttonLabels } from "@/config/cubeLabels";
 
 export default function CubeLabelPreview() {
   return (
@@ -26,6 +26,31 @@ export default function CubeLabelPreview() {
           </figure>
         ))}
       </div>
+      {buttonLabels.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-[clamp(1.25rem,3vw,2rem)] font-semibold uppercase text-white/80">
+            Button Label SVG Preview
+          </h3>
+          <div className="grid gap-6 sm:grid-cols-2">
+            {buttonLabels.map((label) => (
+              <figure
+                key={label.slug}
+                className="flex flex-col items-start gap-3 rounded-lg border border-white/10 bg-white/5 p-4"
+              >
+                <figcaption className="text-sm uppercase tracking-[0.3em] text-white/60">
+                  {label.text}
+                </figcaption>
+                <img
+                  src={`/generated/button-labels/${label.slug}.svg`}
+                  alt={label.text}
+                  className="w-full h-auto text-white"
+                  loading="lazy"
+                />
+              </figure>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }

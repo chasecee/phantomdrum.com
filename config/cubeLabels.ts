@@ -15,15 +15,28 @@ const slugify = (text: string) =>
 export const cubeLabelFontPath = rawConfig.fontPath;
 export const cubeLabelFontSize = rawConfig.fontSize;
 
-export const cubeLabels: CubeLabel[] = rawConfig.labels.map((text) => ({
-  text,
-  slug: slugify(text),
-}));
+export const cubeLabels: CubeLabel[] = rawConfig.cubeLabels.map(
+  (text: string) => ({
+    text,
+    slug: slugify(text),
+  })
+);
+
+export const buttonLabels: CubeLabel[] = (rawConfig.buttonLabels ?? []).map(
+  (text: string) => ({
+    text,
+    slug: slugify(text),
+  })
+);
 
 export const cubeLabelSlugify = (text: string) => slugify(text);
 
 export const cubeLabelSlugMap = new Map<string, string>(
   cubeLabels.map((label) => [label.text, label.slug])
+);
+
+export const buttonLabelSlugMap = new Map<string, string>(
+  buttonLabels.map((label) => [label.text, label.slug])
 );
 
 export default cubeLabels;

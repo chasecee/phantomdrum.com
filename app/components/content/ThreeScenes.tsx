@@ -10,7 +10,7 @@ import {
   useCallback,
 } from "react";
 import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
-import { Edges, Text } from "@react-three/drei";
+import { Edges } from "@react-three/drei";
 import { EffectComposer, DotScreen } from "@react-three/postprocessing";
 import {
   Group,
@@ -24,7 +24,12 @@ import {
 } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
-import { cubeLabelSlugMap, cubeLabelSlugify } from "@/config/cubeLabels";
+import type { SVGResult } from "three/examples/jsm/loaders/SVGLoader.js";
+import {
+  cubeLabelSlugMap,
+  cubeLabelSlugify,
+  buttonLabelSlugMap,
+} from "@/config/cubeLabels";
 import { getScrollTrigger } from "../../lib/gsap";
 
 type CubeGroupRef = React.MutableRefObject<Group | null>;
@@ -34,6 +39,21 @@ type LabelGeometryAsset = {
   width: number;
   height: number;
 };
+
+function buildLabelAsset(data: SVGResult): LabelGeometryAsset | null {
+  const shapes = data.paths.flatMap((path) => path.toShapes(true));
+  if (!shapes.length) return null;
+  const geometry = new ShapeGeometry(shapes);
+  geometry.computeBoundingBox();
+  const bbox = geometry.boundingBox;
+  if (!bbox) return null;
+  const width = bbox.max.x - bbox.min.x;
+  const height = bbox.max.y - bbox.min.y;
+  geometry.translate(-(bbox.min.x + width / 2), -(bbox.min.y + height / 2), 0);
+  geometry.scale(1, -1, 1);
+  geometry.computeBoundingSphere();
+  return { geometry, width, height };
+}
 
 interface AnimatedMultiCubeProps {
   texts: string[];
@@ -309,21 +329,10 @@ const MultiCubeScene = memo(function MultiCubeScene({
   const labelAssets = useMemo(() => {
     const map = new Map<string, LabelGeometryAsset>();
     svgData.forEach((data, index) => {
-      const shapes = data.paths.flatMap((path) => path.toShapes(true));
-      if (!shapes.length) return;
-      const geometry = new ShapeGeometry(shapes);
-      geometry.computeBoundingBox();
-      const bbox = geometry.boundingBox;
-      if (!bbox) return;
-      const width = bbox.max.x - bbox.min.x;
-      const height = bbox.max.y - bbox.min.y;
-      geometry.translate(
-        -(bbox.min.x + width / 2),
-        -(bbox.min.y + height / 2),
-        0
-      );
-      geometry.scale(1, -1, 1);
-      map.set(uniqueSlugs[index], { geometry, width, height });
+      const asset = buildLabelAsset(data);
+      if (asset) {
+        map.set(uniqueSlugs[index], asset);
+      }
     });
     return map;
   }, [svgData, uniqueSlugs]);
@@ -805,14 +814,14 @@ function EdgesWithTransition({
 }
 
 function TextWithTransition({
-  text,
+  labelAsset,
   color,
-  fontSize,
+  baseScale,
   targetScale,
 }: {
-  text: string;
+  labelAsset: LabelGeometryAsset | null;
   color: string;
-  fontSize: number;
+  baseScale: number;
   targetScale: number;
 }) {
   const [currentScale, setCurrentScale] = useState(1);
@@ -821,17 +830,27 @@ function TextWithTransition({
     setCurrentScale((prev) => prev + (targetScale - prev) * 0.15);
   });
 
+  if (!labelAsset) {
+    return null;
+  }
+
   return (
-    <Text
+    <mesh
       position={[0, 0, 0.08]}
-      fontSize={fontSize * currentScale}
-      color={color}
-      anchorX="center"
-      anchorY="middle"
+      geometry={labelAsset.geometry}
+      scale={[baseScale * currentScale, baseScale * currentScale, 1]}
       renderOrder={3}
     >
-      {text.toUpperCase()}
-    </Text>
+      <meshBasicMaterial
+        color={color}
+        depthWrite={false}
+        polygonOffset
+        polygonOffsetFactor={-0.5}
+        polygonOffsetUnits={-0.5}
+        toneMapped={false}
+        side={DoubleSide}
+      />
+    </mesh>
   );
 }
 
@@ -849,11 +868,6 @@ function ButtonScene({
   const { size } = useThree();
   const aspect = size.width / size.height;
 
-  const fontSize = useMemo(() => {
-    const baseSize = Math.max(0.8 / text.length, 0.15);
-    return baseSize * 3.5;
-  }, [text.length]);
-
   const { boxWidth, boxHeight, radius } = useMemo(() => {
     const width = BASE_HEIGHT * aspect;
     const boxWidth = width * 0.99;
@@ -861,6 +875,28 @@ function ButtonScene({
     const radius = Math.min(boxWidth, boxHeight) * 0.05;
     return { boxWidth, boxHeight, radius };
   }, [aspect]);
+
+  const labelSlug = useMemo(
+    () => buttonLabelSlugMap.get(text) ?? cubeLabelSlugify(text),
+    [text]
+  );
+  const svgData = useLoader(
+    SVGLoader,
+    `/generated/button-labels/${labelSlug}.svg`
+  );
+  const labelAsset = useMemo(
+    () => buildLabelAsset(svgData),
+    [svgData]
+  );
+  const baseLabelScale = useMemo(() => {
+    if (!labelAsset) return 1;
+    const widthAllowance = boxWidth * 0.8;
+    const heightAllowance = boxHeight * 0.45;
+    return Math.min(
+      widthAllowance / labelAsset.width,
+      heightAllowance / labelAsset.height
+    );
+  }, [labelAsset, boxWidth, boxHeight]);
 
   const responsiveStrokeWidth = useMemo(() => {
     const baseStrokeWidth = strokeWidth;
@@ -916,9 +952,9 @@ function ButtonScene({
         targetWidth={responsiveStrokeWidth}
       />
       <TextWithTransition
-        text={text}
+        labelAsset={labelAsset}
         color={color}
-        fontSize={fontSize}
+        baseScale={baseLabelScale}
         targetScale={textScale}
       />
     </>
