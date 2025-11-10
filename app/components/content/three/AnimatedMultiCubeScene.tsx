@@ -14,14 +14,9 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Edges } from "@react-three/drei";
 import { EffectComposer, DotScreen } from "@react-three/postprocessing";
 import { DoubleSide } from "three";
-import {
-  cubeLabelSlugMap,
-  cubeLabelSlugify,
-} from "@/config/cubeLabels";
+import { cubeLabelSlugMap, cubeLabelSlugify } from "@/config/cubeLabels";
 import { getScrollTrigger } from "@/app/lib/gsap";
-import {
-  getBoxGeometry,
-} from "@/app/lib/three/geometryCache";
+import { getBoxGeometry } from "@/app/lib/three/geometryCache";
 import {
   getCubeLabelAsset,
   type LabelGeometryAsset,
@@ -307,7 +302,7 @@ const MultiCubeScene = memo(function MultiCubeScene({
   }, [uniqueSlugs]);
 
   return (
-    <Canvas camera={cameraConfig} gl={glConfig} dpr={[1, 1.75]}>
+    <Canvas camera={cameraConfig} gl={glConfig} dpr={[1, 1.5]}>
       <EffectComposer>
         <DotScreen angle={Math.PI / 12} scale={1.1} />
       </EffectComposer>
@@ -316,10 +311,8 @@ const MultiCubeScene = memo(function MultiCubeScene({
         const labelSlug = labelSlugs[index];
         const labelAsset = labelAssets.get(labelSlug);
         const groupKey = labelSlug ?? `${index}-${text}`;
-        const rotationRef =
-          targetRotationRefs[index] ?? targetRotationRefs[0];
-        const dragRotationRef =
-          dragRotationRefs[index] ?? dragRotationRefs[0];
+        const rotationRef = targetRotationRefs[index] ?? targetRotationRefs[0];
+        const dragRotationRef = dragRotationRefs[index] ?? dragRotationRefs[0];
         return (
           <group key={groupKey} position={[0, pos.y, pos.z]}>
             <SingleTextCube
@@ -392,12 +385,7 @@ export function AnimatedMultiCubeScene({
           z: from?.rotation?.z ?? 0,
         },
       })),
-    [
-      texts.length,
-      from?.rotation?.x,
-      from?.rotation?.y,
-      from?.rotation?.z,
-    ]
+    [texts.length, from?.rotation?.x, from?.rotation?.y, from?.rotation?.z]
   );
   const dragRotationRefs = useMemo(
     () => Array.from({ length: texts.length }, () => ({ current: 0 })),
@@ -766,4 +754,3 @@ export function AnimatedMultiCubeScene({
     </div>
   );
 }
-

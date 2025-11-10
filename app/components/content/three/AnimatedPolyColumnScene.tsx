@@ -419,7 +419,7 @@ export function AnimatedPolyColumnScene({
       <Canvas
         camera={{ position: cameraPosition, fov: cameraFov }}
         gl={glConfig}
-        dpr={[1, 1.75]}
+        dpr={[1, 1.5]}
       >
         <EffectComposer>
           <DotScreen angle={Math.PI / 12} scale={1.1} />
