@@ -9,22 +9,30 @@ import {
   memo,
   useCallback,
 } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Text, Edges } from "@react-three/drei";
+import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
+import { Edges, Text } from "@react-three/drei";
 import { EffectComposer, DotScreen } from "@react-three/postprocessing";
 import {
   Group,
   BoxGeometry,
   BufferGeometry,
+  ShapeGeometry,
   OrthographicCamera,
   AlwaysStencilFunc,
   ReplaceStencilOp,
 } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
+import { cubeLabelSlugMap, cubeLabelSlugify } from "@/config/cubeLabels";
 import { getScrollTrigger } from "../../lib/gsap";
 
 type CubeGroupRef = React.MutableRefObject<Group | null>;
 type Rotation = { x: number; y: number; z: number };
+type LabelGeometryAsset = {
+  geometry: ShapeGeometry;
+  width: number;
+  height: number;
+};
 
 interface AnimatedMultiCubeProps {
   texts: string[];
@@ -54,7 +62,6 @@ interface AnimatedMultiCubeProps {
   cameraFov?: number;
   className?: string;
   maxWidth?: number;
-  font?: string | object;
   spacing?: number;
   stagger?: boolean;
   staggerDelay?: number;
@@ -98,7 +105,7 @@ const SingleTextCube = memo(function SingleTextCube({
   groupRef,
   targetRotation,
   targetScale,
-  text,
+  labelAsset,
   size,
   heightRatio,
   widthRatio,
@@ -106,7 +113,6 @@ const SingleTextCube = memo(function SingleTextCube({
   textColor,
   textSize,
   maxWidth,
-  font,
   dragRotation,
   fillMode,
   strokeWidth,
@@ -115,7 +121,7 @@ const SingleTextCube = memo(function SingleTextCube({
   groupRef: CubeGroupRef;
   targetRotation: Rotation;
   targetScale: number;
-  text: string;
+  labelAsset?: LabelGeometryAsset;
   size: number;
   heightRatio: number;
   widthRatio: number;
@@ -123,7 +129,6 @@ const SingleTextCube = memo(function SingleTextCube({
   textColor: string;
   textSize: number;
   maxWidth?: number;
-  font?: string | object;
   dragRotation: number;
   fillMode?: "fill" | "outline";
   strokeWidth?: number;
@@ -133,30 +138,32 @@ const SingleTextCube = memo(function SingleTextCube({
   const cubeWidth = size * widthRatio;
   const cubeDepth = size * widthRatio;
   const textMaxWidth = maxWidth ?? cubeWidth * 0.85;
-  const textFont = font || "/fonts/space-mono-v17-latin-700.ttf";
-  const textExtrusion = size * 0.001;
-  const fontSize =
-    Math.max(((size * 0.8) / text.length) * (100 / 65), textSize * 0.3) * 1.2;
+  const verticalAllowance =
+    cubeHeight * Math.min(0.9, Math.max(0.35, textSize + 0.4));
+  const textOffset = size * 0.01;
+  const labelScale =
+    labelAsset && labelAsset.width > 0 && labelAsset.height > 0
+      ? Math.min(
+          textMaxWidth / labelAsset.width,
+          verticalAllowance / labelAsset.height
+        )
+      : 1;
   const textFaces: Array<{
     pos: [number, number, number];
     rot: [number, number, number];
-    lh: number;
   }> = [
-    { pos: [0, 0, cubeDepth / 2 + textExtrusion], rot: [0, 0, 0], lh: 0.9 },
+    { pos: [0, 0, cubeDepth / 2 + textOffset], rot: [0, 0, 0] },
     {
-      pos: [cubeWidth / 2 + textExtrusion, 0, 0],
+      pos: [cubeWidth / 2 + textOffset, 0, 0],
       rot: [0, Math.PI / 2, 0],
-      lh: 0.8,
     },
     {
-      pos: [0, 0, -cubeDepth / 2 - textExtrusion],
+      pos: [0, 0, -cubeDepth / 2 - textOffset],
       rot: [0, Math.PI, 0],
-      lh: 0.8,
     },
     {
-      pos: [-cubeWidth / 2 - textExtrusion, 0, 0],
+      pos: [-cubeWidth / 2 - textOffset, 0, 0],
       rot: [0, -Math.PI / 2, 0],
-      lh: 0.8,
     },
   ];
   const materialColor = fillMode === "outline" ? "black" : color;
@@ -191,24 +198,27 @@ const SingleTextCube = memo(function SingleTextCube({
             polygonOffsetUnits={-1}
           />
         )}
-        {textFaces.map((face, i) => (
-          <Text
-            key={i}
-            position={face.pos}
-            rotation={face.rot}
-            fontSize={fontSize}
-            color={finalTextColor}
-            anchorX="center"
-            anchorY="middle"
-            lineHeight={face.lh}
-            maxWidth={textMaxWidth}
-            renderOrder={2}
-            {...(typeof textFont === "string" ? { font: textFont } : {})}
-            overflowWrap="break-word"
-          >
-            {text}
-          </Text>
-        ))}
+        {textFaces.map((face, i) =>
+          labelAsset ? (
+            <mesh
+              key={i}
+              geometry={labelAsset.geometry}
+              position={face.pos}
+              rotation={face.rot}
+              scale={[labelScale, labelScale, 1]}
+              renderOrder={2}
+            >
+              <meshBasicMaterial
+                color={finalTextColor}
+                depthWrite={false}
+                polygonOffset
+                polygonOffsetFactor={-0.5}
+                polygonOffsetUnits={-0.5}
+                toneMapped={false}
+              />
+            </mesh>
+          ) : null
+        )}
       </group>
     </>
   );
@@ -228,7 +238,6 @@ const MultiCubeScene = memo(function MultiCubeScene({
   cameraPosition,
   cameraFov,
   maxWidth,
-  font,
   spacing,
   dragRotations,
   fillMode,
@@ -248,7 +257,6 @@ const MultiCubeScene = memo(function MultiCubeScene({
   cameraPosition: [number, number, number];
   cameraFov: number;
   maxWidth?: number;
-  font?: string | object;
   spacing: number;
   dragRotations: number[];
   fillMode?: "fill" | "outline";
@@ -282,6 +290,41 @@ const MultiCubeScene = memo(function MultiCubeScene({
     }),
     []
   );
+  const labelSlugs = useMemo(
+    () =>
+      texts.map((text) => cubeLabelSlugMap.get(text) ?? cubeLabelSlugify(text)),
+    [texts]
+  );
+  const uniqueSlugs = useMemo(
+    () => Array.from(new Set(labelSlugs)),
+    [labelSlugs]
+  );
+  const labelUrls = useMemo(
+    () => uniqueSlugs.map((slug) => `/generated/cube-labels/${slug}.svg`),
+    [uniqueSlugs]
+  );
+  const svgData = useLoader(SVGLoader, labelUrls);
+  const labelAssets = useMemo(() => {
+    const map = new Map<string, LabelGeometryAsset>();
+    svgData.forEach((data, index) => {
+      const shapes = data.paths.flatMap((path) => path.toShapes(true));
+      if (!shapes.length) return;
+      const geometry = new ShapeGeometry(shapes);
+      geometry.computeBoundingBox();
+      const bbox = geometry.boundingBox;
+      if (!bbox) return;
+      const width = bbox.max.x - bbox.min.x;
+      const height = bbox.max.y - bbox.min.y;
+      geometry.translate(
+        -(bbox.min.x + width / 2),
+        -(bbox.min.y + height / 2),
+        0
+      );
+      geometry.scale(1, -1, 1);
+      map.set(uniqueSlugs[index], { geometry, width, height });
+    });
+    return map;
+  }, [svgData, uniqueSlugs]);
 
   return (
     <Canvas camera={cameraConfig} gl={glConfig}>
@@ -290,13 +333,16 @@ const MultiCubeScene = memo(function MultiCubeScene({
       </EffectComposer>
       {texts.map((text, index) => {
         const pos = cubePositions[index];
+        const labelSlug = labelSlugs[index];
+        const labelAsset = labelAssets.get(labelSlug);
+        const groupKey = labelSlug ?? `${index}-${text}`;
         return (
-          <group key={index} position={[0, pos.y, pos.z]}>
+          <group key={groupKey} position={[0, pos.y, pos.z]}>
             <SingleTextCube
               groupRef={groupRefs[index]}
               targetRotation={targetRotations[index]}
               targetScale={targetScale}
-              text={text}
+              labelAsset={labelAsset}
               size={size}
               heightRatio={heightRatio}
               widthRatio={widthRatio}
@@ -304,7 +350,6 @@ const MultiCubeScene = memo(function MultiCubeScene({
               textColor={textColor}
               textSize={textSize}
               maxWidth={maxWidth}
-              font={font}
               dragRotation={dragRotations[index]}
               fillMode={fillMode}
               strokeWidth={strokeWidth}
@@ -337,7 +382,6 @@ export function AnimatedMultiCubeScene({
   cameraFov = 10,
   className,
   maxWidth,
-  font,
   spacing = 0.1,
   stagger = false,
   staggerDelay = 0.1,
@@ -682,7 +726,6 @@ export function AnimatedMultiCubeScene({
         cameraPosition={cameraPosition}
         cameraFov={cameraFov}
         maxWidth={maxWidth}
-        font={font}
         spacing={spacing}
         dragRotations={dragRotations}
         fillMode={fillMode}
@@ -965,4 +1008,3 @@ export function HalftoneButtonScene({
     </a>
   );
 }
-
