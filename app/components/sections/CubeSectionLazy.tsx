@@ -10,6 +10,8 @@ const LazyCubeSection = dynamic(() => import("./CubeSection"), {
   ),
 }) as ReturnType<typeof dynamic> & { preload?: () => void };
 
+const PREFETCH_DELAY = 2000;
+
 export default function CubeSectionLazy() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -39,17 +41,33 @@ export default function CubeSectionLazy() {
   useEffect(() => {
     if (hasPrefetched) return;
 
+    const prefetchModule = () => {
+      LazyCubeSection.preload?.();
+      setHasPrefetched(true);
+    };
+
     const onScroll = () => {
       if (window.scrollY > 100) {
-        LazyCubeSection.preload?.();
-        setHasPrefetched(true);
+        prefetchModule();
         window.removeEventListener("scroll", onScroll);
       }
     };
 
+    const timeoutId = window.setTimeout(() => {
+      const trigger = () => prefetchModule();
+      if ("requestIdleCallback" in window) {
+        (window as any).requestIdleCallback?.(trigger);
+      } else {
+        trigger();
+      }
+    }, PREFETCH_DELAY);
+
     window.addEventListener("scroll", onScroll, { passive: true });
 
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.clearTimeout(timeoutId);
+    };
   }, [hasPrefetched]);
 
   return (

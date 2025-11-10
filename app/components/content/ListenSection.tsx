@@ -10,6 +10,8 @@ const HalftoneButton = dynamic(
   }
 );
 
+const PREFETCH_DELAY = 2000;
+
 export default function ListenSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -36,6 +38,24 @@ export default function ListenSection() {
     }
 
     return () => observer.disconnect();
+  }, [hasLoaded]);
+
+  useEffect(() => {
+    if (hasLoaded) return;
+
+    const timeoutId = window.setTimeout(() => {
+      const trigger = () => {
+        HalftoneButton.preload?.();
+        import("./three/HalftoneButtonScene").catch(() => {});
+      };
+      if ("requestIdleCallback" in window) {
+        (window as any).requestIdleCallback?.(trigger);
+      } else {
+        trigger();
+      }
+    }, PREFETCH_DELAY);
+
+    return () => window.clearTimeout(timeoutId);
   }, [hasLoaded]);
 
   return (

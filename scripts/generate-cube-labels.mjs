@@ -10,7 +10,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, "..");
 const CONFIG_PATH = path.join(ROOT_DIR, "config", "cube-labels.json");
-const OUTPUT_DIR = path.join(ROOT_DIR, "public", "generated");
 const LABEL_MODULE_DIR = path.join(
   ROOT_DIR,
   "app",
@@ -37,7 +36,7 @@ function loadConfig() {
   }
 
   if (!data.fontPath) {
-    throw new Error("Config must include \"fontPath\"");
+    throw new Error('Config must include "fontPath"');
   }
 
   return {
@@ -80,28 +79,19 @@ function translatePath(pathData, dx, dy) {
   });
 }
 
-function generateSvgForLabel(font, text, fontSize) {
+function prepareGlyphPath(font, text, fontSize) {
   const glyphPath = font.getPath(text, 0, 0, fontSize);
   const bbox = glyphPath.getBoundingBox();
 
-  const width = bbox.x2 - bbox.x1 || fontSize;
-  const height = bbox.y2 - bbox.y1 || fontSize;
-
   translatePath(glyphPath, -bbox.x1, -bbox.y1);
 
-  const pathData = glyphPath.toPathData(3);
-  const viewBox = `0 0 ${width.toFixed(2)} ${height.toFixed(2)}`;
-
-  const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" role="img" aria-label="${text}">
-  <path d="${pathData}" fill="#000000" />
-</svg>
-`;
-
-  return { svgContent, glyphPath };
+  return glyphPath;
 }
 
+const FLOAT_PRECISION = 2;
+
 function formatFloat(value) {
-  const rounded = Number(value.toFixed(6));
+  const rounded = Number(value.toFixed(FLOAT_PRECISION));
   return Object.is(rounded, -0) ? 0 : rounded;
 }
 
@@ -158,11 +148,7 @@ function buildGeometryAsset(glyphPath) {
   }
   const width = bbox.max.x - bbox.min.x;
   const height = bbox.max.y - bbox.min.y;
-  geometry.translate(
-    -(bbox.min.x + width / 2),
-    -(bbox.min.y + height / 2),
-    0
-  );
+  geometry.translate(-(bbox.min.x + width / 2), -(bbox.min.y + height / 2), 0);
   geometry.scale(1, -1, 1);
   geometry.computeBoundingSphere();
   const positionAttr = geometry.getAttribute("position");
@@ -186,7 +172,7 @@ function writeModuleFile(moduleDir, slug, asset) {
           values: formatIntArray(asset.indices),
         }
       : null;
-const moduleContent = `export const positions = new Float32Array(${positions});
+  const moduleContent = `export const positions = new Float32Array(${positions});
 export const uvs = new Float32Array(${uvs});
 ${
   indexData
@@ -229,31 +215,22 @@ export default ${exportName};
   fs.writeFileSync(path.join(moduleDir, "index.ts"), content, "utf-8");
 }
 
-function generateGroup(
-  font,
-  labels,
-  groupDir,
-  moduleDir,
-  fontSize,
-  exportName
-) {
-  ensureDir(groupDir);
+function generateGroup(font, labels, moduleDir, fontSize, exportName) {
   ensureCleanDir(moduleDir);
   const entries = [];
   labels.forEach((label) => {
     const slug = slugify(label);
-    const { svgContent, glyphPath } = generateSvgForLabel(
-      font,
-      label,
-      fontSize
-    );
-    const outputPath = path.join(groupDir, `${slug}.svg`);
-    fs.writeFileSync(outputPath, svgContent, "utf-8");
-    console.log(`Generated ${path.relative(ROOT_DIR, outputPath)}`);
+    const glyphPath = prepareGlyphPath(font, label, fontSize);
     const asset = buildGeometryAsset(glyphPath);
     if (!asset) return;
     writeModuleFile(moduleDir, slug, asset);
     entries.push({ slug, identifier: slugToIdentifier(slug) });
+    console.log(
+      `Generated geometry module ${path.relative(
+        ROOT_DIR,
+        path.join(moduleDir, `${slug}.ts`)
+      )}`
+    );
   });
   writeIndexFile(moduleDir, entries, exportName);
 }
@@ -266,22 +243,18 @@ function main() {
 
   const font = opentype.loadSync(config.fontPath);
 
-  const cubeDir = path.join(OUTPUT_DIR, "cube-labels");
   generateGroup(
     font,
     config.cubeLabels,
-    cubeDir,
     LABEL_MODULE_DIR,
     config.fontSize,
     "labelGeometries"
   );
 
   if (config.buttonLabels.length > 0) {
-    const buttonDir = path.join(OUTPUT_DIR, "button-labels");
     generateGroup(
       font,
       config.buttonLabels,
-      buttonDir,
       BUTTON_MODULE_DIR,
       config.fontSize,
       "buttonLabelGeometries"

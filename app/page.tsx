@@ -49,7 +49,7 @@ export default function Home() {
             radius={4}
             height={4}
             textSize={0.25}
-            strokeWidth={3}
+            strokeWidth={5}
             cameraPosition={[0, 0, 18]}
             cameraFov={25}
             className="w-full h-full"

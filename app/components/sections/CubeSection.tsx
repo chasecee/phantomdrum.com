@@ -11,6 +11,8 @@ const AnimatedMultiCube = dynamic(
   { ssr: false }
 );
 
+const PREFETCH_DELAY = 2000;
+
 export default function CubeSection() {
   const multiCubeContainerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -37,6 +39,24 @@ export default function CubeSection() {
     }
 
     return () => observer.disconnect();
+  }, [hasLoaded]);
+
+  useEffect(() => {
+    if (hasLoaded) return;
+
+    const timeoutId = window.setTimeout(() => {
+      const trigger = () => {
+        AnimatedMultiCube.preload?.();
+        import("../content/three/AnimatedMultiCubeScene").catch(() => {});
+      };
+      if ("requestIdleCallback" in window) {
+        (window as any).requestIdleCallback?.(trigger);
+      } else {
+        trigger();
+      }
+    }, PREFETCH_DELAY);
+
+    return () => window.clearTimeout(timeoutId);
   }, [hasLoaded]);
 
   return (

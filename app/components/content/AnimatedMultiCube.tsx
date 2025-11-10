@@ -1,19 +1,43 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense } from "react";
+import { Suspense, type ComponentType } from "react";
+
+const PREFETCH_DELAY = 2000;
+
+type PrefetchableComponent<P> = ComponentType<P> & {
+  preload?: () => Promise<unknown>;
+};
 
 // Dynamically import the Three.js scene to prevent upfront bundling
-const AnimatedMultiCubeScene = dynamic(
-  () =>
-    import("./ThreeScenes").then((mod) => ({
-      default: mod.AnimatedMultiCubeScene,
-    })),
-  {
-    ssr: false,
-    loading: () => null,
+const AnimatedMultiCubeScene = dynamic(() =>
+  import("./ThreeScenes").then((mod) => ({
+    default: mod.AnimatedMultiCubeScene,
+  }))
+) as PrefetchableComponent<AnimatedMultiCubeProps>;
+
+const scheduleIdle = (callback: () => void) => {
+  if (typeof window === "undefined") return;
+  const idle = (
+    window as Window & {
+      requestIdleCallback?: (
+        cb: IdleRequestCallback,
+        options?: IdleRequestOptions
+      ) => number;
+    }
+  ).requestIdleCallback;
+  if (typeof idle === "function") {
+    idle(() => callback());
+  } else {
+    callback();
   }
-);
+};
+
+if (typeof window !== "undefined") {
+  window.setTimeout(() => {
+    scheduleIdle(() => AnimatedMultiCubeScene.preload?.());
+  }, PREFETCH_DELAY);
+}
 
 interface AnimatedMultiCubeProps {
   texts: string[];

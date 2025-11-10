@@ -1,25 +1,13 @@
 "use client";
 
-import {
-  useRef,
-  useEffect,
-  useState,
-  RefObject,
-  useMemo,
-  memo,
-} from "react";
+import { useRef, useEffect, useState, RefObject, useMemo, memo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Edges } from "@react-three/drei";
 import { EffectComposer, DotScreen } from "@react-three/postprocessing";
 import { DoubleSide } from "three";
-import {
-  cubeLabelSlugMap,
-  cubeLabelSlugify,
-} from "@/config/cubeLabels";
+import { cubeLabelSlugMap, cubeLabelSlugify } from "@/config/cubeLabels";
 import { getScrollTrigger } from "@/app/lib/gsap";
-import {
-  getCylinderGeometry,
-} from "@/app/lib/three/geometryCache";
+import { getCylinderGeometry } from "@/app/lib/three/geometryCache";
 import {
   getCubeLabelAsset,
   type LabelGeometryAsset,
@@ -124,7 +112,7 @@ const PolyColumn = memo(function PolyColumn({
     () => radius * Math.cos(Math.PI / segments),
     [radius, segments]
   );
-  const textOffset = apothem * 0.05;
+  const textOffset = apothem * 0.01;
   const faceWidth = useMemo(
     () => 2 * apothem * Math.tan(Math.PI / segments),
     [apothem, segments]
@@ -405,4 +393,3 @@ export function AnimatedPolyColumnScene({
     </div>
   );
 }
-
