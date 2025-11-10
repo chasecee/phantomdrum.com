@@ -19,7 +19,6 @@ export default function Home() {
       <HeroSection />
       <CubeSection />
       <QuotesSection />
-      <CubeLabelPreview />
       <ListenSection />
       <ArtistBio />
       <div className="h-[100vw] w-full" />
