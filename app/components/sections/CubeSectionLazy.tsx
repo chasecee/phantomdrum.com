@@ -8,11 +8,12 @@ const LazyCubeSection = dynamic(() => import("./CubeSection"), {
   loading: () => (
     <div className="aspect-[1.5/1] my-[10vw] w-full" aria-hidden />
   ),
-});
+}) as ReturnType<typeof dynamic> & { preload?: () => void };
 
 export default function CubeSectionLazy() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [hasPrefetched, setHasPrefetched] = useState(false);
 
   useEffect(() => {
     const node = containerRef.current;
@@ -27,13 +28,29 @@ export default function CubeSectionLazy() {
           }
         });
       },
-      { rootMargin: "-15% 0px", threshold: 0.25 }
+      { rootMargin: "200px 0px", threshold: 0.1 }
     );
 
     observer.observe(node);
 
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (hasPrefetched) return;
+
+    const onScroll = () => {
+      if (window.scrollY > 100) {
+        LazyCubeSection.preload?.();
+        setHasPrefetched(true);
+        window.removeEventListener("scroll", onScroll);
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [hasPrefetched]);
 
   return (
     <div ref={containerRef} className="w-full">

@@ -40,9 +40,6 @@ export function useScrubAnimation(
   elementRef: RefObject<HTMLElement | null>,
   config: ScrubAnimationConfig
 ): void {
-  const fromStr = JSON.stringify(config.from);
-  const toStr = JSON.stringify(config.to);
-
   useEffect(() => {
     if (
       typeof window === "undefined" ||
@@ -51,16 +48,16 @@ export function useScrubAnimation(
     )
       return;
 
-    let animationTarget: ReturnType<typeof import("gsap").gsap.to> | null = null;
+    let animationTarget: ReturnType<typeof import("gsap").gsap.to> | null =
+      null;
     let isActive = true;
 
     const initAnimation = async () => {
       if (!isActive) return;
 
-      const [gsap, ScrollTrigger] = await Promise.all([
-        getGSAP(),
-        getScrollTrigger(),
-      ]);
+      await Promise.all([getGSAP(), getScrollTrigger()]);
+      const gsap = await getGSAP();
+      await getScrollTrigger();
 
       if (!isActive || !elementRef?.current || !config.trigger?.current) return;
 
@@ -145,8 +142,6 @@ export function useScrubAnimation(
     config.invalidateOnRefresh,
     config.from,
     config.to,
-    fromStr,
-    toStr,
   ]);
 }
 

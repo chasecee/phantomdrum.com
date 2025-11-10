@@ -3,7 +3,6 @@ import CubeSection from "./components/sections/CubeSectionLazy";
 import QuotesSection from "./components/content/QuotesSection";
 import ArtistBio from "./components/content/ArtistBio";
 import ListenSection from "./components/content/ListenSectionLazy";
-import CubeLabelPreview from "./components/content/CubeLabelPreview";
 
 export default function Home() {
   return (
