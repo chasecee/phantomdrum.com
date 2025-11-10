@@ -1,8 +1,8 @@
 import HeroSection from "./components/sections/HeroSection";
-import CubeSection from "./components/sections/CubeSection";
+import CubeSection from "./components/sections/CubeSectionLazy";
 import QuotesSection from "./components/content/QuotesSection";
 import ArtistBio from "./components/content/ArtistBio";
-import ListenSection from "./components/content/ListenSection";
+import ListenSection from "./components/content/ListenSectionLazy";
 
 export default function Home() {
   return (
@@ -16,9 +16,9 @@ export default function Home() {
       }}
     >
       <HeroSection />
-      {/* <CubeSection /> */}
+      <CubeSection />
       <QuotesSection />
-      {/* <ListenSection /> */}
+      <ListenSection />
       <ArtistBio />
       <div className="h-[100vw] w-full" />
     </div>
