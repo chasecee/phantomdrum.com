@@ -9,50 +9,112 @@ import {
   memo,
   useCallback,
 } from "react";
-import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Edges } from "@react-three/drei";
 import { EffectComposer, DotScreen } from "@react-three/postprocessing";
 import {
   Group,
   BoxGeometry,
+  CylinderGeometry,
   BufferGeometry,
-  ShapeGeometry,
+  BufferAttribute,
+  Float32BufferAttribute,
   DoubleSide,
   OrthographicCamera,
   AlwaysStencilFunc,
   ReplaceStencilOp,
 } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
-import type { SVGResult } from "three/examples/jsm/loaders/SVGLoader.js";
 import {
   cubeLabelSlugMap,
   cubeLabelSlugify,
   buttonLabelSlugMap,
 } from "@/config/cubeLabels";
 import { getScrollTrigger } from "../../lib/gsap";
+import labelGeometries from "@/app/generated/labelGeometries";
+import buttonLabelGeometries from "@/app/generated/buttonLabelGeometries";
 
 type CubeGroupRef = React.MutableRefObject<Group | null>;
 type Rotation = { x: number; y: number; z: number };
-type LabelGeometryAsset = {
-  geometry: ShapeGeometry;
+type LabelGeometrySource = {
+  positions: Float32Array;
+  uvs: Float32Array;
+  indices?: Uint16Array | Uint32Array | null | undefined;
   width: number;
   height: number;
 };
 
-function buildLabelAsset(data: SVGResult): LabelGeometryAsset | null {
-  const shapes = data.paths.flatMap((path) => path.toShapes(true));
-  if (!shapes.length) return null;
-  const geometry = new ShapeGeometry(shapes);
-  geometry.computeBoundingBox();
-  const bbox = geometry.boundingBox;
-  if (!bbox) return null;
-  const width = bbox.max.x - bbox.min.x;
-  const height = bbox.max.y - bbox.min.y;
-  geometry.translate(-(bbox.min.x + width / 2), -(bbox.min.y + height / 2), 0);
-  geometry.scale(1, -1, 1);
+type LabelGeometryAsset = {
+  geometry: BufferGeometry;
+  width: number;
+  height: number;
+};
+
+const cubeLabelSources = labelGeometries as Record<string, LabelGeometrySource>;
+const buttonLabelSources = buttonLabelGeometries as Record<
+  string,
+  LabelGeometrySource
+>;
+
+const cubeLabelGeometryCache = new Map<string, LabelGeometryAsset>();
+const buttonLabelGeometryCache = new Map<string, LabelGeometryAsset>();
+
+function buildLabelGeometryAsset(
+  slug: string,
+  sourceMap: Record<string, LabelGeometrySource>,
+  cache: Map<string, LabelGeometryAsset>
+): LabelGeometryAsset | null {
+  const cached = cache.get(slug);
+  if (cached) return cached;
+  const source = sourceMap[slug];
+  if (!source) return null;
+  const geometry = new BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new Float32BufferAttribute(source.positions, 3)
+  );
+  if (source.uvs && source.uvs.length) {
+    geometry.setAttribute("uv", new Float32BufferAttribute(source.uvs, 2));
+  }
+  if (source.indices && source.indices.length) {
+    geometry.setIndex(new BufferAttribute(source.indices, 1));
+  }
   geometry.computeBoundingSphere();
-  return { geometry, width, height };
+  const asset = {
+    geometry,
+    width: source.width,
+    height: source.height,
+  };
+  cache.set(slug, asset);
+  return asset;
+}
+
+const boxGeometryCache = new Map<string, BoxGeometry>();
+function getBoxGeometry(width: number, height: number, depth: number) {
+  const key = `${width.toFixed(6)}:${height.toFixed(6)}:${depth.toFixed(6)}`;
+  const cached = boxGeometryCache.get(key);
+  if (cached) return cached;
+  const geometry = new BoxGeometry(width, height, depth);
+  boxGeometryCache.set(key, geometry);
+  return geometry;
+}
+
+const cylinderGeometryCache = new Map<string, CylinderGeometry>();
+function getCylinderGeometry(radius: number, height: number, segments: number) {
+  const key = `${radius.toFixed(6)}:${height.toFixed(6)}:${segments}`;
+  const cached = cylinderGeometryCache.get(key);
+  if (cached) return cached;
+  const geometry = new CylinderGeometry(
+    radius,
+    radius,
+    height,
+    segments,
+    1,
+    false
+  );
+  geometry.rotateY(Math.PI / segments);
+  cylinderGeometryCache.set(key, geometry);
+  return geometry;
 }
 
 interface AnimatedMultiCubeProps {
@@ -91,6 +153,37 @@ interface AnimatedMultiCubeProps {
   matchTextColor?: boolean;
 }
 
+interface AnimatedPolyColumnProps {
+  texts: string[];
+  trigger: RefObject<HTMLElement>;
+  start: string;
+  end: string;
+  scrub?: number | boolean;
+  from?: {
+    rotation?: { x?: number; y?: number; z?: number };
+    scale?: number;
+    yPercent?: number;
+  };
+  to?: {
+    rotation?: { x?: number; y?: number; z?: number };
+    scale?: number;
+    yPercent?: number;
+  };
+  showMarkers?: boolean;
+  invalidateOnRefresh?: boolean;
+  radius?: number;
+  height?: number;
+  bodyColor?: string;
+  edgeColor?: string;
+  textColor?: string;
+  textSize?: number;
+  cameraPosition?: [number, number, number];
+  cameraFov?: number;
+  className?: string;
+  strokeWidth?: number;
+  matchTextColor?: boolean;
+}
+
 interface HalftoneButtonSceneProps {
   text: string;
   href: string;
@@ -113,6 +206,29 @@ function SmoothRotation({
     const g = groupRef.current;
     g.rotation.x += (targetRotation.x - g.rotation.x) * 0.1;
     g.rotation.y += (targetRotation.y + dragRotation - g.rotation.y) * 0.1;
+    g.rotation.z += (targetRotation.z - g.rotation.z) * 0.1;
+    const scaleDelta = (targetScale - g.scale.x) * 0.1;
+    g.scale.x += scaleDelta;
+    g.scale.y += scaleDelta;
+    g.scale.z += scaleDelta;
+  });
+  return null;
+}
+
+function SmoothColumnMotion({
+  groupRef,
+  targetRotation,
+  targetScale,
+}: {
+  groupRef: CubeGroupRef;
+  targetRotation: Rotation;
+  targetScale: number;
+}) {
+  useFrame(() => {
+    if (!groupRef.current) return;
+    const g = groupRef.current;
+    g.rotation.x += (targetRotation.x - g.rotation.x) * 0.1;
+    g.rotation.y += (targetRotation.y - g.rotation.y) * 0.1;
     g.rotation.z += (targetRotation.z - g.rotation.z) * 0.1;
     const scaleDelta = (targetScale - g.scale.x) * 0.1;
     g.scale.x += scaleDelta;
@@ -190,7 +306,7 @@ const SingleTextCube = memo(function SingleTextCube({
   const materialColor = fillMode === "outline" ? "black" : color;
   const finalTextColor = matchTextColor ? color : textColor;
   const boxGeometry = useMemo(
-    () => new BoxGeometry(cubeWidth, cubeHeight, cubeDepth),
+    () => getBoxGeometry(cubeWidth, cubeHeight, cubeDepth),
     [cubeWidth, cubeHeight, cubeDepth]
   );
 
@@ -321,21 +437,20 @@ const MultiCubeScene = memo(function MultiCubeScene({
     () => Array.from(new Set(labelSlugs)),
     [labelSlugs]
   );
-  const labelUrls = useMemo(
-    () => uniqueSlugs.map((slug) => `/generated/cube-labels/${slug}.svg`),
-    [uniqueSlugs]
-  );
-  const svgData = useLoader(SVGLoader, labelUrls);
   const labelAssets = useMemo(() => {
     const map = new Map<string, LabelGeometryAsset>();
-    svgData.forEach((data, index) => {
-      const asset = buildLabelAsset(data);
+    uniqueSlugs.forEach((slug) => {
+      const asset = buildLabelGeometryAsset(
+        slug,
+        cubeLabelSources,
+        cubeLabelGeometryCache
+      );
       if (asset) {
-        map.set(uniqueSlugs[index], asset);
+        map.set(slug, asset);
       }
     });
     return map;
-  }, [svgData, uniqueSlugs]);
+  }, [uniqueSlugs]);
 
   return (
     <Canvas camera={cameraConfig} gl={glConfig}>
@@ -747,6 +862,335 @@ export function AnimatedMultiCubeScene({
   );
 }
 
+const PolyColumn = memo(function PolyColumn({
+  groupRef,
+  targetRotation,
+  targetScale,
+  labelAssets,
+  faceSlugs,
+  faceTexts,
+  radius,
+  height,
+  bodyColor,
+  edgeColor,
+  textSize,
+  strokeWidth,
+}: {
+  groupRef: CubeGroupRef;
+  targetRotation: Rotation;
+  targetScale: number;
+  labelAssets: Map<string, LabelGeometryAsset>;
+  faceSlugs: Array<string | null>;
+  faceTexts: string[];
+  radius: number;
+  height: number;
+  bodyColor: string;
+  edgeColor: string;
+  textSize: number;
+  strokeWidth: number;
+}) {
+  const segments = faceTexts.length;
+  const geometry = useMemo(
+    () => getCylinderGeometry(radius, height, segments),
+    [radius, height, segments]
+  );
+  const angleStep = useMemo(
+    () => (segments > 0 ? (Math.PI * 2) / segments : 0),
+    [segments]
+  );
+  const angles = useMemo(
+    () => Array.from({ length: segments }, (_, index) => index * angleStep),
+    [segments, angleStep]
+  );
+  const apothem = useMemo(
+    () => radius * Math.cos(Math.PI / segments),
+    [radius, segments]
+  );
+  const textOffset = apothem * 0.05;
+  const faceWidth = useMemo(
+    () => 2 * apothem * Math.tan(Math.PI / segments),
+    [apothem, segments]
+  );
+  const textMaxWidth = faceWidth * 0.85;
+  const verticalAllowance = height * Math.max(0.25, Math.min(0.65, textSize));
+  return (
+    <>
+      <SmoothColumnMotion
+        groupRef={groupRef}
+        targetRotation={targetRotation}
+        targetScale={targetScale}
+      />
+      <group ref={groupRef}>
+        <mesh geometry={geometry} renderOrder={0}>
+          <meshBasicMaterial color={bodyColor} depthWrite />
+        </mesh>
+        <Edges
+          geometry={geometry}
+          color={edgeColor}
+          lineWidth={strokeWidth}
+          renderOrder={1}
+          depthTest
+          depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-1}
+          polygonOffsetUnits={-1}
+        />
+        {angles.map((angle, index) => {
+          const slug = faceSlugs[index];
+          const text = faceTexts[index];
+          if (!slug || !text) return null;
+          const labelAsset = labelAssets.get(slug);
+          if (!labelAsset) return null;
+          const scale =
+            labelAsset.width > 0 && labelAsset.height > 0
+              ? Math.min(
+                  textMaxWidth / labelAsset.width,
+                  verticalAllowance / labelAsset.height
+                )
+              : 1;
+          return (
+            <group key={`${slug}-${index}`} rotation={[0, angle, 0]}>
+              <mesh
+                geometry={labelAsset.geometry}
+                position={[0, 0, apothem + textOffset]}
+                scale={[scale, scale, 1]}
+                renderOrder={2}
+              >
+                <meshBasicMaterial
+                  color={edgeColor}
+                  depthWrite={false}
+                  polygonOffset
+                  polygonOffsetFactor={-0.5}
+                  polygonOffsetUnits={-0.5}
+                  toneMapped={false}
+                  side={DoubleSide}
+                />
+              </mesh>
+            </group>
+          );
+        })}
+      </group>
+    </>
+  );
+});
+
+export function AnimatedPolyColumnScene({
+  texts,
+  trigger,
+  start,
+  end,
+  scrub = 1,
+  from,
+  to,
+  showMarkers = false,
+  invalidateOnRefresh = true,
+  radius,
+  height,
+  bodyColor,
+  edgeColor,
+  textSize = 0.45,
+  cameraPosition = [0, 0, 12],
+  cameraFov = 18,
+  className,
+  strokeWidth = 5,
+}: AnimatedPolyColumnProps) {
+  const columnGroupRef = useRef<Group | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const [dynamicRadius, setDynamicRadius] = useState(() => radius ?? 1);
+  const [dynamicHeight, setDynamicHeight] = useState(() => height ?? 2.2);
+  const [targetRotation, setTargetRotation] = useState<Rotation>(() => ({
+    x: from?.rotation?.x ?? 0,
+    y: from?.rotation?.y ?? 0,
+    z: from?.rotation?.z ?? 0,
+  }));
+  const [targetScale, setTargetScale] = useState(from?.scale ?? 1);
+  const [targetYPercent, setTargetYPercent] = useState(from?.yPercent ?? 0);
+
+  const finalRadius = radius ?? dynamicRadius;
+  const finalHeight = height ?? dynamicHeight;
+  const finalBodyColor = bodyColor ?? "#0E0E0E";
+  const finalEdgeColor = edgeColor ?? "#C4A070";
+
+  useEffect(() => {
+    if (radius !== undefined || height !== undefined) {
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
+    }
+  }, [radius, height]);
+
+  useEffect(() => {
+    if (radius !== undefined && height !== undefined) {
+      return;
+    }
+    const updateDimensions = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const minDim = Math.min(rect.width, rect.height);
+      if (radius === undefined) {
+        setDynamicRadius(Math.max(minDim * 0.25, 0.6));
+      }
+      if (height === undefined) {
+        setDynamicHeight(Math.max(minDim * 1.4, 2));
+      }
+    };
+    updateDimensions();
+    const observer = new ResizeObserver(updateDimensions);
+    resizeObserverRef.current = observer;
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => {
+      observer.disconnect();
+      resizeObserverRef.current = null;
+    };
+  }, [radius, height]);
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      !containerRef.current ||
+      !trigger?.current
+    )
+      return;
+
+    let scrollTrigger: ReturnType<
+      typeof import("gsap/ScrollTrigger").ScrollTrigger.create
+    > | null = null;
+    let isActive = true;
+
+    const init = async () => {
+      if (!isActive) return;
+      const ScrollTrigger = await getScrollTrigger();
+      if (!isActive || !containerRef.current || !trigger?.current) return;
+      const fromRotation = {
+        x: from?.rotation?.x ?? 0,
+        y: from?.rotation?.y ?? 0,
+        z: from?.rotation?.z ?? 0,
+      };
+      const toRotation = {
+        x: to?.rotation?.x ?? fromRotation.x,
+        y: to?.rotation?.y ?? fromRotation.y + Math.PI * 2,
+        z: to?.rotation?.z ?? fromRotation.z,
+      };
+      const fromScale = from?.scale ?? 1;
+      const toScale = to?.scale ?? fromScale;
+      const fromYPercent = from?.yPercent ?? 0;
+      const toYPercent = to?.yPercent ?? fromYPercent;
+      const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+      scrollTrigger = ScrollTrigger.create({
+        trigger: trigger.current,
+        start,
+        end,
+        scrub: typeof scrub === "number" ? scrub : scrub ? 1 : false,
+        invalidateOnRefresh,
+        markers: showMarkers,
+        onUpdate: (self) => {
+          const progress = self.progress;
+          setTargetRotation({
+            x: lerp(fromRotation.x, toRotation.x, progress),
+            y: lerp(fromRotation.y, toRotation.y, progress),
+            z: lerp(fromRotation.z, toRotation.z, progress),
+          });
+          setTargetScale(lerp(fromScale, toScale, progress));
+          setTargetYPercent(lerp(fromYPercent, toYPercent, progress));
+        },
+      });
+    };
+
+    init();
+    return () => {
+      isActive = false;
+      scrollTrigger?.kill();
+    };
+  }, [trigger, start, end, scrub, showMarkers, invalidateOnRefresh, from, to]);
+
+  const faceTexts = useMemo(() => texts, [texts]);
+
+  const faceSlugs = useMemo(
+    () =>
+      faceTexts.map((text) =>
+        text ? cubeLabelSlugMap.get(text) ?? cubeLabelSlugify(text) : null
+      ),
+    [faceTexts]
+  );
+
+  const uniqueSlugs = useMemo(
+    () =>
+      Array.from(
+        new Set(faceSlugs.filter((slug): slug is string => Boolean(slug)))
+      ),
+    [faceSlugs]
+  );
+
+  const labelAssets = useMemo(() => {
+    const map = new Map<string, LabelGeometryAsset>();
+    uniqueSlugs.forEach((slug) => {
+      const asset = buildLabelGeometryAsset(
+        slug,
+        cubeLabelSources,
+        cubeLabelGeometryCache
+      );
+      if (asset) {
+        map.set(slug, asset);
+      }
+    });
+    return map;
+  }, [uniqueSlugs]);
+
+  const glConfig = useMemo(
+    () => ({
+      antialias: true,
+      alpha: true,
+      depth: true,
+      stencil: false,
+      powerPreference: "high-performance" as const,
+    }),
+    []
+  );
+
+  return (
+    <div
+      ref={containerRef}
+      className={className}
+      style={{
+        transform: `translateY(${targetYPercent}%)`,
+      }}
+      role="region"
+      aria-label="Animated column"
+    >
+      <div className="sr-only" aria-live="polite">
+        <ul>
+          {texts.map((text, index) => (
+            <li key={index}>{text}</li>
+          ))}
+        </ul>
+      </div>
+      <Canvas
+        camera={{ position: cameraPosition, fov: cameraFov }}
+        gl={glConfig}
+      >
+        <EffectComposer>
+          <DotScreen angle={Math.PI / 12} scale={1.1} />
+        </EffectComposer>
+        <PolyColumn
+          groupRef={columnGroupRef}
+          targetRotation={targetRotation}
+          targetScale={targetScale}
+          labelAssets={labelAssets}
+          faceSlugs={faceSlugs}
+          faceTexts={faceTexts}
+          radius={finalRadius}
+          height={finalHeight}
+          bodyColor={finalBodyColor}
+          edgeColor={finalEdgeColor}
+          textSize={textSize}
+          strokeWidth={strokeWidth}
+        />
+      </Canvas>
+    </div>
+  );
+}
+
 const BASE_HEIGHT = 1.9;
 
 function CameraController() {
@@ -880,14 +1324,14 @@ function ButtonScene({
     () => buttonLabelSlugMap.get(text) ?? cubeLabelSlugify(text),
     [text]
   );
-  const svgData = useLoader(
-    SVGLoader,
-    `/generated/button-labels/${labelSlug}.svg`
-  );
-  const labelAsset = useMemo(
-    () => buildLabelAsset(svgData),
-    [svgData]
-  );
+  const labelAsset = useMemo(() => {
+    const asset = buildLabelGeometryAsset(
+      labelSlug,
+      buttonLabelSources,
+      buttonLabelGeometryCache
+    );
+    return asset ?? null;
+  }, [labelSlug]);
   const baseLabelScale = useMemo(() => {
     if (!labelAsset) return 1;
     const widthAllowance = boxWidth * 0.8;
