@@ -16,9 +16,9 @@ export default function Home() {
       }}
     >
       <HeroSection />
-      <CubeSection />
+      {/* <CubeSection /> */}
       <QuotesSection />
-      <ListenSection />
+      {/* <ListenSection /> */}
       <ArtistBio />
       <div className="h-[100vw] w-full" />
     </div>
