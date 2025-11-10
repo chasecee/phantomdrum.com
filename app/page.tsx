@@ -5,7 +5,7 @@ import CubeSection from "./components/sections/CubeSectionLazy";
 import QuotesSection from "./components/content/QuotesSection";
 import ArtistBio from "./components/content/ArtistBio";
 import ListenSection from "./components/content/ListenSectionLazy";
-import AnimatedPolyColumn from "./components/content/AnimatedPolyColumn";
+import AnimatedPolyColumnLazy from "./components/content/AnimatedPolyColumnLazy";
 import { RefObject, useRef } from "react";
 
 export default function Home() {
@@ -30,7 +30,7 @@ export default function Home() {
         className="aspect-square w-full relative flex items-center justify-center"
       >
         <div className="w-full  aspect-square">
-          <AnimatedPolyColumn
+          <AnimatedPolyColumnLazy
             texts={[
               "Drums",
               "Synths",

@@ -1,14 +1,19 @@
 "use client";
 
-import { Suspense, useRef, useState, useEffect } from "react";
+import { Suspense, useRef, useState, useEffect, type ComponentType } from "react";
 import dynamic from "next/dynamic";
+import type { HalftoneButtonProps } from "./HalftoneButton";
+
+type PrefetchableComponent<P> = ComponentType<P> & {
+  preload?: () => void;
+};
 
 const HalftoneButton = dynamic(
   () => import("./HalftoneButton"),
   {
     ssr: false,
   }
-);
+) as PrefetchableComponent<HalftoneButtonProps>;
 
 const PREFETCH_DELAY = 2000;
 

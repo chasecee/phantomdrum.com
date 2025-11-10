@@ -15,6 +15,7 @@ import {
   AlwaysStencilFunc,
   ReplaceStencilOp,
   BufferGeometry,
+  OrthographicCamera,
 } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { cubeLabelSlugify, buttonLabelSlugMap } from "@/config/cubeLabels";
@@ -53,23 +54,26 @@ const BASE_HEIGHT = 1.9;
 
 function CameraController() {
   const { camera, size } = useThree();
-  const camRef = useRef(camera);
+  const camRef = useRef<OrthographicCamera | null>(null);
 
   useEffect(() => {
-    camRef.current = camera;
+    if (camera instanceof OrthographicCamera) {
+      camRef.current = camera;
+    }
   }, [camera]);
 
   useFrame(() => {
-    if (!camRef.current) return;
+    const currentCamera = camRef.current;
+    if (!currentCamera) return;
     const aspect = size.width / size.height;
     const height = BASE_HEIGHT;
     const width = height * aspect;
     const padding = 0.1;
-    camRef.current.left = -width / 2 - padding;
-    camRef.current.right = width / 2 + padding;
-    camRef.current.top = height / 2 + padding;
-    camRef.current.bottom = -height / 2 - padding;
-    camRef.current.updateProjectionMatrix();
+    currentCamera.left = -width / 2 - padding;
+    currentCamera.right = width / 2 + padding;
+    currentCamera.top = height / 2 + padding;
+    currentCamera.bottom = -height / 2 - padding;
+    currentCamera.updateProjectionMatrix();
   });
 
   return null;

@@ -8,6 +8,7 @@ import {
   useMemo,
   memo,
   useCallback,
+  MutableRefObject,
 } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Edges } from "@react-three/drei";
@@ -29,8 +30,8 @@ import type { GroupRef, Rotation } from "./types";
 
 interface SingleTextCubeProps {
   groupRef: GroupRef;
-  targetRotation: Rotation;
-  targetScale: number;
+  targetRotationRef: MutableRefObject<Rotation>;
+  targetScaleRef: MutableRefObject<number>;
   labelAsset?: LabelGeometryAsset;
   size: number;
   heightRatio: number;
@@ -39,7 +40,7 @@ interface SingleTextCubeProps {
   textColor: string;
   textSize: number;
   maxWidth?: number;
-  dragRotation: number;
+  dragRotationRef: MutableRefObject<number>;
   fillMode?: "fill" | "outline";
   strokeWidth?: number;
   matchTextColor?: boolean;
@@ -47,8 +48,8 @@ interface SingleTextCubeProps {
 
 interface MultiCubeSceneProps {
   groupRefs: GroupRef[];
-  targetRotations: Rotation[];
-  targetScale: number;
+  targetRotationRefs: Array<MutableRefObject<Rotation>>;
+  targetScaleRef: MutableRefObject<number>;
   texts: string[];
   size: number;
   heightRatio: number;
@@ -60,7 +61,7 @@ interface MultiCubeSceneProps {
   cameraFov: number;
   maxWidth?: number;
   spacing: number;
-  dragRotations: number[];
+  dragRotationRefs: Array<MutableRefObject<number>>;
   fillMode?: "fill" | "outline";
   strokeWidth?: number;
   matchTextColor?: boolean;
@@ -104,18 +105,21 @@ export interface AnimatedMultiCubeProps {
 
 function SmoothRotation({
   groupRef,
-  targetRotation,
-  targetScale,
-  dragRotation,
+  targetRotationRef,
+  targetScaleRef,
+  dragRotationRef,
 }: {
   groupRef: GroupRef;
-  targetRotation: Rotation;
-  targetScale: number;
-  dragRotation: number;
+  targetRotationRef: MutableRefObject<Rotation>;
+  targetScaleRef: MutableRefObject<number>;
+  dragRotationRef: MutableRefObject<number>;
 }) {
   useFrame(() => {
     if (!groupRef.current) return;
     const g = groupRef.current;
+    const targetRotation = targetRotationRef.current;
+    const targetScale = targetScaleRef.current;
+    const dragRotation = dragRotationRef.current;
     g.rotation.x += (targetRotation.x - g.rotation.x) * 0.1;
     g.rotation.y += (targetRotation.y + dragRotation - g.rotation.y) * 0.1;
     g.rotation.z += (targetRotation.z - g.rotation.z) * 0.1;
@@ -129,8 +133,8 @@ function SmoothRotation({
 
 const SingleTextCube = memo(function SingleTextCube({
   groupRef,
-  targetRotation,
-  targetScale,
+  targetRotationRef,
+  targetScaleRef,
   labelAsset,
   size,
   heightRatio,
@@ -139,7 +143,7 @@ const SingleTextCube = memo(function SingleTextCube({
   textColor,
   textSize,
   maxWidth,
-  dragRotation,
+  dragRotationRef,
   fillMode,
   strokeWidth,
   matchTextColor,
@@ -187,9 +191,9 @@ const SingleTextCube = memo(function SingleTextCube({
     <>
       <SmoothRotation
         groupRef={groupRef}
-        targetRotation={targetRotation}
-        targetScale={targetScale}
-        dragRotation={dragRotation}
+        targetRotationRef={targetRotationRef}
+        targetScaleRef={targetScaleRef}
+        dragRotationRef={dragRotationRef}
       />
       <group ref={groupRef}>
         <mesh renderOrder={0} geometry={boxGeometry}>
@@ -237,8 +241,8 @@ const SingleTextCube = memo(function SingleTextCube({
 
 const MultiCubeScene = memo(function MultiCubeScene({
   groupRefs,
-  targetRotations,
-  targetScale,
+  targetRotationRefs,
+  targetScaleRef,
   texts,
   size,
   heightRatio,
@@ -250,7 +254,7 @@ const MultiCubeScene = memo(function MultiCubeScene({
   cameraFov,
   maxWidth,
   spacing,
-  dragRotations,
+  dragRotationRefs,
   fillMode,
   strokeWidth,
   matchTextColor,
@@ -303,7 +307,7 @@ const MultiCubeScene = memo(function MultiCubeScene({
   }, [uniqueSlugs]);
 
   return (
-    <Canvas camera={cameraConfig} gl={glConfig}>
+    <Canvas camera={cameraConfig} gl={glConfig} dpr={[1, 1.75]}>
       <EffectComposer>
         <DotScreen angle={Math.PI / 12} scale={1.1} />
       </EffectComposer>
@@ -312,12 +316,16 @@ const MultiCubeScene = memo(function MultiCubeScene({
         const labelSlug = labelSlugs[index];
         const labelAsset = labelAssets.get(labelSlug);
         const groupKey = labelSlug ?? `${index}-${text}`;
+        const rotationRef =
+          targetRotationRefs[index] ?? targetRotationRefs[0];
+        const dragRotationRef =
+          dragRotationRefs[index] ?? dragRotationRefs[0];
         return (
           <group key={groupKey} position={[0, pos.y, pos.z]}>
             <SingleTextCube
               groupRef={groupRefs[index]}
-              targetRotation={targetRotations[index]}
-              targetScale={targetScale}
+              targetRotationRef={rotationRef}
+              targetScaleRef={targetScaleRef}
               labelAsset={labelAsset}
               size={size}
               heightRatio={heightRatio}
@@ -326,7 +334,7 @@ const MultiCubeScene = memo(function MultiCubeScene({
               textColor={textColor}
               textSize={textSize}
               maxWidth={maxWidth}
-              dragRotation={dragRotations[index]}
+              dragRotationRef={dragRotationRef}
               fillMode={fillMode}
               strokeWidth={strokeWidth}
               matchTextColor={matchTextColor}
@@ -373,24 +381,62 @@ export function AnimatedMultiCubeScene({
   const [dynamicSize, setDynamicSize] = useState(2);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const finalSize = size ?? dynamicSize;
-  const [targetRotations, setTargetRotations] = useState<Rotation[]>(() =>
-    texts.map(() => ({
-      x: from?.rotation?.x ?? 0,
-      y: from?.rotation?.y ?? 0,
-      z: from?.rotation?.z ?? 0,
-    }))
+  const targetScaleRef = useRef<number>(from?.scale ?? 1);
+  const targetYPercentRef = useRef<number>(from?.yPercent ?? 0);
+  const targetRotationRefs = useMemo(
+    () =>
+      Array.from({ length: texts.length }, () => ({
+        current: {
+          x: from?.rotation?.x ?? 0,
+          y: from?.rotation?.y ?? 0,
+          z: from?.rotation?.z ?? 0,
+        },
+      })),
+    [
+      texts.length,
+      from?.rotation?.x,
+      from?.rotation?.y,
+      from?.rotation?.z,
+    ]
   );
-  const [targetScale, setTargetScale] = useState(from?.scale ?? 1);
-  const [targetYPercent, setTargetYPercent] = useState(from?.yPercent ?? 0);
-  const [dragRotations, setDragRotations] = useState<number[]>(() =>
-    texts.map(() => 0)
+  const dragRotationRefs = useMemo(
+    () => Array.from({ length: texts.length }, () => ({ current: 0 })),
+    [texts.length]
   );
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const dragStartRotationsRef = useRef<number[]>([]);
-  const dragRotationsRef = useRef<number[]>([]);
   const draggedCubeIndexRef = useRef(-1);
   const isHorizontalDragRef = useRef(false);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    containerRef.current.style.transform = `translateY(${targetYPercentRef.current}%)`;
+  }, []);
+
+  useEffect(() => {
+    targetScaleRef.current = from?.scale ?? 1;
+    targetYPercentRef.current = from?.yPercent ?? 0;
+    targetRotationRefs.forEach((ref) => {
+      ref.current.x = from?.rotation?.x ?? 0;
+      ref.current.y = from?.rotation?.y ?? 0;
+      ref.current.z = from?.rotation?.z ?? 0;
+    });
+    dragRotationRefs.forEach((ref) => {
+      ref.current = 0;
+    });
+    if (containerRef.current) {
+      containerRef.current.style.transform = `translateY(${targetYPercentRef.current}%)`;
+    }
+  }, [
+    from?.rotation?.x,
+    from?.rotation?.y,
+    from?.rotation?.z,
+    from?.scale,
+    from?.yPercent,
+    targetRotationRefs,
+    dragRotationRefs,
+  ]);
 
   useEffect(() => {
     if (size !== undefined) {
@@ -448,10 +494,12 @@ export function AnimatedMultiCubeScene({
         markers: showMarkers,
         onUpdate: (self) => {
           const progress = self.progress;
-          setTargetYPercent(
+          targetYPercentRef.current =
             fromYPercent +
-              ((to.yPercent ?? fromYPercent) - fromYPercent) * progress
-          );
+            ((to.yPercent ?? fromYPercent) - fromYPercent) * progress;
+          if (containerRef.current) {
+            containerRef.current.style.transform = `translateY(${targetYPercentRef.current}%)`;
+          }
 
           for (let index = 0; index < texts.length; index++) {
             const offset = stagger ? index * staggerDelay : 0;
@@ -471,19 +519,14 @@ export function AnimatedMultiCubeScene({
               lerp(fromRotation.z ?? 0, to.rotation.z ?? 0, prog) ?? 0;
             const scale = lerp(fromScale, to.scale ?? 1, prog);
 
-            setTargetRotations((previous) => {
-              if (
-                previous[index]?.x === rotX &&
-                previous[index]?.y === rotY &&
-                previous[index]?.z === rotZ
-              )
-                return previous;
-              const next = [...previous];
-              next[index] = { x: rotX, y: rotY, z: rotZ };
-              return next;
-            });
+            const rotationRef = targetRotationRefs[index];
+            if (rotationRef) {
+              rotationRef.current.x = rotX;
+              rotationRef.current.y = rotY;
+              rotationRef.current.z = rotZ;
+            }
             if (index === 0) {
-              setTargetScale((prev) => (prev === scale ? prev : scale));
+              targetScaleRef.current = scale;
             }
           }
         },
@@ -512,6 +555,7 @@ export function AnimatedMultiCubeScene({
     texts.length,
     stagger,
     staggerDelay,
+    targetRotationRefs,
   ]);
 
   useEffect(() => {
@@ -532,7 +576,9 @@ export function AnimatedMultiCubeScene({
       isDraggingRef.current = true;
       dragStartRef.current = { x: clientX, y: clientY };
       draggedCubeIndexRef.current = getCubeIndexFromY(clientY);
-      dragStartRotationsRef.current = [...dragRotationsRef.current];
+      dragStartRotationsRef.current = dragRotationRefs.map(
+        (ref) => ref.current
+      );
       isHorizontalDragRef.current = false;
       container.style.cursor = "grabbing";
     };
@@ -546,11 +592,12 @@ export function AnimatedMultiCubeScene({
         Math.PI *
         2;
       const cubeIndex = draggedCubeIndexRef.current;
-      const newRotations = [...dragRotationsRef.current];
-      newRotations[cubeIndex] =
-        dragStartRotationsRef.current[cubeIndex] + rotationDelta;
-      dragRotationsRef.current = newRotations;
-      setDragRotations(newRotations);
+      const next =
+        (dragStartRotationsRef.current[cubeIndex] ?? 0) + rotationDelta;
+      const rotationRef = dragRotationRefs[cubeIndex];
+      if (rotationRef) {
+        rotationRef.current = next;
+      }
     };
 
     const handleEnd = () => {
@@ -625,16 +672,13 @@ export function AnimatedMultiCubeScene({
       container.removeEventListener("touchmove", handleTouchMove);
       container.removeEventListener("touchend", handleEnd);
     };
-  }, [texts.length]);
-
-  useEffect(() => {
-    dragRotationsRef.current = dragRotations;
-  }, [dragRotations]);
+  }, [texts.length, dragRotationRefs]);
 
   const defaultColors = useMemo(
     () => ["#C4A070", "#B88B70", "#C85A3D", "#A85A5A"],
     []
   );
+  const initialTranslateY = from?.yPercent ?? 0;
 
   const interpolateColor = useCallback(
     (color1: string, color2: string, t: number): string => {
@@ -687,7 +731,7 @@ export function AnimatedMultiCubeScene({
       ref={containerRef}
       className={className}
       style={{
-        transform: `translateY(${targetYPercent}%)`,
+        transform: `translateY(${initialTranslateY}%)`,
       }}
       role="region"
       aria-label="Animated text cubes"
@@ -701,8 +745,8 @@ export function AnimatedMultiCubeScene({
       </div>
       <MultiCubeScene
         groupRefs={groupRefs}
-        targetRotations={targetRotations}
-        targetScale={targetScale}
+        targetRotationRefs={targetRotationRefs}
+        targetScaleRef={targetScaleRef}
         texts={texts}
         size={finalSize}
         heightRatio={heightRatio}
@@ -714,7 +758,7 @@ export function AnimatedMultiCubeScene({
         cameraFov={cameraFov}
         maxWidth={maxWidth}
         spacing={spacing}
-        dragRotations={dragRotations}
+        dragRotationRefs={dragRotationRefs}
         fillMode={fillMode}
         strokeWidth={strokeWidth}
         matchTextColor={matchTextColor}

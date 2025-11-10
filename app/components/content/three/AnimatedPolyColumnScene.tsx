@@ -1,6 +1,14 @@
 "use client";
 
-import { useRef, useEffect, useState, RefObject, useMemo, memo } from "react";
+import {
+  useRef,
+  useEffect,
+  useState,
+  RefObject,
+  useMemo,
+  memo,
+  MutableRefObject,
+} from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Edges } from "@react-three/drei";
 import { EffectComposer, DotScreen } from "@react-three/postprocessing";
@@ -16,8 +24,8 @@ import type { GroupRef, Rotation } from "./types";
 
 interface PolyColumnProps {
   groupRef: GroupRef;
-  targetRotation: Rotation;
-  targetScale: number;
+  targetRotationRef: MutableRefObject<Rotation>;
+  targetScaleRef: MutableRefObject<number>;
   labelAssets: Map<string, LabelGeometryAsset>;
   faceSlugs: Array<string | null>;
   faceTexts: string[];
@@ -60,16 +68,18 @@ export interface AnimatedPolyColumnProps {
 
 function SmoothColumnMotion({
   groupRef,
-  targetRotation,
-  targetScale,
+  targetRotationRef,
+  targetScaleRef,
 }: {
   groupRef: GroupRef;
-  targetRotation: Rotation;
-  targetScale: number;
+  targetRotationRef: MutableRefObject<Rotation>;
+  targetScaleRef: MutableRefObject<number>;
 }) {
   useFrame(() => {
     if (!groupRef.current) return;
     const g = groupRef.current;
+    const targetRotation = targetRotationRef.current;
+    const targetScale = targetScaleRef.current;
     g.rotation.x += (targetRotation.x - g.rotation.x) * 0.1;
     g.rotation.y += (targetRotation.y - g.rotation.y) * 0.1;
     g.rotation.z += (targetRotation.z - g.rotation.z) * 0.1;
@@ -83,8 +93,8 @@ function SmoothColumnMotion({
 
 const PolyColumn = memo(function PolyColumn({
   groupRef,
-  targetRotation,
-  targetScale,
+  targetRotationRef,
+  targetScaleRef,
   labelAssets,
   faceSlugs,
   faceTexts,
@@ -124,8 +134,8 @@ const PolyColumn = memo(function PolyColumn({
     <>
       <SmoothColumnMotion
         groupRef={groupRef}
-        targetRotation={targetRotation}
-        targetScale={targetScale}
+        targetRotationRef={targetRotationRef}
+        targetScaleRef={targetScaleRef}
       />
       <group ref={groupRef}>
         <mesh geometry={geometry} renderOrder={0}>
@@ -206,18 +216,43 @@ export function AnimatedPolyColumnScene({
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const [dynamicRadius, setDynamicRadius] = useState(() => radius ?? 1);
   const [dynamicHeight, setDynamicHeight] = useState(() => height ?? 2.2);
-  const [targetRotation, setTargetRotation] = useState<Rotation>(() => ({
+  const targetRotationRef = useRef<Rotation>({
     x: from?.rotation?.x ?? 0,
     y: from?.rotation?.y ?? 0,
     z: from?.rotation?.z ?? 0,
-  }));
-  const [targetScale, setTargetScale] = useState(from?.scale ?? 1);
-  const [targetYPercent, setTargetYPercent] = useState(from?.yPercent ?? 0);
+  });
+  const targetScaleRef = useRef<number>(from?.scale ?? 1);
+  const targetYPercentRef = useRef<number>(from?.yPercent ?? 0);
 
   const finalRadius = radius ?? dynamicRadius;
   const finalHeight = height ?? dynamicHeight;
   const finalBodyColor = bodyColor ?? "#0E0E0E";
   const finalEdgeColor = edgeColor ?? "#C4A070";
+  const initialTranslateY = from?.yPercent ?? 0;
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    containerRef.current.style.transform = `translateY(${targetYPercentRef.current}%)`;
+  }, []);
+
+  useEffect(() => {
+    targetRotationRef.current = {
+      x: from?.rotation?.x ?? 0,
+      y: from?.rotation?.y ?? 0,
+      z: from?.rotation?.z ?? 0,
+    };
+    targetScaleRef.current = from?.scale ?? 1;
+    targetYPercentRef.current = from?.yPercent ?? 0;
+    if (containerRef.current) {
+      containerRef.current.style.transform = `translateY(${targetYPercentRef.current}%)`;
+    }
+  }, [
+    from?.rotation?.x,
+    from?.rotation?.y,
+    from?.rotation?.z,
+    from?.scale,
+    from?.yPercent,
+  ]);
 
   useEffect(() => {
     if (radius !== undefined || height !== undefined) {
@@ -293,13 +328,26 @@ export function AnimatedPolyColumnScene({
         markers: showMarkers,
         onUpdate: (self) => {
           const progress = self.progress;
-          setTargetRotation({
-            x: lerp(fromRotation.x, toRotation.x, progress),
-            y: lerp(fromRotation.y, toRotation.y, progress),
-            z: lerp(fromRotation.z, toRotation.z, progress),
-          });
-          setTargetScale(lerp(fromScale, toScale, progress));
-          setTargetYPercent(lerp(fromYPercent, toYPercent, progress));
+          targetRotationRef.current.x = lerp(
+            fromRotation.x,
+            toRotation.x,
+            progress
+          );
+          targetRotationRef.current.y = lerp(
+            fromRotation.y,
+            toRotation.y,
+            progress
+          );
+          targetRotationRef.current.z = lerp(
+            fromRotation.z,
+            toRotation.z,
+            progress
+          );
+          targetScaleRef.current = lerp(fromScale, toScale, progress);
+          targetYPercentRef.current = lerp(fromYPercent, toYPercent, progress);
+          if (containerRef.current) {
+            containerRef.current.style.transform = `translateY(${targetYPercentRef.current}%)`;
+          }
         },
       });
     };
@@ -356,7 +404,7 @@ export function AnimatedPolyColumnScene({
       ref={containerRef}
       className={className}
       style={{
-        transform: `translateY(${targetYPercent}%)`,
+        transform: `translateY(${initialTranslateY}%)`,
       }}
       role="region"
       aria-label="Animated column"
@@ -371,14 +419,15 @@ export function AnimatedPolyColumnScene({
       <Canvas
         camera={{ position: cameraPosition, fov: cameraFov }}
         gl={glConfig}
+        dpr={[1, 1.75]}
       >
         <EffectComposer>
           <DotScreen angle={Math.PI / 12} scale={1.1} />
         </EffectComposer>
         <PolyColumn
           groupRef={columnGroupRef}
-          targetRotation={targetRotation}
-          targetScale={targetScale}
+          targetRotationRef={targetRotationRef}
+          targetScaleRef={targetScaleRef}
           labelAssets={labelAssets}
           faceSlugs={faceSlugs}
           faceTexts={faceTexts}

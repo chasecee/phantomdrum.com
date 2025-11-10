@@ -1,18 +1,26 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, ComponentType } from "react";
+import type { AnimatedPolyColumnProps } from "./three/AnimatedPolyColumnScene";
 
-const LazyCubeSection = dynamic(() => import("./CubeSection"), {
-  ssr: false,
-  loading: () => (
-    <div className="aspect-[1.5/1] my-[10vw] w-full" aria-hidden />
-  ),
-}) as ReturnType<typeof dynamic> & { preload?: () => void };
+type PrefetchableComponent<P> = ComponentType<P> & {
+  preload?: () => void;
+};
 
 const PREFETCH_DELAY = 2000;
 
-export default function CubeSectionLazy() {
+const LazyAnimatedPolyColumn = dynamic(
+  () => import("./AnimatedPolyColumn"),
+  {
+    ssr: false,
+    loading: () => <div className="w-full h-full" aria-hidden />,
+  }
+) as PrefetchableComponent<AnimatedPolyColumnProps>;
+
+export default function AnimatedPolyColumnLazy(
+  props: AnimatedPolyColumnProps
+) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [hasPrefetched, setHasPrefetched] = useState(false);
@@ -41,25 +49,24 @@ export default function CubeSectionLazy() {
   useEffect(() => {
     if (hasPrefetched) return;
 
-    const prefetchModule = () => {
-      LazyCubeSection.preload?.();
-      import("../content/three/AnimatedMultiCubeScene").catch(() => {});
+    const prefetch = () => {
+      LazyAnimatedPolyColumn.preload?.();
+      import("./three/AnimatedPolyColumnScene").catch(() => {});
       setHasPrefetched(true);
     };
 
     const onScroll = () => {
       if (window.scrollY > 100) {
-        prefetchModule();
+        prefetch();
         window.removeEventListener("scroll", onScroll);
       }
     };
 
     const timeoutId = window.setTimeout(() => {
-      const trigger = () => prefetchModule();
       if ("requestIdleCallback" in window) {
-        (window as any).requestIdleCallback?.(trigger);
+        (window as any).requestIdleCallback?.(prefetch);
       } else {
-        trigger();
+        prefetch();
       }
     }, PREFETCH_DELAY);
 
@@ -72,12 +79,14 @@ export default function CubeSectionLazy() {
   }, [hasPrefetched]);
 
   return (
-    <div ref={containerRef} className="w-full">
+    <div ref={containerRef} className="w-full h-full">
       {isVisible ? (
-        <LazyCubeSection />
+        <LazyAnimatedPolyColumn {...props} />
       ) : (
-        <div className="aspect-[1.5/1] my-[10vw] w-full" />
+        <div className={props.className ?? ""} />
       )}
     </div>
   );
 }
+
+

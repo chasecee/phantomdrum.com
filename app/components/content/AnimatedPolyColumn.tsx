@@ -3,8 +3,6 @@
 import dynamic from "next/dynamic";
 import { Suspense, type ComponentType } from "react";
 
-const PREFETCH_DELAY = 2000;
-
 type PrefetchableComponent<P> = ComponentType<P> & {
   preload?: () => Promise<unknown>;
 };
@@ -14,29 +12,6 @@ const AnimatedPolyColumnScene = dynamic(() =>
     default: mod.AnimatedPolyColumnScene,
   }))
 ) as PrefetchableComponent<AnimatedPolyColumnProps>;
-
-const scheduleIdle = (callback: () => void) => {
-  if (typeof window === "undefined") return;
-  const idle = (
-    window as Window & {
-      requestIdleCallback?: (
-        cb: IdleRequestCallback,
-        options?: IdleRequestOptions
-      ) => number;
-    }
-  ).requestIdleCallback;
-  if (typeof idle === "function") {
-    idle(() => callback());
-  } else {
-    callback();
-  }
-};
-
-if (typeof window !== "undefined") {
-  window.setTimeout(() => {
-    scheduleIdle(() => AnimatedPolyColumnScene.preload?.());
-  }, PREFETCH_DELAY);
-}
 
 interface AnimatedPolyColumnProps {
   texts: string[];

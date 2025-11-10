@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { Suspense, type ComponentType } from "react";
 
-interface HalftoneButtonProps {
+export interface HalftoneButtonProps {
   text: string;
   href: string;
   color: string;
