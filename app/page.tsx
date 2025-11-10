@@ -27,9 +27,9 @@ export default function Home() {
       <ArtistBio />
       <section
         ref={polyColumnSectionRef}
-        className="h-screen w-full relative flex items-center justify-center"
+        className="aspect-square w-full relative flex items-center justify-center"
       >
-        <div className="w-full max-w-[600px] aspect-square">
+        <div className="w-full  aspect-square">
           <AnimatedPolyColumn
             texts={[
               "Drums",
