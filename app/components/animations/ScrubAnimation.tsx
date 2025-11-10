@@ -120,8 +120,6 @@ export function useScrubAnimation(
             immediateRender: false,
             scrollTrigger: scrollTriggerConfig,
           });
-
-      ScrollTrigger.refresh();
     };
 
     initAnimation();
