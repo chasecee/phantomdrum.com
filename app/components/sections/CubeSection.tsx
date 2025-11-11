@@ -42,7 +42,7 @@ export default function CubeSection() {
   return (
     <div
       ref={multiCubeContainerRef}
-      className="aspect-[1.5/1] my-[10vw] w-full relative mix-blend-screen"
+      className="aspect-[1.5/1] my-[20vw] w-full relative mix-blend-screen"
     >
       {isVisible ? (
         <Suspense fallback={<div className="absolute inset-0" />}>

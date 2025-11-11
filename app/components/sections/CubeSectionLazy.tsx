@@ -94,7 +94,7 @@ export default function CubeSectionLazy() {
       {isVisible ? (
         <LazyCubeSection />
       ) : (
-        <div className="aspect-[1.5/1] my-[10vw] w-full" />
+        <div className="aspect-[1.5/1] my-[20vw] w-full" />
       )}
     </div>
   );

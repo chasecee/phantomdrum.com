@@ -13,7 +13,11 @@
     "FX",
     "Loops",
     "Textures",
-    "Atmos"
+    "Atmos",
+    "Samplers",
+    "love Loops!",
+    "love Textures!",
+    "love Atmos!"
   ],
   "buttonLabels": [
     "Spotify",

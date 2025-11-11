@@ -6,7 +6,7 @@ import CombinedLogo from "../svgs/CombinedLogo";
 import Image from "next/image";
 
 const LOGO_START = { anchor: 0, viewport: 0 } as const;
-const LOGO_END = { anchor: 0.5, viewport: -0.5 } as const;
+const LOGO_END = { anchor: 0.2, viewport: 0 } as const;
 const LOGO_FROM = { scaleY: 2 } as const;
 const LOGO_TO = { scaleY: 1 } as const;
 
@@ -20,10 +20,7 @@ export default function HeroSection() {
 
   return (
     <div ref={containerRef} className="relative aspect-1/2 w-full">
-      <div
-        className="sticky top-6 z-10 mix-blend-difference px-6"
-        style={{ contain: "layout style", overflow: "visible" }}
-      >
+      <div className="sticky top-6 z-10 mix-blend-difference px-6">
         <div
           className="relative w-full aspect-887/449"
           style={{ overflow: "visible" }}
@@ -36,31 +33,35 @@ export default function HeroSection() {
             to={LOGO_TO}
             className="w-full h-full text-neutral-200"
             transformOrigin="top center"
+            viewportMode="none"
           >
             <CombinedLogo className="w-full h-full" />
           </ScrollTransform>
         </div>
       </div>
 
-      <ScrollTransform
-        anchorRef={containerRef}
-        start={HERO_IMAGE_START}
-        end={HERO_IMAGE_END}
-        from={HERO_IMAGE_FROM}
-        to={HERO_IMAGE_TO}
-        className="aspect-square  w-full origin-[50%_50%] absolute inset-0"
-        transformOrigin="50% 100%"
-      >
-        <Image
-          src="/img/optimized/planet-cropped.webp"
-          alt="Phantom Drum Globe"
-          fill
-          className="object-cover object-center"
-          priority
-          fetchPriority="high"
-          sizes="100vw"
-        />
-      </ScrollTransform>
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <ScrollTransform
+          anchorRef={containerRef}
+          start={HERO_IMAGE_START}
+          end={HERO_IMAGE_END}
+          from={HERO_IMAGE_FROM}
+          to={HERO_IMAGE_TO}
+          className="aspect-square  w-full origin-[50%_50%] absolute inset-0"
+          transformOrigin="50% 100%"
+          viewportMode="none"
+        >
+          <Image
+            src="/img/optimized/planet-cropped.webp"
+            alt="Phantom Drum Globe"
+            fill
+            className="object-cover object-center"
+            priority
+            fetchPriority="high"
+            sizes="100vw"
+          />
+        </ScrollTransform>
+      </div>
     </div>
   );
 }

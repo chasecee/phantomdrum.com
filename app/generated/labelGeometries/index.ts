@@ -10,6 +10,10 @@ import * as fx from "./fx";
 import * as loops from "./loops";
 import * as textures from "./textures";
 import * as atmos from "./atmos";
+import * as samplers from "./samplers";
+import * as loveLoops from "./love-loops";
+import * as loveTextures from "./love-textures";
+import * as loveAtmos from "./love-atmos";
 
 export const labelGeometries = {
   "ghost-grade": { positions: ghostGrade.positions, uvs: ghostGrade.uvs, indices: ghostGrade.indices, width: ghostGrade.width, height: ghostGrade.height },
@@ -23,7 +27,11 @@ export const labelGeometries = {
   "fx": { positions: fx.positions, uvs: fx.uvs, indices: fx.indices, width: fx.width, height: fx.height },
   "loops": { positions: loops.positions, uvs: loops.uvs, indices: loops.indices, width: loops.width, height: loops.height },
   "textures": { positions: textures.positions, uvs: textures.uvs, indices: textures.indices, width: textures.width, height: textures.height },
-  "atmos": { positions: atmos.positions, uvs: atmos.uvs, indices: atmos.indices, width: atmos.width, height: atmos.height }
+  "atmos": { positions: atmos.positions, uvs: atmos.uvs, indices: atmos.indices, width: atmos.width, height: atmos.height },
+  "samplers": { positions: samplers.positions, uvs: samplers.uvs, indices: samplers.indices, width: samplers.width, height: samplers.height },
+  "love-loops": { positions: loveLoops.positions, uvs: loveLoops.uvs, indices: loveLoops.indices, width: loveLoops.width, height: loveLoops.height },
+  "love-textures": { positions: loveTextures.positions, uvs: loveTextures.uvs, indices: loveTextures.indices, width: loveTextures.width, height: loveTextures.height },
+  "love-atmos": { positions: loveAtmos.positions, uvs: loveAtmos.uvs, indices: loveAtmos.indices, width: loveAtmos.width, height: loveAtmos.height }
 };
 
 export default labelGeometries;

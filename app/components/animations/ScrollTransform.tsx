@@ -28,6 +28,7 @@ interface ScrollTransformProps extends HTMLAttributes<HTMLDivElement> {
   to?: TransformValues;
   transformOrigin?: string;
   willChange?: CSSProperties["willChange"];
+  viewportMode?: "dynamic" | "initial" | "none";
   children: ReactNode;
 }
 
@@ -63,12 +64,14 @@ export default function ScrollTransform({
   to,
   transformOrigin,
   willChange,
+  viewportMode = "dynamic",
   className,
   style,
   children,
   ...rest
 }: ScrollTransformProps) {
   const elementRef = useRef<HTMLDivElement>(null);
+  const initialViewportRef = useRef<number | null>(null);
   const startAnchor = start?.anchor ?? DEFAULT_START.anchor;
   const startViewport = start?.viewport ?? DEFAULT_START.viewport;
   const endAnchor = end?.anchor ?? DEFAULT_END.anchor;
@@ -104,24 +107,59 @@ export default function ScrollTransform({
       element.style.transformOrigin = String(computedTransformOrigin);
     }
 
-    const apply = () => {
-      const anchor = anchorRef?.current ?? element;
-      if (!anchor) return;
+    let geometryDirty = true;
+    let startBoundary = 0;
+    let endBoundary = 1;
+    let anchorElement: Element | null = null;
 
-      const rect = anchor.getBoundingClientRect();
+    const usesViewport =
+      viewportMode !== "none" && (startViewport !== 0 || endViewport !== 0);
+
+    const resolveViewport = () => {
+      if (!usesViewport) return 0;
+      if (viewportMode === "initial") {
+        if (initialViewportRef.current === null) {
+          initialViewportRef.current =
+            window.visualViewport?.height ?? window.innerHeight ?? 0;
+        }
+        return initialViewportRef.current;
+      }
+      return window.visualViewport?.height ?? window.innerHeight ?? 0;
+    };
+
+    const refreshGeometry = () => {
+      const targetAnchor = anchorRef?.current ?? element;
+      if (!targetAnchor) return false;
+
+      anchorElement = targetAnchor;
+
+      const rect = targetAnchor.getBoundingClientRect();
       const scroll = window.scrollY || window.pageYOffset || 0;
-      const viewport = window.innerHeight || 1;
+      const viewport = resolveViewport() || 1;
+      const anchorTop = rect.top + scroll;
+      const anchorHeight = rect.height || 1;
 
-      const startBoundary = Math.max(
-        rect.top +
-          scroll +
-          rect.height * startAnchor +
-          viewport * startViewport,
+      const startValue = Math.max(
+        anchorTop + anchorHeight * startAnchor + viewport * startViewport,
         0
       );
-      const endBoundary =
-        rect.top + scroll + rect.height * endAnchor + viewport * endViewport;
 
+      let endValue =
+        anchorTop + anchorHeight * endAnchor + viewport * endViewport;
+      if (endValue <= startValue) {
+        endValue = startValue + 1;
+      }
+
+      startBoundary = startValue;
+      endBoundary = endValue;
+      geometryDirty = false;
+      return true;
+    };
+
+    const apply = () => {
+      if (geometryDirty && !refreshGeometry()) return;
+
+      const scroll = window.scrollY || window.pageYOffset || 0;
       const effectiveEnd =
         endBoundary <= startBoundary ? startBoundary + 1 : endBoundary;
       const progress = clamp(
@@ -165,31 +203,37 @@ export default function ScrollTransform({
       });
     };
 
+    const refreshAndApply = () => {
+      geometryDirty = true;
+      requestApply();
+    };
+
+    refreshGeometry();
     apply();
 
     window.addEventListener("scroll", requestApply, { passive: true });
-    window.addEventListener("resize", requestApply);
+    window.addEventListener("resize", refreshAndApply);
 
-    const anchor = anchorRef?.current ?? element;
     const resizeObserver =
-      typeof ResizeObserver !== "undefined" && anchor
-        ? new ResizeObserver(requestApply)
+      typeof ResizeObserver !== "undefined" && anchorElement
+        ? new ResizeObserver(refreshAndApply)
         : null;
 
-    if (anchor) {
-      resizeObserver?.observe(anchor);
+    if (anchorElement) {
+      resizeObserver?.observe(anchorElement);
     }
 
     return () => {
       window.cancelAnimationFrame(raf);
       window.removeEventListener("scroll", requestApply);
-      window.removeEventListener("resize", requestApply);
+      window.removeEventListener("resize", refreshAndApply);
       resizeObserver?.disconnect();
     };
   }, [
     anchorRef,
     endAnchor,
     endViewport,
+    viewportMode,
     scaleRange.end,
     scaleRange.enabled,
     scaleRange.start,
