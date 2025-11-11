@@ -19,9 +19,5 @@
     "love Textures!",
     "love Atmos!"
   ],
-  "buttonLabels": [
-    "Spotify",
-    "Apple Music"
-  ]
+  "buttonLabels": ["Spotify", "Apple Music"]
 }
-
