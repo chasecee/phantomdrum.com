@@ -1,26 +1,32 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState, ComponentType } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import type { AnimatedPolyColumnProps } from "./three/AnimatedPolyColumnScene";
 
 type PrefetchableComponent<P> = ComponentType<P> & {
   preload?: () => void;
 };
 
+type WindowWithIdleCallback = Window & {
+  requestIdleCallback: (
+    callback: IdleRequestCallback,
+    options?: IdleRequestOptions
+  ) => number;
+};
+
+const hasRequestIdleCallback = (win: Window): win is WindowWithIdleCallback =>
+  typeof (win as Partial<WindowWithIdleCallback>).requestIdleCallback ===
+  "function";
+
 const PREFETCH_DELAY = 2000;
 
-const LazyAnimatedPolyColumn = dynamic(
-  () => import("./AnimatedPolyColumn"),
-  {
-    ssr: false,
-    loading: () => <div className="w-full h-full" aria-hidden />,
-  }
-) as PrefetchableComponent<AnimatedPolyColumnProps>;
+const LazyAnimatedPolyColumn = dynamic(() => import("./AnimatedPolyColumn"), {
+  ssr: false,
+  loading: () => <div className="w-full h-full" aria-hidden />,
+}) as PrefetchableComponent<AnimatedPolyColumnProps>;
 
-export default function AnimatedPolyColumnLazy(
-  props: AnimatedPolyColumnProps
-) {
+export default function AnimatedPolyColumnLazy(props: AnimatedPolyColumnProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [hasPrefetched, setHasPrefetched] = useState(false);
@@ -38,7 +44,7 @@ export default function AnimatedPolyColumnLazy(
           }
         });
       },
-      { rootMargin: "200px 0px", threshold: 0.1 }
+      { rootMargin: "50% 0px", threshold: 0 }
     );
 
     observer.observe(node);
@@ -63,8 +69,8 @@ export default function AnimatedPolyColumnLazy(
     };
 
     const timeoutId = window.setTimeout(() => {
-      if ("requestIdleCallback" in window) {
-        (window as any).requestIdleCallback?.(prefetch);
+      if (hasRequestIdleCallback(window)) {
+        window.requestIdleCallback(prefetch);
       } else {
         prefetch();
       }
@@ -88,5 +94,3 @@ export default function AnimatedPolyColumnLazy(
     </div>
   );
 }
-
-

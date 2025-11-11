@@ -8,6 +8,17 @@ type PrefetchableComponent<P> = ComponentType<P> & {
   preload?: () => void;
 };
 
+type WindowWithIdleCallback = Window & {
+  requestIdleCallback: (
+    callback: IdleRequestCallback,
+    options?: IdleRequestOptions
+  ) => number;
+};
+
+const hasRequestIdleCallback = (win: Window): win is WindowWithIdleCallback =>
+  typeof (win as Partial<WindowWithIdleCallback>).requestIdleCallback ===
+  "function";
+
 const HalftoneButton = dynamic(
   () => import("./HalftoneButton"),
   {
@@ -53,8 +64,8 @@ export default function ListenSection() {
         HalftoneButton.preload?.();
         import("./three/HalftoneButtonScene").catch(() => {});
       };
-      if ("requestIdleCallback" in window) {
-        (window as any).requestIdleCallback?.(trigger);
+      if (hasRequestIdleCallback(window)) {
+        window.requestIdleCallback(trigger);
       } else {
         trigger();
       }

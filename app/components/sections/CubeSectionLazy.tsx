@@ -1,14 +1,32 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 
-const LazyCubeSection = dynamic(() => import("./CubeSection"), {
-  ssr: false,
-  loading: () => (
-    <div className="aspect-[1.5/1] my-[10vw] w-full" aria-hidden />
-  ),
-}) as ReturnType<typeof dynamic> & { preload?: () => void };
+type PrefetchableComponent<P> = ComponentType<P> & {
+  preload?: () => void;
+};
+
+type WindowWithIdleCallback = Window & {
+  requestIdleCallback: (
+    callback: IdleRequestCallback,
+    options?: IdleRequestOptions
+  ) => number;
+};
+
+const hasRequestIdleCallback = (win: Window): win is WindowWithIdleCallback =>
+  typeof (win as Partial<WindowWithIdleCallback>).requestIdleCallback ===
+  "function";
+
+const LazyCubeSection = dynamic<Record<string, never>>(
+  () => import("./CubeSection"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="aspect-[1.5/1] my-[10vw] w-full" aria-hidden />
+    ),
+  }
+) as PrefetchableComponent<Record<string, never>>;
 
 const PREFETCH_DELAY = 2000;
 
@@ -30,7 +48,7 @@ export default function CubeSectionLazy() {
           }
         });
       },
-      { rootMargin: "200px 0px", threshold: 0.1 }
+      { rootMargin: "50% 0px", threshold: 0 }
     );
 
     observer.observe(node);
@@ -56,8 +74,8 @@ export default function CubeSectionLazy() {
 
     const timeoutId = window.setTimeout(() => {
       const trigger = () => prefetchModule();
-      if ("requestIdleCallback" in window) {
-        (window as any).requestIdleCallback?.(trigger);
+      if (hasRequestIdleCallback(window)) {
+        window.requestIdleCallback(trigger);
       } else {
         trigger();
       }
