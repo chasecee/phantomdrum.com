@@ -40,12 +40,14 @@ interface AnimatedPolyColumnProps {
   cameraFov?: number;
   className?: string;
   strokeWidth?: number;
+  labelRotation?: number;
 }
 
 export default function AnimatedPolyColumn(props: AnimatedPolyColumnProps) {
+  const { labelRotation = Math.PI / 2, ...rest } = props;
   return (
     <Suspense fallback={null}>
-      <AnimatedPolyColumnScene {...props} />
+      <AnimatedPolyColumnScene {...rest} labelRotation={labelRotation} />
     </Suspense>
   );
 }

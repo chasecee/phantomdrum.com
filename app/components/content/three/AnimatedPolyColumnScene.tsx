@@ -35,6 +35,7 @@ interface PolyColumnProps {
   edgeColor: string;
   textSize: number;
   strokeWidth: number;
+  labelRotation: number;
 }
 
 export interface AnimatedPolyColumnProps {
@@ -64,6 +65,7 @@ export interface AnimatedPolyColumnProps {
   cameraFov?: number;
   className?: string;
   strokeWidth?: number;
+  labelRotation?: number;
 }
 
 function SmoothColumnMotion({
@@ -104,6 +106,7 @@ const PolyColumn = memo(function PolyColumn({
   edgeColor,
   textSize,
   strokeWidth,
+  labelRotation,
 }: PolyColumnProps) {
   const segments = faceTexts.length;
   const geometry = useMemo(
@@ -158,19 +161,31 @@ const PolyColumn = memo(function PolyColumn({
           if (!slug || !text) return null;
           const labelAsset = labelAssets.get(slug);
           if (!labelAsset) return null;
-          const scale =
-            labelAsset.width > 0 && labelAsset.height > 0
-              ? Math.min(
-                  textMaxWidth / labelAsset.width,
-                  verticalAllowance / labelAsset.height
-                )
-              : 1;
+          const originalWidth = labelAsset.width;
+          const originalHeight = labelAsset.height;
+          const hasDimensions = originalWidth > 0 && originalHeight > 0;
+          const rotation = labelRotation;
+          const cos = Math.cos(rotation);
+          const sin = Math.sin(rotation);
+          const rotatedWidth = hasDimensions
+            ? Math.abs(originalWidth * cos) + Math.abs(originalHeight * sin)
+            : 0;
+          const rotatedHeight = hasDimensions
+            ? Math.abs(originalWidth * sin) + Math.abs(originalHeight * cos)
+            : 0;
+          const scale = hasDimensions
+            ? Math.min(
+                textMaxWidth / Math.max(rotatedWidth, Number.EPSILON),
+                verticalAllowance / Math.max(rotatedHeight, Number.EPSILON)
+              )
+            : 1;
           return (
             <group key={`${slug}-${index}`} rotation={[0, angle, 0]}>
               <mesh
                 geometry={labelAsset.geometry}
                 position={[0, 0, apothem + textOffset]}
                 scale={[scale, scale, 1]}
+                rotation={[0, 0, rotation]}
                 renderOrder={2}
               >
                 <meshBasicMaterial
@@ -210,6 +225,7 @@ export function AnimatedPolyColumnScene({
   cameraFov = 18,
   className,
   strokeWidth = 5,
+  labelRotation: incomingLabelRotation = 0,
 }: AnimatedPolyColumnProps) {
   const columnGroupRef = useRef<GroupRef["current"]>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -437,6 +453,7 @@ export function AnimatedPolyColumnScene({
           edgeColor={finalEdgeColor}
           textSize={textSize}
           strokeWidth={strokeWidth}
+          labelRotation={incomingLabelRotation}
         />
       </Canvas>
     </div>

@@ -2,6 +2,7 @@ import Quote from "../../art/Quote";
 import NatGeoLogo from "../../art/NatGeoLogo";
 import SiliconValleyLogo from "../../art/SiliconValleyLogo";
 import RoyalAcademyLogo from "../../art/RoyalAcademyLogo";
+import LuminaryAwardsLogo from "../../art/LuminaryAwardsLogo";
 
 const quotes = [
   { text: "It could be music!", logo: NatGeoLogo, opacity: "opacity-90" },
@@ -17,7 +18,7 @@ const quotes = [
   },
   {
     text: "Avant garde in the lightest sense of the word",
-    logo: RoyalAcademyLogo,
+    logo: LuminaryAwardsLogo,
     opacity: "opacity-60",
   },
 ] as const;
