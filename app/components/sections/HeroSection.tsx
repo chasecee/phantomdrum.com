@@ -12,17 +12,20 @@ const LOGO_TO = { scaleY: 1 } as const;
 
 const HERO_IMAGE_START = { anchor: 0, viewport: 0 } as const;
 const HERO_IMAGE_END = { anchor: 0.9, viewport: 0 } as const;
-const HERO_IMAGE_FROM = { scale: 1, translateYPercent: 100 } as const;
-const HERO_IMAGE_TO = { scale: 2.25, translateYPercent: 40 } as const;
+const HERO_IMAGE_FROM = { scale: 1, translateYPercent: 120 } as const;
+const HERO_IMAGE_TO = { scale: 1.5, translateYPercent: 50 } as const;
 
 export default function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div ref={containerRef} className="relative aspect-1/2 w-full">
+    <div
+      ref={containerRef}
+      className="relative aspect-1/2 w-full border-b-8 border-white"
+    >
       <div className="sticky top-6 z-10 mix-blend-difference px-6">
         <div
-          className="relative w-full aspect-887/449"
+          className="relative w-full aspect-887/488"
           style={{ overflow: "visible" }}
         >
           <ScrollTransform
