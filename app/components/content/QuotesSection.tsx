@@ -5,21 +5,21 @@ import RoyalAcademyLogo from "../../art/RoyalAcademyLogo";
 import LuminaryAwardsLogo from "../../art/LuminaryAwardsLogo";
 
 const quotes = [
-  { text: "It could be music!", logo: NatGeoLogo, opacity: "opacity-90" },
+  { text: "It could be music!", logo: NatGeoLogo, opacity: "opacity-100" },
   {
     text: "A robot could never replace our Son",
     logo: SiliconValleyLogo,
-    opacity: "opacity-80",
+    opacity: "opacity-100",
   },
   {
     text: "Bold, daring, devoid of life",
     logo: RoyalAcademyLogo,
-    opacity: "opacity-70",
+    opacity: "opacity-100",
   },
   {
     text: "Avant garde in the lightest sense of the word",
     logo: LuminaryAwardsLogo,
-    opacity: "opacity-60",
+    opacity: "opacity-100",
   },
 ] as const;
 

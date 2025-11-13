@@ -17,8 +17,7 @@ export default function ArtistBio() {
 
       <p>
         These songs are favorites from 2019-2025. This is the first release of{" "}
-        Phantom Drum. Initialization is what happens when a system boots for the
-        first time. Let&apos;s begin.
+        Phantom Drum. Let&apos;s begin.
       </p>
     </div>
   );

@@ -41,13 +41,25 @@ interface AnimatedPolyColumnProps {
   className?: string;
   strokeWidth?: number;
   labelRotation?: number;
+  fitVertical?: boolean;
+  verticalPadding?: number;
 }
 
 export default function AnimatedPolyColumn(props: AnimatedPolyColumnProps) {
-  const { labelRotation = Math.PI / 2, ...rest } = props;
+  const {
+    labelRotation = Math.PI / 2,
+    fitVertical = true,
+    verticalPadding = 0.06,
+    ...rest
+  } = props;
   return (
     <Suspense fallback={null}>
-      <AnimatedPolyColumnScene {...rest} labelRotation={labelRotation} />
+      <AnimatedPolyColumnScene
+        {...rest}
+        labelRotation={labelRotation}
+        fitVertical={fitVertical}
+        verticalPadding={verticalPadding}
+      />
     </Suspense>
   );
 }

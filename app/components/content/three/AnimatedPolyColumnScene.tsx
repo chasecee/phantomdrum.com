@@ -26,6 +26,7 @@ interface PolyColumnProps {
   groupRef: GroupRef;
   targetRotationRef: MutableRefObject<Rotation>;
   targetScaleRef: MutableRefObject<number>;
+  dragRotationRef: MutableRefObject<number>;
   labelAssets: Map<string, LabelGeometryAsset>;
   faceSlugs: Array<string | null>;
   faceTexts: string[];
@@ -36,6 +37,8 @@ interface PolyColumnProps {
   textSize: number;
   strokeWidth: number;
   labelRotation: number;
+  fitVertical: boolean;
+  verticalPadding: number;
 }
 
 export interface AnimatedPolyColumnProps {
@@ -66,24 +69,29 @@ export interface AnimatedPolyColumnProps {
   className?: string;
   strokeWidth?: number;
   labelRotation?: number;
+  fitVertical?: boolean;
+  verticalPadding?: number;
 }
 
 function SmoothColumnMotion({
   groupRef,
   targetRotationRef,
   targetScaleRef,
+  dragRotationRef,
 }: {
   groupRef: GroupRef;
   targetRotationRef: MutableRefObject<Rotation>;
   targetScaleRef: MutableRefObject<number>;
+  dragRotationRef: MutableRefObject<number>;
 }) {
   useFrame(() => {
     if (!groupRef.current) return;
     const g = groupRef.current;
     const targetRotation = targetRotationRef.current;
     const targetScale = targetScaleRef.current;
+    const dragRotation = dragRotationRef.current;
     g.rotation.x += (targetRotation.x - g.rotation.x) * 0.1;
-    g.rotation.y += (targetRotation.y - g.rotation.y) * 0.1;
+    g.rotation.y += (targetRotation.y + dragRotation - g.rotation.y) * 0.1;
     g.rotation.z += (targetRotation.z - g.rotation.z) * 0.1;
     const scaleDelta = (targetScale - g.scale.x) * 0.1;
     g.scale.x += scaleDelta;
@@ -97,6 +105,7 @@ const PolyColumn = memo(function PolyColumn({
   groupRef,
   targetRotationRef,
   targetScaleRef,
+  dragRotationRef,
   labelAssets,
   faceSlugs,
   faceTexts,
@@ -107,6 +116,8 @@ const PolyColumn = memo(function PolyColumn({
   textSize,
   strokeWidth,
   labelRotation,
+  fitVertical,
+  verticalPadding,
 }: PolyColumnProps) {
   const segments = faceTexts.length;
   const geometry = useMemo(
@@ -130,8 +141,11 @@ const PolyColumn = memo(function PolyColumn({
     () => 2 * apothem * Math.tan(Math.PI / segments),
     [apothem, segments]
   );
-  const textMaxWidth = faceWidth * 0.85;
-  const verticalAllowance = height * Math.max(0.25, Math.min(0.65, textSize));
+  const textMaxWidth = faceWidth * (fitVertical ? 0.95 : 0.85);
+  const resolvedPadding = Math.min(Math.max(verticalPadding, 0), 0.5);
+  const verticalAllowance = fitVertical
+    ? height * Math.max(0.1, 1 - resolvedPadding)
+    : height * Math.max(0.25, Math.min(0.65, textSize));
 
   return (
     <>
@@ -139,6 +153,7 @@ const PolyColumn = memo(function PolyColumn({
         groupRef={groupRef}
         targetRotationRef={targetRotationRef}
         targetScaleRef={targetScaleRef}
+        dragRotationRef={dragRotationRef}
       />
       <group ref={groupRef}>
         <mesh geometry={geometry} renderOrder={0}>
@@ -226,6 +241,8 @@ export function AnimatedPolyColumnScene({
   className,
   strokeWidth = 5,
   labelRotation: incomingLabelRotation = 0,
+  fitVertical = true,
+  verticalPadding = 0.06,
 }: AnimatedPolyColumnProps) {
   const columnGroupRef = useRef<GroupRef["current"]>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -239,6 +256,11 @@ export function AnimatedPolyColumnScene({
   });
   const targetScaleRef = useRef<number>(from?.scale ?? 1);
   const targetYPercentRef = useRef<number>(from?.yPercent ?? 0);
+  const dragRotationRef = useRef<number>(0);
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const dragStartRotationRef = useRef(0);
+  const isHorizontalDragRef = useRef(false);
 
   const finalRadius = radius ?? dynamicRadius;
   const finalHeight = height ?? dynamicHeight;
@@ -259,6 +281,7 @@ export function AnimatedPolyColumnScene({
     };
     targetScaleRef.current = from?.scale ?? 1;
     targetYPercentRef.current = from?.yPercent ?? 0;
+    dragRotationRef.current = 0;
     if (containerRef.current) {
       containerRef.current.style.transform = `translateY(${targetYPercentRef.current}%)`;
     }
@@ -268,6 +291,7 @@ export function AnimatedPolyColumnScene({
     from?.rotation?.z,
     from?.scale,
     from?.yPercent,
+    dragRotationRef,
   ]);
 
   useEffect(() => {
@@ -375,6 +399,98 @@ export function AnimatedPolyColumnScene({
     };
   }, [trigger, start, end, scrub, showMarkers, invalidateOnRefresh, from, to]);
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleStart = (clientX: number, clientY: number) => {
+      isDraggingRef.current = true;
+      dragStartRef.current = { x: clientX, y: clientY };
+      dragStartRotationRef.current = dragRotationRef.current;
+      isHorizontalDragRef.current = false;
+      container.style.cursor = "grabbing";
+    };
+
+    const handleMove = (clientX: number) => {
+      if (!isDraggingRef.current || !isHorizontalDragRef.current) return;
+      const width = container.offsetWidth || 1;
+      const rotationDelta =
+        ((clientX - dragStartRef.current.x) / width) * Math.PI * 2;
+      dragRotationRef.current = dragStartRotationRef.current + rotationDelta;
+    };
+
+    const handleEnd = () => {
+      isDraggingRef.current = false;
+      isHorizontalDragRef.current = false;
+      container.style.cursor = "grab";
+    };
+
+    const handleMouseDown = (event: MouseEvent) => {
+      handleStart(event.clientX, event.clientY);
+      isHorizontalDragRef.current = true;
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      handleMove(event.clientX);
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (event.touches.length === 1) {
+        handleStart(event.touches[0].clientX, event.touches[0].clientY);
+      }
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      if (!isDraggingRef.current || event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      const deltaX = Math.abs(touch.clientX - dragStartRef.current.x);
+      const deltaY = Math.abs(touch.clientY - dragStartRef.current.y);
+
+      if (!isHorizontalDragRef.current) {
+        if (deltaY > deltaX && deltaY > 15) {
+          handleEnd();
+          return;
+        }
+        if (deltaX > 5 || (deltaX > deltaY && deltaX > 3)) {
+          isHorizontalDragRef.current = true;
+          event.preventDefault();
+        } else {
+          return;
+        }
+      } else {
+        event.preventDefault();
+      }
+
+      handleMove(touch.clientX);
+    };
+
+    const handleTouchEnd = () => {
+      handleEnd();
+    };
+
+    container.style.cursor = "grab";
+    container.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleEnd);
+    container.addEventListener("touchstart", handleTouchStart, {
+      passive: false,
+    });
+    container.addEventListener("touchmove", handleTouchMove, {
+      passive: false,
+    });
+    container.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      container.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleEnd);
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchmove", handleTouchMove);
+      container.removeEventListener("touchend", handleTouchEnd);
+      container.style.cursor = "";
+    };
+  }, [dragRotationRef]);
+
   const faceTexts = useMemo(() => texts, [texts]);
 
   const faceSlugs = useMemo(
@@ -444,6 +560,7 @@ export function AnimatedPolyColumnScene({
           groupRef={columnGroupRef}
           targetRotationRef={targetRotationRef}
           targetScaleRef={targetScaleRef}
+          dragRotationRef={dragRotationRef}
           labelAssets={labelAssets}
           faceSlugs={faceSlugs}
           faceTexts={faceTexts}
@@ -454,6 +571,8 @@ export function AnimatedPolyColumnScene({
           textSize={textSize}
           strokeWidth={strokeWidth}
           labelRotation={incomingLabelRotation}
+          fitVertical={fitVertical}
+          verticalPadding={verticalPadding}
         />
       </Canvas>
     </div>
