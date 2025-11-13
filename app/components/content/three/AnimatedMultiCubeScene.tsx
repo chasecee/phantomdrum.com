@@ -181,6 +181,16 @@ const SingleTextCube = memo(function SingleTextCube({
     () => getBoxGeometry(cubeWidth, cubeHeight, cubeDepth),
     [cubeWidth, cubeHeight, cubeDepth]
   );
+  const edgeGeometry = useMemo(() => {
+    const clone = boxGeometry.clone();
+    clone.scale(1.0025, 1.0025, 1.0025);
+    return clone;
+  }, [boxGeometry]);
+  useEffect(() => {
+    return () => {
+      edgeGeometry.dispose();
+    };
+  }, [edgeGeometry]);
 
   return (
     <>
@@ -192,11 +202,17 @@ const SingleTextCube = memo(function SingleTextCube({
       />
       <group ref={groupRef}>
         <mesh renderOrder={0} geometry={boxGeometry}>
-          <meshBasicMaterial color={materialColor} depthWrite={true} />
+          <meshBasicMaterial
+            color={materialColor}
+            depthWrite={true}
+            polygonOffset
+            polygonOffsetFactor={1.5}
+            polygonOffsetUnits={1.5}
+          />
         </mesh>
         {fillMode === "outline" && (
           <Edges
-            geometry={boxGeometry}
+            geometry={edgeGeometry}
             color={color}
             lineWidth={strokeWidth}
             renderOrder={1}
@@ -277,6 +293,7 @@ const MultiCubeScene = memo(function MultiCubeScene({
       alpha: true,
       depth: true,
       stencil: false,
+      logarithmicDepthBuffer: true,
       powerPreference: "high-performance" as const,
     }),
     []
