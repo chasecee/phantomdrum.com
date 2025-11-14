@@ -7,7 +7,7 @@ export interface HalftoneEffectProps {
   children: ReactNode;
   dotRadius?: number;
   dotSpacing?: number;
-  angle?: number;
+  blur?: number;
   className?: string;
 }
 
@@ -15,29 +15,39 @@ export default function HalftoneEffect({
   children,
   dotRadius = 2,
   dotSpacing = 5,
-  angle = 45,
+  blur,
   className = "",
 }: HalftoneEffectProps) {
-  const maskSVG = useMemo(() => {
-    return createDiamondMaskSVG(dotRadius, dotSpacing, angle);
-  }, [dotRadius, dotSpacing, angle]);
+  const maskSVG = useMemo(
+    () => createDiamondMaskSVG(dotRadius, dotSpacing),
+    [dotRadius, dotSpacing]
+  );
 
-  const patternSize = Math.round(dotSpacing * 1.414213562 * 100) / 100;
+  const patternSize = useMemo(
+    () => Math.round(dotSpacing * 1.414213562 * 100) / 100,
+    [dotSpacing]
+  );
 
-  const maskStyles: React.CSSProperties & Record<string, string> = {
-    "--dot-radius": `${dotRadius}px`,
-    "--dot-spacing": `${dotSpacing}px`,
-    "--mask-angle": `${angle}deg`,
-    "--pattern-size": `${patternSize}px`,
-    WebkitMaskImage: `url("${maskSVG}")`,
-    maskImage: `url("${maskSVG}")`,
-    WebkitMaskSize: `${patternSize}px ${patternSize}px`,
-    maskSize: `${patternSize}px ${patternSize}px`,
-    WebkitMaskPosition: "center",
-    maskPosition: "center",
-    WebkitMaskRepeat: "repeat",
-    maskRepeat: "repeat",
-  };
+  const maskStyles = useMemo<React.CSSProperties & Record<string, string>>(
+    () => ({
+      "--dot-radius": `${dotRadius}px`,
+      "--dot-spacing": `${dotSpacing}px`,
+      "--pattern-size": `${patternSize}px`,
+      WebkitMaskImage: `url("${maskSVG}")`,
+      maskImage: `url("${maskSVG}")`,
+      WebkitMaskSize: `${patternSize}px ${patternSize}px`,
+      maskSize: `${patternSize}px ${patternSize}px`,
+      WebkitMaskPosition: "center",
+      maskPosition: "center",
+      WebkitMaskRepeat: "repeat",
+      maskRepeat: "repeat",
+      ...(blur !== undefined && {
+        filter: `blur(${blur}px)`,
+        WebkitFilter: `blur(${blur}px)`,
+      }),
+    }),
+    [dotRadius, dotSpacing, patternSize, maskSVG, blur]
+  );
 
   if (isValidElement(children)) {
     const childProps = children.props as {

@@ -3,6 +3,7 @@
 import CombinedLogo from "../svgs/CombinedLogo";
 import Image from "next/image";
 import styles from "./HeroSection.module.css";
+import HalftoneEffect from "../content/HalftoneEffect";
 
 export default function HeroSection() {
   return (
@@ -12,9 +13,13 @@ export default function HeroSection() {
           className="relative w-full aspect-887/488"
           style={{ overflow: "visible" }}
         >
-          <div className={`w-full h-full text-neutral-200 ${styles.heroLogo}`}>
-            <CombinedLogo className="w-full h-full" />
-          </div>
+          <HalftoneEffect blur={0} dotRadius={2} dotSpacing={4}>
+            <div
+              className={`w-full h-full text-neutral-300 ${styles.heroLogo}`}
+            >
+              <CombinedLogo className="w-full h-full" />
+            </div>
+          </HalftoneEffect>
         </div>
       </div>
 

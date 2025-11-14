@@ -1,9 +1,11 @@
 .heroLogo {
   transform-origin: top center;
+  transform: scaleY(2);
 }
 
 .heroImage {
   transform-origin: 50% 100%;
+  transform: translateY(110%) scale(1);
 }
 
 @supports (animation-timeline: view()) {

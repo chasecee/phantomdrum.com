@@ -11,6 +11,7 @@ import {
   PerspectiveCamera,
   Scene,
   SRGBColorSpace,
+  Vector2,
   Vector3,
   WebGLRenderer,
 } from "three";
@@ -332,12 +333,11 @@ const rebuildCubes = () => {
       const outlineColor = new Color(colorHex);
       const lineWidth = strokeWidth ?? 1;
       const resolution = state.dimensions
-        ? new Vector3(
+        ? new Vector2(
             state.dimensions.width * state.dimensions.dpr,
-            state.dimensions.height * state.dimensions.dpr,
-            1
+            state.dimensions.height * state.dimensions.dpr
           )
-        : new Vector3(1, 1, 1);
+        : new Vector2(1, 1);
       const outlineMaterial = new LineMaterial({
         color: outlineColor.getHex(),
         linewidth: lineWidth,

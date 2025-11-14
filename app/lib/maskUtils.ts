@@ -1,7 +1,6 @@
 export function createDiamondMaskSVG(
   dotRadius: number = 2,
-  dotSpacing: number = 6,
-  angle: number = 45
+  dotSpacing: number = 6
 ): string {
   const patternSize = dotSpacing * 1.414213562;
   const halfPattern = patternSize / 2;
