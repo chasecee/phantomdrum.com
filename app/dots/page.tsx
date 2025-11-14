@@ -12,15 +12,15 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-const START_RADIUS = 50;
+const START_RADIUS = 40;
 const END_RADIUS = 2;
 
-const START_OFFSET = START_RADIUS;
-const END_OFFSET = -5;
+const START_OFFSET = -170;
+const END_OFFSET = -2;
 
-const START_SPACING = START_RADIUS * 2.26;
+const START_SPACING = 120;
 const END_SPACING = END_RADIUS * 2;
-const SCROLL_START = "40% 80%";
+const SCROLL_START = "40% 100%";
 const SCROLL_END = "60% 0%";
 
 export default function RGBChannelHalftone() {
@@ -48,7 +48,7 @@ export default function RGBChannelHalftone() {
   if (!channels) return null;
 
   return (
-    <div ref={containerRef} className="min-h-[400vh] bg-black relative">
+    <div ref={containerRef} className="min-h-[600vh] bg-black relative">
       <div className="sticky top-0 h-svh w-full flex items-center justify-center">
         <div
           className="relative w-full h-full"

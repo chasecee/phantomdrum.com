@@ -60,6 +60,13 @@ export default function AnimatedHalftoneMask({
         "-webkit-mask-size",
         `${patternSize}px ${patternSize}px`
       );
+      maskRef.current.style.maskPosition = "center center";
+      maskRef.current.style.setProperty(
+        "-webkit-mask-position",
+        "center center"
+      );
+      maskRef.current.style.maskRepeat = "repeat";
+      maskRef.current.style.setProperty("-webkit-mask-repeat", "repeat");
     };
 
     updateMask(0);
