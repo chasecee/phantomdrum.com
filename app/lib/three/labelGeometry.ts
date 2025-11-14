@@ -2,7 +2,6 @@
 
 import { BufferAttribute, BufferGeometry, Float32BufferAttribute } from "three";
 import labelGeometries from "@/app/generated/labelGeometries";
-import buttonLabelGeometries from "@/app/generated/buttonLabelGeometries";
 
 type LabelGeometrySource = {
   positions: Float32Array;
@@ -19,13 +18,7 @@ export type LabelGeometryAsset = {
 };
 
 const cubeSources = labelGeometries as Record<string, LabelGeometrySource>;
-const buttonSources = buttonLabelGeometries as Record<
-  string,
-  LabelGeometrySource
->;
-
 const cubeCache = new Map<string, LabelGeometryAsset>();
-const buttonCache = new Map<string, LabelGeometryAsset>();
 
 function buildAsset(
   slug: string,
@@ -63,9 +56,5 @@ function buildAsset(
 
 export function getCubeLabelAsset(slug: string): LabelGeometryAsset | null {
   return buildAsset(slug, cubeSources, cubeCache);
-}
-
-export function getButtonLabelAsset(slug: string): LabelGeometryAsset | null {
-  return buildAsset(slug, buttonSources, buttonCache);
 }
 

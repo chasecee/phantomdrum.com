@@ -9,20 +9,20 @@ import { AnimatedPolyColumnScene } from "./components/content/three/AnimatedPoly
 import { RefObject, useRef } from "react";
 
 const POLY_COLUMN_TEXTS = [
-  "Drums",
-  "Synths",
-  "Samples",
+  "DRUMS",
+  "SYNTHS",
+  "SAMPLES",
   "FX",
-  "Loops",
-  "Textures",
-  "Atmos",
-  "Samplers",
-  "love Loops!",
-  "love Textures!",
-  "love Atmos!",
-  "love Loops!",
-  "love Textures!",
-  "love Atmos!",
+  "LOOPS",
+  "TEXTURES",
+  "ATMOS",
+  "SAMPLERS",
+  "LOVE LOOPS!",
+  "LOVE TEXTURES!",
+  "LOVE ATMOS!",
+  "LOVE LOOPS!",
+  "LOVE TEXTURES!",
+  "LOVE ATMOS!",
 ];
 
 export default function Home() {

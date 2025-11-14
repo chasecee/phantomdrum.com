@@ -7,17 +7,16 @@
     "ABSTRACT YET FAMILIAR",
     "CLASSIC SUNDAY DINNER",
     "BIG OL BEATS",
-    "Drums",
-    "Synths",
-    "Samples",
+    "DRUMS",
+    "SYNTHS",
+    "SAMPLES",
     "FX",
-    "Loops",
-    "Textures",
-    "Atmos",
-    "Samplers",
-    "love Loops!",
-    "love Textures!",
-    "love Atmos!"
-  ],
-  "buttonLabels": ["Spotify", "Apple Music"]
+    "LOOPS",
+    "TEXTURES",
+    "ATMOS",
+    "SAMPLERS",
+    "LOVE LOOPS!",
+    "LOVE TEXTURES!",
+    "LOVE ATMOS!"
+  ]
 }

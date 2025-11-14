@@ -22,21 +22,10 @@ export const cubeLabels: CubeLabel[] = rawConfig.cubeLabels.map(
   })
 );
 
-export const buttonLabels: CubeLabel[] = (rawConfig.buttonLabels ?? []).map(
-  (text: string) => ({
-    text,
-    slug: slugify(text),
-  })
-);
-
 export const cubeLabelSlugify = (text: string) => slugify(text);
 
 export const cubeLabelSlugMap = new Map<string, string>(
   cubeLabels.map((label) => [label.text, label.slug])
-);
-
-export const buttonLabelSlugMap = new Map<string, string>(
-  buttonLabels.map((label) => [label.text, label.slug])
 );
 
 export default cubeLabels;
