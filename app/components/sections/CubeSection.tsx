@@ -16,7 +16,10 @@ export default function CubeSection() {
   const multiCubeContainerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <HalftoneEffect>
+    <HalftoneEffect
+      dotRadius={{ sm: 1, md: 2, lg: 2 }}
+      dotSpacing={{ sm: 2, md: 5, lg: 5 }}
+    >
       <div
         ref={multiCubeContainerRef}
         className="aspect-square my-[20vw] w-full relative"
@@ -39,7 +42,7 @@ export default function CubeSection() {
           staggerDelay={0.1}
           fillMode="outline"
           strokeWidth={10}
-          showMarkers={true}
+          showMarkers={false}
           matchTextColor={true}
         />
       </div>

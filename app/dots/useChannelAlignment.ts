@@ -34,12 +34,18 @@ export function useChannelAlignment(
     };
 
     const ctx = gsap.context(() => {
+      const redStart = -startOffset;
+      const redEnd = -endOffset;
+      const greenStart = startOffset * 0.5;
+      const greenEnd = endOffset * 0.5;
+      const blueStart = startOffset;
+      const blueEnd = endOffset;
+
       gsap.fromTo(
         refs.red.current,
-        { x: -startOffset, y: -startOffset },
+        { y: redStart },
         {
-          x: -endOffset,
-          y: -endOffset,
+          y: redEnd,
           ease: "none",
           scrollTrigger: scrollTriggerConfig,
         }
@@ -47,10 +53,9 @@ export function useChannelAlignment(
 
       gsap.fromTo(
         refs.green.current,
-        { x: 0, y: startOffset },
+        { y: greenStart },
         {
-          x: 0,
-          y: endOffset,
+          y: greenEnd,
           ease: "none",
           scrollTrigger: scrollTriggerConfig,
         }
@@ -58,10 +63,9 @@ export function useChannelAlignment(
 
       gsap.fromTo(
         refs.blue.current,
-        { x: startOffset, y: startOffset },
+        { y: blueStart },
         {
-          x: endOffset,
-          y: endOffset,
+          y: blueEnd,
           ease: "none",
           scrollTrigger: scrollTriggerConfig,
         }

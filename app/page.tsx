@@ -1,6 +1,6 @@
 "use client";
 
-import HeroSection from "./components/sections/HeroSection";
+import HeroSectionText from "./components/sections/HeroSectionText";
 import CubeSection from "./components/sections/CubeSection";
 import QuotesSection from "./components/content/QuotesSection";
 import ArtistBio from "./components/content/ArtistBio";
@@ -38,7 +38,7 @@ export default function Home() {
         containerType: "inline-size",
       }}
     >
-      <HeroSection />
+      <HeroSectionText />
       <div className="mix-blend-difference">
         <CubeSection />
       </div>

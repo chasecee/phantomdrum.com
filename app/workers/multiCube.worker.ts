@@ -159,7 +159,7 @@ const clearCubes = () => {
 
 const ensureRenderer = (canvas: OffscreenCanvas, dimensions: Dimensions) => {
   if (state.renderer) return;
-  state.dimensions = dimensions;
+  state.dimensions = { ...dimensions };
   const renderer = new WebGLRenderer({
     canvas,
     antialias: true,
@@ -198,7 +198,16 @@ const ensureRenderer = (canvas: OffscreenCanvas, dimensions: Dimensions) => {
 
 const handleResize = (dimensions: Dimensions) => {
   if (!state.renderer || !state.camera || !state.composer) return;
-  state.dimensions = dimensions;
+  const current = state.dimensions;
+  if (
+    current &&
+    current.width === dimensions.width &&
+    current.height === dimensions.height &&
+    current.dpr === dimensions.dpr
+  ) {
+    return;
+  }
+  state.dimensions = { ...dimensions };
   const aspect =
     dimensions.height > 0 ? dimensions.width / dimensions.height : 1;
   state.renderer.setPixelRatio(dimensions.dpr);

@@ -61,6 +61,7 @@ export interface AnimatedMultiCubeProps {
 }
 
 const clamp01 = (value: number) => Math.min(Math.max(value, 0), 1);
+const TOUCH_DRAG_THRESHOLD_PX = 18;
 
 export function AnimatedMultiCubeScene({
   texts,
@@ -102,8 +103,19 @@ export function AnimatedMultiCubeScene({
   const dragStartRotationsRef = useRef<number[]>([]);
   const draggedCubeIndexRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
+  const pendingTouchDragRef = useRef<{
+    cubeIndex: number;
+    startX: number;
+    startY: number;
+  } | null>(null);
+  const activeTouchIdRef = useRef<number | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const dprRef = useRef<number>(1);
+  const canvasDimensionsRef = useRef({
+    width: 0,
+    height: 0,
+    dpr: 1,
+  });
 
   const fromRotationX = useMemo(
     () => from?.rotation?.x ?? 0,
@@ -258,11 +270,19 @@ export function AnimatedMultiCubeScene({
     let initResizeObserver: ResizeObserver | null = null;
     let cleanupFn: (() => void) | null = null;
 
-    const initWorker = () => {
+    const measureCanvasSize = () => {
       const rect = canvas.getBoundingClientRect();
-      const width = rect.width || canvas.clientWidth || 0;
-      const height = rect.height || canvas.clientHeight || 0;
-      if (width === 0 || height === 0) return;
+      const width = canvas.clientWidth || Math.round(rect.width);
+      const height = canvas.clientHeight || Math.round(rect.height);
+      return {
+        width: Number.isFinite(width) ? width : 0,
+        height: Number.isFinite(height) ? height : 0,
+      };
+    };
+
+    const initWorker = () => {
+      const { width, height } = measureCanvasSize();
+      if (width < 2 || height < 2) return;
 
       if (transferredCanvasRef.current === canvas) return;
       transferredCanvasRef.current = canvas;
@@ -290,29 +310,42 @@ export function AnimatedMultiCubeScene({
         },
         [offscreen]
       );
+      canvasDimensionsRef.current = { width, height, dpr: dprRef.current };
       workerInitializedRef.current = true;
       sendTargetsRef.current?.();
       let resizeTimeout: number | null = null;
       const handleResize = () => {
         if (resizeTimeout !== null) return;
         resizeTimeout = requestAnimationFrame(() => {
+          resizeTimeout = null;
           if (!workerRef.current) {
-            resizeTimeout = null;
             return;
           }
-          const nextWidth = canvas.clientWidth || 1;
-          const nextHeight = canvas.clientHeight || 1;
-          const currentDpr = Math.min(window.devicePixelRatio ?? 1, 1.25);
-          if (currentDpr !== dprRef.current) {
-            dprRef.current = currentDpr;
+          const { width: measuredWidth, height: measuredHeight } =
+            measureCanvasSize();
+          if (measuredWidth < 2 || measuredHeight < 2) {
+            return;
           }
+          const currentDpr = Math.min(window.devicePixelRatio ?? 1, 1.25);
+          const previous = canvasDimensionsRef.current;
+          const widthChanged = measuredWidth !== previous.width;
+          const heightChanged = measuredHeight !== previous.height;
+          const dprChanged = Math.abs(currentDpr - previous.dpr) > 0.001;
+          if (!widthChanged && !heightChanged && !dprChanged) {
+            return;
+          }
+          dprRef.current = currentDpr;
+          canvasDimensionsRef.current = {
+            width: measuredWidth,
+            height: measuredHeight,
+            dpr: dprRef.current,
+          };
           workerRef.current.postMessage({
             type: "resize",
-            width: nextWidth,
-            height: nextHeight,
+            width: measuredWidth,
+            height: measuredHeight,
             dpr: dprRef.current,
           });
-          resizeTimeout = null;
         });
       };
       const resizeObserver = new ResizeObserver(handleResize);
@@ -353,6 +386,7 @@ export function AnimatedMultiCubeScene({
       workerInitializedRef.current = false;
       transferredCanvasRef.current = null;
       resizeObserverRef.current = null;
+      canvasDimensionsRef.current = { width: 0, height: 0, dpr: 1 };
       if (throttledSendTargetsRef.current !== null) {
         cancelAnimationFrame(throttledSendTargetsRef.current);
         throttledSendTargetsRef.current = null;
@@ -451,21 +485,23 @@ export function AnimatedMultiCubeScene({
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    const handleStart = (clientX: number, clientY: number) => {
-      const cubeIndex = getCubeIndexFromY(clientY, container);
-      if (cubeIndex === null) return;
+
+    const beginDrag = (cubeIndex: number, startX: number) => {
+      if (isDraggingRef.current) return;
       isDraggingRef.current = true;
       draggedCubeIndexRef.current = cubeIndex;
-      dragStartXRef.current = clientX;
+      dragStartXRef.current = startX;
       if (dragRotationsRef.current.length !== texts.length) {
         dragRotationsRef.current = Array(texts.length).fill(0);
       }
       dragStartRotationsRef.current = dragRotationsRef.current.slice();
       container.style.cursor = "grabbing";
     };
-    const handleMove = (clientX: number) => {
-      if (!isDraggingRef.current || draggedCubeIndexRef.current === null)
+
+    const updateDrag = (clientX: number) => {
+      if (!isDraggingRef.current || draggedCubeIndexRef.current === null) {
         return;
+      }
       const width = container.offsetWidth || 1;
       const delta = ((clientX - dragStartXRef.current) / width) * Math.PI * 2;
       const cubeIndex = draggedCubeIndexRef.current;
@@ -473,48 +509,132 @@ export function AnimatedMultiCubeScene({
       dragRotationsRef.current[cubeIndex] = startRotation + delta;
       throttledSendTargets();
     };
-    const handleEnd = () => {
+
+    const endDrag = () => {
+      if (!isDraggingRef.current) {
+        return;
+      }
       isDraggingRef.current = false;
       draggedCubeIndexRef.current = null;
       container.style.cursor = "grab";
     };
+
+    const resetTouchTracking = () => {
+      pendingTouchDragRef.current = null;
+      activeTouchIdRef.current = null;
+    };
+
+    const findTouch = (touches: TouchList, id: number | null) => {
+      if (id === null) return null;
+      for (let index = 0; index < touches.length; index += 1) {
+        const touch = touches.item(index);
+        if (touch && touch.identifier === id) {
+          return touch;
+        }
+      }
+      return null;
+    };
+
     const handleMouseDown = (event: MouseEvent) => {
-      handleStart(event.clientX, event.clientY);
+      const cubeIndex = getCubeIndexFromY(event.clientY, container);
+      if (cubeIndex === null) return;
+      beginDrag(cubeIndex, event.clientX);
     };
+
     const handleMouseMove = (event: MouseEvent) => {
-      handleMove(event.clientX);
+      updateDrag(event.clientX);
     };
+
+    const handleMouseUp = () => {
+      endDrag();
+    };
+
     const handleTouchStart = (event: TouchEvent) => {
-      if (event.touches.length !== 1) return;
-      handleStart(event.touches[0].clientX, event.touches[0].clientY);
+      if (event.touches.length !== 1 || activeTouchIdRef.current !== null) {
+        return;
+      }
+      const touch = event.touches[0];
+      const cubeIndex = getCubeIndexFromY(touch.clientY, container);
+      if (cubeIndex === null) {
+        resetTouchTracking();
+        return;
+      }
+      activeTouchIdRef.current = touch.identifier;
+      pendingTouchDragRef.current = {
+        cubeIndex,
+        startX: touch.clientX,
+        startY: touch.clientY,
+      };
     };
+
     const handleTouchMove = (event: TouchEvent) => {
-      if (!isDraggingRef.current || event.touches.length !== 1) return;
+      const touch = findTouch(event.touches, activeTouchIdRef.current);
+      if (!touch) return;
+
+      if (!isDraggingRef.current) {
+        const pending = pendingTouchDragRef.current;
+        if (!pending) return;
+        const deltaX = touch.clientX - pending.startX;
+        const deltaY = touch.clientY - pending.startY;
+        if (
+          Math.abs(deltaX) >= TOUCH_DRAG_THRESHOLD_PX &&
+          Math.abs(deltaX) > Math.abs(deltaY)
+        ) {
+          beginDrag(pending.cubeIndex, touch.clientX);
+          pendingTouchDragRef.current = null;
+        } else if (Math.abs(deltaY) > Math.abs(deltaX)) {
+          resetTouchTracking();
+          return;
+        } else {
+          return;
+        }
+      }
+
       event.preventDefault();
-      handleMove(event.touches[0].clientX);
+      updateDrag(touch.clientX);
     };
-    const handleTouchEnd = () => {
-      handleEnd();
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      const ended = findTouch(event.changedTouches, activeTouchIdRef.current);
+      if (!ended) return;
+      resetTouchTracking();
+      if (isDraggingRef.current) {
+        endDrag();
+      }
     };
+
+    const handleTouchCancel = (event: TouchEvent) => {
+      const cancelled = findTouch(event.changedTouches, activeTouchIdRef.current);
+      if (!cancelled) return;
+      resetTouchTracking();
+      if (isDraggingRef.current) {
+        endDrag();
+      }
+    };
+
     container.style.cursor = "grab";
     container.addEventListener("mousedown", handleMouseDown);
     window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleEnd);
-    container.addEventListener("touchstart", handleTouchStart, {
-      passive: false,
-    });
+    window.addEventListener("mouseup", handleMouseUp);
+    container.addEventListener("touchstart", handleTouchStart);
     container.addEventListener("touchmove", handleTouchMove, {
       passive: false,
     });
     container.addEventListener("touchend", handleTouchEnd);
+    container.addEventListener("touchcancel", handleTouchCancel);
+
     return () => {
       container.removeEventListener("mousedown", handleMouseDown);
       window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleEnd);
+      window.removeEventListener("mouseup", handleMouseUp);
       container.removeEventListener("touchstart", handleTouchStart);
       container.removeEventListener("touchmove", handleTouchMove);
       container.removeEventListener("touchend", handleTouchEnd);
+      container.removeEventListener("touchcancel", handleTouchCancel);
       container.style.cursor = "";
+      resetTouchTracking();
+      isDraggingRef.current = false;
+      draggedCubeIndexRef.current = null;
     };
   }, [getCubeIndexFromY, texts.length, throttledSendTargets]);
 

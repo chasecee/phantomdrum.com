@@ -17,6 +17,20 @@ export interface AnimatedHalftoneMaskProps {
   className?: string;
 }
 
+const HALFTONE_MASK_IMAGE = [
+  "radial-gradient(circle, #000 0, #000 var(--dot-radius), transparent var(--dot-radius), transparent 100%)",
+  "radial-gradient(circle, #000 0, #000 var(--dot-radius), transparent var(--dot-radius), transparent 100%)",
+].join(", ");
+
+const HALFTONE_MASK_POSITIONS =
+  "calc(50% - var(--pattern-size) / 2) calc(50% - var(--pattern-size) / 2), 50% 50%";
+const HALFTONE_MASK_SIZES =
+  "var(--pattern-size) var(--pattern-size), var(--pattern-size) var(--pattern-size)";
+const MASK_REPEAT = "repeat, repeat";
+const SQRT_TWO = Math.SQRT2;
+const RADIUS_EPSILON = 0.5;
+const SIZE_EPSILON = 0.5;
+
 export default function AnimatedHalftoneMask({
   children,
   containerRef,
@@ -31,15 +45,25 @@ export default function AnimatedHalftoneMask({
   className = "",
 }: AnimatedHalftoneMaskProps) {
   const maskRef = useRef<HTMLDivElement>(null);
+  const lastMaskValuesRef = useRef<{ radius: number; patternSize: number }>();
 
   useEffect(() => {
     if (!maskRef.current || !containerRef.current) return;
-
-    const createMaskSVG = (radius: number, spacing: number): string => {
-      const patternSize = spacing * 1.414213562;
-      const halfPattern = patternSize / 2;
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg"><defs><pattern id="dots" x="0" y="0" width="${patternSize}" height="${patternSize}" patternUnits="userSpaceOnUse"><circle cx="${halfPattern}" cy="0" r="${radius}" fill="black"/><circle cx="0" cy="${halfPattern}" r="${radius}" fill="black"/><circle cx="${patternSize}" cy="${halfPattern}" r="${radius}" fill="black"/><circle cx="${halfPattern}" cy="${patternSize}" r="${radius}" fill="black"/></pattern></defs><rect width="100%" height="100%" fill="url(#dots)"/></svg>`;
-      return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    const element = maskRef.current;
+    const applyBaseMaskStyles = () => {
+      element.style.setProperty("--dot-radius", `${startRadius}px`);
+      element.style.setProperty(
+        "--pattern-size",
+        `${startSpacing * SQRT_TWO}px`
+      );
+      element.style.maskImage = HALFTONE_MASK_IMAGE;
+      element.style.webkitMaskImage = HALFTONE_MASK_IMAGE;
+      element.style.maskSize = HALFTONE_MASK_SIZES;
+      element.style.webkitMaskSize = HALFTONE_MASK_SIZES;
+      element.style.maskPosition = HALFTONE_MASK_POSITIONS;
+      element.style.webkitMaskPosition = HALFTONE_MASK_POSITIONS;
+      element.style.maskRepeat = MASK_REPEAT;
+      element.style.webkitMaskRepeat = MASK_REPEAT;
     };
 
     const updateMask = (progress: number) => {
@@ -48,29 +72,28 @@ export default function AnimatedHalftoneMask({
       const radius = startRadius + (endRadius - startRadius) * clampedProgress;
       const spacing =
         startSpacing + (endSpacing - startSpacing) * clampedProgress;
-      const maskUrl = createMaskSVG(radius, spacing);
-      const patternSize = spacing * 1.414213562;
-      maskRef.current.style.maskImage = `url("${maskUrl}")`;
-      maskRef.current.style.setProperty(
-        "-webkit-mask-image",
-        `url("${maskUrl}")`
-      );
-      maskRef.current.style.maskSize = `${patternSize}px ${patternSize}px`;
-      maskRef.current.style.setProperty(
-        "-webkit-mask-size",
-        `${patternSize}px ${patternSize}px`
-      );
-      maskRef.current.style.maskPosition = "center center";
-      maskRef.current.style.setProperty(
-        "-webkit-mask-position",
-        "center center"
-      );
-      maskRef.current.style.maskRepeat = "repeat";
-      maskRef.current.style.setProperty("-webkit-mask-repeat", "repeat");
+      const patternSize = spacing * SQRT_TWO;
+      const last = lastMaskValuesRef.current;
+      if (last) {
+        if (
+          Math.abs(radius - last.radius) < RADIUS_EPSILON &&
+          Math.abs(patternSize - last.patternSize) < SIZE_EPSILON
+        ) {
+          return;
+        }
+      }
+      lastMaskValuesRef.current = { radius, patternSize };
+      maskRef.current.style.setProperty("--dot-radius", `${radius}px`);
+      maskRef.current.style.setProperty("--pattern-size", `${patternSize}px`);
     };
 
-    updateMask(0);
+    const forceMaskUpdate = () => {
+      lastMaskValuesRef.current = undefined;
+      updateMask(0);
+    };
 
+    applyBaseMaskStyles();
+    forceMaskUpdate();
     const ctx = gsap.context(() => {
       const scrollTrigger = {
         trigger: containerRef.current,
@@ -82,13 +105,14 @@ export default function AnimatedHalftoneMask({
           updateMask(self.progress);
         },
         onEnter: () => {
-          updateMask(0);
+          forceMaskUpdate();
         },
         onLeave: () => {
+          lastMaskValuesRef.current = undefined;
           updateMask(1);
         },
         onLeaveBack: () => {
-          updateMask(0);
+          forceMaskUpdate();
         },
       };
 

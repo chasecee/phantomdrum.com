@@ -2,12 +2,15 @@
 
 import { useMemo, ReactNode, cloneElement, isValidElement } from "react";
 import { createDiamondMaskSVG } from "../../lib/maskUtils";
+import { useBreakpoint, getResponsiveValue } from "../../lib/useBreakpoint";
+
+type ResponsiveValue<T> = T | Partial<Record<"sm" | "md" | "lg" | "xl" | "2xl", T>>;
 
 export interface HalftoneEffectProps {
   children: ReactNode;
-  dotRadius?: number;
-  dotSpacing?: number;
-  blur?: number;
+  dotRadius?: ResponsiveValue<number>;
+  dotSpacing?: ResponsiveValue<number>;
+  blur?: ResponsiveValue<number>;
   className?: string;
 }
 
@@ -18,20 +21,37 @@ export default function HalftoneEffect({
   blur,
   className = "",
 }: HalftoneEffectProps) {
+  const breakpoint = useBreakpoint();
+
+  const resolvedDotRadius = useMemo(
+    () => getResponsiveValue(dotRadius, breakpoint),
+    [dotRadius, breakpoint]
+  );
+
+  const resolvedDotSpacing = useMemo(
+    () => getResponsiveValue(dotSpacing, breakpoint),
+    [dotSpacing, breakpoint]
+  );
+
+  const resolvedBlur = useMemo(
+    () => (blur !== undefined ? getResponsiveValue(blur, breakpoint) : undefined),
+    [blur, breakpoint]
+  );
+
   const maskSVG = useMemo(
-    () => createDiamondMaskSVG(dotRadius, dotSpacing),
-    [dotRadius, dotSpacing]
+    () => createDiamondMaskSVG(resolvedDotRadius, resolvedDotSpacing),
+    [resolvedDotRadius, resolvedDotSpacing]
   );
 
   const patternSize = useMemo(
-    () => Math.round(dotSpacing * 1.414213562 * 100) / 100,
-    [dotSpacing]
+    () => Math.round(resolvedDotSpacing * 1.414213562 * 100) / 100,
+    [resolvedDotSpacing]
   );
 
   const maskStyles = useMemo<React.CSSProperties & Record<string, string>>(
     () => ({
-      "--dot-radius": `${dotRadius}px`,
-      "--dot-spacing": `${dotSpacing}px`,
+      "--dot-radius": `${resolvedDotRadius}px`,
+      "--dot-spacing": `${resolvedDotSpacing}px`,
       "--pattern-size": `${patternSize}px`,
       WebkitMaskImage: `url("${maskSVG}")`,
       maskImage: `url("${maskSVG}")`,
@@ -41,12 +61,12 @@ export default function HalftoneEffect({
       maskPosition: "center",
       WebkitMaskRepeat: "repeat",
       maskRepeat: "repeat",
-      ...(blur !== undefined && {
-        filter: `blur(${blur}px)`,
-        WebkitFilter: `blur(${blur}px)`,
+      ...(resolvedBlur !== undefined && {
+        filter: `blur(${resolvedBlur}px)`,
+        WebkitFilter: `blur(${resolvedBlur}px)`,
       }),
     }),
-    [dotRadius, dotSpacing, patternSize, maskSVG, blur]
+    [resolvedDotRadius, resolvedDotSpacing, patternSize, maskSVG, resolvedBlur]
   );
 
   if (isValidElement(children)) {
