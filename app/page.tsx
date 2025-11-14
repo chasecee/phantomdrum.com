@@ -1,15 +1,33 @@
 "use client";
 
 import HeroSection from "./components/sections/HeroSection";
-import CubeSection from "./components/sections/CubeSectionLazy";
+import CubeSection from "./components/sections/CubeSection";
 import QuotesSection from "./components/content/QuotesSection";
 import ArtistBio from "./components/content/ArtistBio";
-import ListenSection from "./components/content/ListenSectionLazy";
-import AnimatedPolyColumnLazy from "./components/content/AnimatedPolyColumnLazy";
+import ListenSection from "./components/content/ListenSection";
+import { AnimatedPolyColumnScene } from "./components/content/three/AnimatedPolyColumnScene";
 import { RefObject, useRef } from "react";
+
+const POLY_COLUMN_TEXTS = [
+  "Drums",
+  "Synths",
+  "Samples",
+  "FX",
+  "Loops",
+  "Textures",
+  "Atmos",
+  "Samplers",
+  "love Loops!",
+  "love Textures!",
+  "love Atmos!",
+  "love Loops!",
+  "love Textures!",
+  "love Atmos!",
+];
 
 export default function Home() {
   const polyColumnSectionRef = useRef<HTMLElement>(null);
+
   return (
     <div
       className="w-full max-w-[1500px] mx-auto body-container"
@@ -21,7 +39,9 @@ export default function Home() {
       }}
     >
       <HeroSection />
-      <CubeSection />
+      <div className="mix-blend-difference">
+        <CubeSection />
+      </div>
       <QuotesSection />
       <ListenSection />
       <ArtistBio />
@@ -29,30 +49,15 @@ export default function Home() {
         ref={polyColumnSectionRef}
         className="aspect-square w-full relative flex items-center justify-center"
       >
-        <AnimatedPolyColumnLazy
-          texts={[
-            "Drums",
-            "Synths",
-            "Samples",
-            "FX",
-            "Loops",
-            "Textures",
-            "Atmos",
-            "Samplers",
-            "love Loops!",
-            "love Textures!",
-            "love Atmos!",
-            "love Loops!",
-            "love Textures!",
-            "love Atmos!",
-          ]}
+        <AnimatedPolyColumnScene
+          texts={POLY_COLUMN_TEXTS}
           trigger={polyColumnSectionRef as RefObject<HTMLElement>}
           start="top bottom"
           end="bottom top"
           scrub={1}
           from={{ rotation: { x: 0, y: 0, z: 0 }, scale: 1 }}
           to={{
-            rotation: { x: 0, y: Math.PI * 3, z: 0 },
+            rotation: { x: 0, y: Math.PI * 2.9, z: 0 },
             scale: 1,
           }}
           radius={4}

@@ -1,50 +1,15 @@
 "use client";
 
-import {
-  useRef,
-  useEffect,
-  useState,
-  RefObject,
-  useMemo,
-  memo,
-  useCallback,
-  MutableRefObject,
-} from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Edges } from "@react-three/drei";
-import { EffectComposer, DotScreen } from "@react-three/postprocessing";
-import { DoubleSide } from "three";
-import { cubeLabelSlugMap, cubeLabelSlugify } from "@/config/cubeLabels";
+import { useRef, useEffect, RefObject, useMemo, useCallback } from "react";
 import { getScrollTrigger } from "@/app/lib/gsap";
-import { getBoxGeometry } from "@/app/lib/three/geometryCache";
-import {
-  getCubeLabelAsset,
-  type LabelGeometryAsset,
-} from "@/app/lib/three/labelGeometry";
-import type { GroupRef, Rotation } from "./types";
+import type { Rotation } from "./types";
 
-interface SingleTextCubeProps {
-  groupRef: GroupRef;
-  targetRotationRef: MutableRefObject<Rotation>;
-  targetScaleRef: MutableRefObject<number>;
-  labelAsset?: LabelGeometryAsset;
-  size: number;
-  heightRatio: number;
-  widthRatio: number;
-  color: string;
-  textColor: string;
-  textSize: number;
-  maxWidth?: number;
-  dragRotationRef: MutableRefObject<number>;
-  fillMode?: "fill" | "outline";
-  strokeWidth?: number;
-  matchTextColor?: boolean;
-}
+const DEFAULT_COLORS = ["#A85A90", "#C82A2A", "#C84A2D", "#E67E22", "#F1C40F"];
+const DEFAULT_TEXT_COLOR = "#C4A070";
 
-interface MultiCubeSceneProps {
-  groupRefs: GroupRef[];
-  targetRotationRefs: Array<MutableRefObject<Rotation>>;
-  targetScaleRef: MutableRefObject<number>;
+type FillMode = "fill" | "outline";
+
+type WorkerConfig = {
   texts: string[];
   size: number;
   heightRatio: number;
@@ -54,13 +19,12 @@ interface MultiCubeSceneProps {
   textSize: number;
   cameraPosition: [number, number, number];
   cameraFov: number;
-  maxWidth?: number;
+  maxWidth: number | null;
   spacing: number;
-  dragRotationRefs: Array<MutableRefObject<number>>;
-  fillMode?: "fill" | "outline";
-  strokeWidth?: number;
-  matchTextColor?: boolean;
-}
+  fillMode: FillMode;
+  strokeWidth: number | null;
+  matchTextColor: boolean;
+};
 
 export interface AnimatedMultiCubeProps {
   texts: string[];
@@ -69,292 +33,34 @@ export interface AnimatedMultiCubeProps {
   end: string;
   scrub?: number | boolean;
   from?: {
-    rotation?: { x?: number; y?: number; z?: number };
+    rotation?: Rotation;
     scale?: number;
-    yPercent?: number;
   };
-  to: {
-    rotation: { x: number; y: number; z: number };
+  to?: {
+    rotation?: Rotation;
     scale?: number;
-    yPercent?: number;
   };
   showMarkers?: boolean;
   invalidateOnRefresh?: boolean;
+  className?: string;
   size?: number;
   heightRatio?: number;
   widthRatio?: number;
+  spacing?: number;
   colors?: string[];
   textColor?: string;
   textSize?: number;
   cameraPosition?: [number, number, number];
   cameraFov?: number;
-  className?: string;
-  maxWidth?: number;
-  spacing?: number;
+  maxWidth?: number | null;
+  fillMode?: FillMode;
+  strokeWidth?: number | null;
+  matchTextColor?: boolean;
   stagger?: boolean;
   staggerDelay?: number;
-  fillMode?: "fill" | "outline";
-  strokeWidth?: number;
-  matchTextColor?: boolean;
 }
 
-function SmoothRotation({
-  groupRef,
-  targetRotationRef,
-  targetScaleRef,
-  dragRotationRef,
-}: {
-  groupRef: GroupRef;
-  targetRotationRef: MutableRefObject<Rotation>;
-  targetScaleRef: MutableRefObject<number>;
-  dragRotationRef: MutableRefObject<number>;
-}) {
-  useFrame(() => {
-    if (!groupRef.current) return;
-    const g = groupRef.current;
-    const targetRotation = targetRotationRef.current;
-    const targetScale = targetScaleRef.current;
-    const dragRotation = dragRotationRef.current;
-    g.rotation.x += (targetRotation.x - g.rotation.x) * 0.1;
-    g.rotation.y += (targetRotation.y + dragRotation - g.rotation.y) * 0.1;
-    g.rotation.z += (targetRotation.z - g.rotation.z) * 0.1;
-    const scaleDelta = (targetScale - g.scale.x) * 0.1;
-    g.scale.x += scaleDelta;
-    g.scale.y += scaleDelta;
-    g.scale.z += scaleDelta;
-  });
-  return null;
-}
-
-const SingleTextCube = memo(function SingleTextCube({
-  groupRef,
-  targetRotationRef,
-  targetScaleRef,
-  labelAsset,
-  size,
-  heightRatio,
-  widthRatio,
-  color,
-  textColor,
-  textSize,
-  maxWidth,
-  dragRotationRef,
-  fillMode,
-  strokeWidth,
-  matchTextColor,
-}: SingleTextCubeProps) {
-  const cubeHeight = size * heightRatio;
-  const cubeWidth = size * widthRatio;
-  const cubeDepth = size * widthRatio;
-  const textMaxWidth = maxWidth ?? cubeWidth * 0.85;
-  const verticalAllowance =
-    cubeHeight * Math.min(0.9, Math.max(0.35, textSize + 0.4));
-  const textOffset = size * 0.01;
-  const labelScale =
-    labelAsset && labelAsset.width > 0 && labelAsset.height > 0
-      ? Math.min(
-          textMaxWidth / labelAsset.width,
-          verticalAllowance / labelAsset.height
-        )
-      : 1;
-  const textFaces: Array<{
-    pos: [number, number, number];
-    rot: [number, number, number];
-  }> = [
-    { pos: [0, 0, cubeDepth / 2 + textOffset], rot: [0, 0, 0] },
-    {
-      pos: [cubeWidth / 2 + textOffset, 0, 0],
-      rot: [0, Math.PI / 2, 0],
-    },
-    {
-      pos: [0, 0, -cubeDepth / 2 - textOffset],
-      rot: [0, Math.PI, 0],
-    },
-    {
-      pos: [-cubeWidth / 2 - textOffset, 0, 0],
-      rot: [0, -Math.PI / 2, 0],
-    },
-  ];
-  const materialColor = fillMode === "outline" ? "black" : color;
-  const finalTextColor = matchTextColor ? color : textColor;
-  const boxGeometry = useMemo(
-    () => getBoxGeometry(cubeWidth, cubeHeight, cubeDepth),
-    [cubeWidth, cubeHeight, cubeDepth]
-  );
-  const edgeGeometry = useMemo(() => {
-    const clone = boxGeometry.clone();
-    clone.scale(1.0025, 1.0025, 1.0025);
-    return clone;
-  }, [boxGeometry]);
-  useEffect(() => {
-    return () => {
-      edgeGeometry.dispose();
-    };
-  }, [edgeGeometry]);
-
-  return (
-    <>
-      <SmoothRotation
-        groupRef={groupRef}
-        targetRotationRef={targetRotationRef}
-        targetScaleRef={targetScaleRef}
-        dragRotationRef={dragRotationRef}
-      />
-      <group ref={groupRef}>
-        <mesh renderOrder={0} geometry={boxGeometry}>
-          <meshBasicMaterial
-            color={materialColor}
-            depthWrite={true}
-            polygonOffset
-            polygonOffsetFactor={1.5}
-            polygonOffsetUnits={1.5}
-          />
-        </mesh>
-        {fillMode === "outline" && (
-          <Edges
-            geometry={edgeGeometry}
-            color={color}
-            lineWidth={strokeWidth}
-            renderOrder={1}
-            depthTest={true}
-            depthWrite={false}
-            polygonOffset={true}
-            polygonOffsetFactor={-1}
-            polygonOffsetUnits={-1}
-          />
-        )}
-        {textFaces.map((face, index) =>
-          labelAsset ? (
-            <mesh
-              key={index}
-              geometry={labelAsset.geometry}
-              position={face.pos}
-              rotation={face.rot}
-              scale={[labelScale, labelScale, 1]}
-              renderOrder={2}
-            >
-              <meshBasicMaterial
-                color={finalTextColor}
-                depthWrite={false}
-                polygonOffset
-                polygonOffsetFactor={-0.5}
-                polygonOffsetUnits={-0.5}
-                toneMapped={false}
-                side={DoubleSide}
-              />
-            </mesh>
-          ) : null
-        )}
-      </group>
-    </>
-  );
-});
-
-const MultiCubeScene = memo(function MultiCubeScene({
-  groupRefs,
-  targetRotationRefs,
-  targetScaleRef,
-  texts,
-  size,
-  heightRatio,
-  widthRatio,
-  colors,
-  textColor,
-  textSize,
-  cameraPosition,
-  cameraFov,
-  maxWidth,
-  spacing,
-  dragRotationRefs,
-  fillMode,
-  strokeWidth,
-  matchTextColor,
-}: MultiCubeSceneProps) {
-  const cubeHeight = size * heightRatio;
-  const relativeSpacing = spacing * cubeHeight;
-  const startY =
-    (texts.length * cubeHeight + (texts.length - 1) * relativeSpacing) / 2 -
-    cubeHeight / 2;
-  const cubePositions = useMemo(
-    () =>
-      Array.from({ length: texts.length }, (_, index) => ({
-        y: startY - index * (cubeHeight + relativeSpacing),
-        z: index * 0.05,
-      })),
-    [texts.length, startY, cubeHeight, relativeSpacing]
-  );
-  const cameraConfig = useMemo(
-    () => ({ position: cameraPosition, fov: cameraFov }),
-    [cameraPosition, cameraFov]
-  );
-  const glConfig = useMemo(
-    () => ({
-      antialias: true,
-      alpha: true,
-      depth: true,
-      stencil: false,
-      logarithmicDepthBuffer: true,
-      powerPreference: "high-performance" as const,
-    }),
-    []
-  );
-  const labelSlugs = useMemo(
-    () =>
-      texts.map((text) => cubeLabelSlugMap.get(text) ?? cubeLabelSlugify(text)),
-    [texts]
-  );
-  const uniqueSlugs = useMemo(
-    () => Array.from(new Set(labelSlugs)),
-    [labelSlugs]
-  );
-  const labelAssets = useMemo(() => {
-    const map = new Map<string, LabelGeometryAsset>();
-    uniqueSlugs.forEach((slug) => {
-      const asset = getCubeLabelAsset(slug);
-      if (asset) {
-        map.set(slug, asset);
-      }
-    });
-    return map;
-  }, [uniqueSlugs]);
-
-  return (
-    <Canvas camera={cameraConfig} gl={glConfig} dpr={[1, 1.5]}>
-      <EffectComposer>
-        <DotScreen angle={Math.PI / 12} scale={1.1} />
-      </EffectComposer>
-      {texts.map((text, index) => {
-        const pos = cubePositions[index];
-        const labelSlug = labelSlugs[index];
-        const labelAsset = labelAssets.get(labelSlug);
-        const groupKey = labelSlug ?? `${index}-${text}`;
-        const rotationRef = targetRotationRefs[index] ?? targetRotationRefs[0];
-        const dragRotationRef = dragRotationRefs[index] ?? dragRotationRefs[0];
-        return (
-          <group key={groupKey} position={[0, pos.y, pos.z]}>
-            <SingleTextCube
-              groupRef={groupRefs[index]}
-              targetRotationRef={rotationRef}
-              targetScaleRef={targetScaleRef}
-              labelAsset={labelAsset}
-              size={size}
-              heightRatio={heightRatio}
-              widthRatio={widthRatio}
-              color={colors[index % colors.length]}
-              textColor={textColor}
-              textSize={textSize}
-              maxWidth={maxWidth}
-              dragRotationRef={dragRotationRef}
-              fillMode={fillMode}
-              strokeWidth={strokeWidth}
-              matchTextColor={matchTextColor}
-            />
-          </group>
-        );
-      })}
-    </Canvas>
-  );
-});
+const clamp01 = (value: number) => Math.min(Math.max(value, 0), 1);
 
 export function AnimatedMultiCubeScene({
   texts,
@@ -366,131 +72,305 @@ export function AnimatedMultiCubeScene({
   to,
   showMarkers = false,
   invalidateOnRefresh = true,
-  size,
-  heightRatio = 0.3,
-  widthRatio = 2,
-  colors = [],
-  textColor = "white",
-  textSize = 0.4,
-  cameraPosition = [0, 0, 20],
-  cameraFov = 10,
   className,
-  maxWidth,
+  size = 3,
+  heightRatio = 0.18,
+  widthRatio = 1.1,
   spacing = 0.1,
-  stagger = false,
-  staggerDelay = 0.1,
+  colors = DEFAULT_COLORS,
+  textColor = DEFAULT_TEXT_COLOR,
+  textSize = 0.6,
+  cameraPosition = [0, 0, 14],
+  cameraFov = 18,
+  maxWidth = null,
   fillMode = "fill",
-  strokeWidth,
-  matchTextColor,
+  strokeWidth = null,
+  matchTextColor = false,
+  stagger = false,
+  staggerDelay = 0.12,
 }: AnimatedMultiCubeProps) {
-  const groupRefs = useMemo<GroupRef[]>(
-    () => Array.from({ length: texts.length }, () => ({ current: null })),
-    [texts.length]
-  );
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dynamicSize, setDynamicSize] = useState(2);
-  const resizeObserverRef = useRef<ResizeObserver | null>(null);
-  const finalSize = size ?? dynamicSize;
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const workerRef = useRef<Worker | null>(null);
+  const workerInitializedRef = useRef(false);
+  const transferredCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const workerConfigRef = useRef<WorkerConfig | null>(null);
+  const targetRotationsRef = useRef<Rotation[]>([]);
+  const dragRotationsRef = useRef<number[]>([]);
   const targetScaleRef = useRef<number>(from?.scale ?? 1);
-  const targetYPercentRef = useRef<number>(from?.yPercent ?? 0);
-  const targetRotationRefs = useMemo(
-    () =>
-      Array.from({ length: texts.length }, () => ({
-        current: {
-          x: from?.rotation?.x ?? 0,
-          y: from?.rotation?.y ?? 0,
-          z: from?.rotation?.z ?? 0,
-        },
-      })),
-    [texts.length, from?.rotation?.x, from?.rotation?.y, from?.rotation?.z]
-  );
-  const dragRotationRefs = useMemo(
-    () => Array.from({ length: texts.length }, () => ({ current: 0 })),
-    [texts.length]
-  );
-  const isDraggingRef = useRef(false);
-  const dragStartRef = useRef({ x: 0, y: 0 });
+  const dragStartXRef = useRef(0);
   const dragStartRotationsRef = useRef<number[]>([]);
-  const draggedCubeIndexRef = useRef(-1);
-  const isHorizontalDragRef = useRef(false);
+  const draggedCubeIndexRef = useRef<number | null>(null);
+  const isDraggingRef = useRef(false);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const dprRef = useRef<number>(1);
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-    containerRef.current.style.transform = `translateY(${targetYPercentRef.current}%)`;
+  const faceTexts = useMemo(() => texts, [texts]);
+  const colorPalette = useMemo(() => colors, [colors]);
+
+  const fromRotationX = from?.rotation?.x ?? 0;
+  const fromRotationY = from?.rotation?.y ?? 0;
+  const fromRotationZ = from?.rotation?.z ?? 0;
+  const toRotationX = to?.rotation?.x ?? fromRotationX;
+  const toRotationY = to?.rotation?.y ?? fromRotationY + Math.PI * 2;
+  const toRotationZ = to?.rotation?.z ?? fromRotationZ;
+  const fromScale = from?.scale ?? 1;
+  const toScale = to?.scale ?? fromScale;
+
+  const workerConfig = useMemo<WorkerConfig>(
+    () => ({
+      texts: faceTexts,
+      size,
+      heightRatio,
+      widthRatio,
+      colors: colorPalette,
+      textColor,
+      textSize,
+      cameraPosition,
+      cameraFov,
+      maxWidth: maxWidth ?? null,
+      spacing,
+      fillMode,
+      strokeWidth: strokeWidth ?? null,
+      matchTextColor,
+    }),
+    [
+      faceTexts,
+      size,
+      heightRatio,
+      widthRatio,
+      colorPalette,
+      textColor,
+      textSize,
+      cameraPosition,
+      cameraFov,
+      maxWidth,
+      spacing,
+      fillMode,
+      strokeWidth,
+      matchTextColor,
+    ]
+  );
+
+  const getCubeIndexFromY = useCallback(
+    (clientY: number, container: HTMLElement): number | null => {
+      const rect = container.getBoundingClientRect();
+      const relativeY = clientY - rect.top;
+      const normalizedY = relativeY / rect.height;
+      const cubeHeight = size * heightRatio;
+      const spacingUnits = spacing * cubeHeight;
+      const totalHeight =
+        faceTexts.length * cubeHeight +
+        Math.max(faceTexts.length - 1, 0) * spacingUnits;
+      const startY = totalHeight / 2 - cubeHeight / 2;
+      const worldY = (1 - normalizedY) * totalHeight - totalHeight / 2;
+      for (let i = 0; i < faceTexts.length; i++) {
+        const cubeY = startY - i * (cubeHeight + spacingUnits);
+        const halfHeight = cubeHeight / 2;
+        if (worldY >= cubeY - halfHeight && worldY <= cubeY + halfHeight) {
+          return i;
+        }
+      }
+      return null;
+    },
+    [faceTexts.length, size, heightRatio, spacing]
+  );
+
+  const sendTargetsRef = useRef<() => void>();
+  sendTargetsRef.current = () => {
+    const worker = workerRef.current;
+    if (!worker || !workerInitializedRef.current) return;
+    const rotationsPayload = targetRotationsRef.current.map((rotation) => ({
+      x: rotation.x,
+      y: rotation.y,
+      z: rotation.z,
+    }));
+    const dragPayload =
+      dragRotationsRef.current.length === rotationsPayload.length
+        ? dragRotationsRef.current.slice()
+        : Array(rotationsPayload.length).fill(0);
+    worker.postMessage({
+      type: "targets",
+      rotations: rotationsPayload,
+      dragRotations: dragPayload,
+      scale: targetScaleRef.current,
+    });
+  };
+
+  const sendTargets = useCallback(() => {
+    sendTargetsRef.current?.();
+  }, []);
+
+  const throttledSendTargetsRef = useRef<number | null>(null);
+  const throttledSendTargets = useCallback(() => {
+    if (throttledSendTargetsRef.current !== null) return;
+    throttledSendTargetsRef.current = requestAnimationFrame(() => {
+      sendTargetsRef.current?.();
+      throttledSendTargetsRef.current = null;
+    });
   }, []);
 
   useEffect(() => {
-    targetScaleRef.current = from?.scale ?? 1;
-    targetYPercentRef.current = from?.yPercent ?? 0;
-    targetRotationRefs.forEach((ref) => {
-      ref.current.x = from?.rotation?.x ?? 0;
-      ref.current.y = from?.rotation?.y ?? 0;
-      ref.current.z = from?.rotation?.z ?? 0;
-    });
-    dragRotationRefs.forEach((ref) => {
-      ref.current = 0;
-    });
-    if (containerRef.current) {
-      containerRef.current.style.transform = `translateY(${targetYPercentRef.current}%)`;
-    }
+    workerConfigRef.current = workerConfig;
+  }, [workerConfig]);
+
+  useEffect(() => {
+    targetRotationsRef.current = faceTexts.map(() => ({
+      x: fromRotationX,
+      y: fromRotationY,
+      z: fromRotationZ,
+    }));
+    dragRotationsRef.current = Array(faceTexts.length).fill(0);
+    targetScaleRef.current = fromScale;
+    sendTargetsRef.current?.();
   }, [
-    from?.rotation?.x,
-    from?.rotation?.y,
-    from?.rotation?.z,
-    from?.scale,
-    from?.yPercent,
-    targetRotationRefs,
-    dragRotationRefs,
+    faceTexts,
+    fromRotationX,
+    fromRotationY,
+    fromRotationZ,
+    fromScale,
   ]);
 
   useEffect(() => {
-    if (size !== undefined) {
-      resizeObserverRef.current?.disconnect();
-      resizeObserverRef.current = null;
-      return;
-    }
-    const updateSize = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const minDim = Math.min(rect.width, rect.height);
-      if (minDim > 0) setDynamicSize(Math.max(minDim * 0.4, 1));
+    if (!workerInitializedRef.current || !workerRef.current) return;
+    workerRef.current.postMessage({
+      type: "config",
+      config: workerConfig,
+    });
+    sendTargetsRef.current?.();
+  }, [workerConfig]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    if (transferredCanvasRef.current === canvas) return;
+    if (!workerConfig) return;
+
+    let initResizeObserver: ResizeObserver | null = null;
+    let cleanupFn: (() => void) | null = null;
+
+    const initWorker = () => {
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width || canvas.clientWidth || 0;
+      const height = rect.height || canvas.clientHeight || 0;
+      if (width === 0 || height === 0) return;
+
+      if (transferredCanvasRef.current === canvas) return;
+      transferredCanvasRef.current = canvas;
+      const worker = new Worker(
+        new URL("../../../workers/multiCube.worker.ts", import.meta.url),
+        { type: "module" }
+      );
+      workerRef.current = worker;
+      let offscreen: OffscreenCanvas;
+      try {
+        offscreen = canvas.transferControlToOffscreen();
+      } catch {
+        transferredCanvasRef.current = null;
+        worker.terminate();
+        workerRef.current = null;
+        return;
+      }
+      dprRef.current = Math.min(window.devicePixelRatio ?? 1, 1.25);
+      worker.postMessage(
+        {
+          type: "init",
+          canvas: offscreen,
+          config: workerConfig,
+          dimensions: { width, height, dpr: dprRef.current },
+        },
+        [offscreen]
+      );
+      workerInitializedRef.current = true;
+      sendTargetsRef.current?.();
+      let resizeTimeout: number | null = null;
+      const handleResize = () => {
+        if (resizeTimeout !== null) return;
+        resizeTimeout = requestAnimationFrame(() => {
+          if (!workerRef.current) {
+            resizeTimeout = null;
+            return;
+          }
+          const nextWidth = canvas.clientWidth || 1;
+          const nextHeight = canvas.clientHeight || 1;
+          const currentDpr = Math.min(window.devicePixelRatio ?? 1, 1.25);
+          if (currentDpr !== dprRef.current) {
+            dprRef.current = currentDpr;
+          }
+          workerRef.current.postMessage({
+            type: "resize",
+            width: nextWidth,
+            height: nextHeight,
+            dpr: dprRef.current,
+          });
+          resizeTimeout = null;
+        });
+      };
+      const resizeObserver = new ResizeObserver(handleResize);
+      resizeObserver.observe(canvas);
+      resizeObserverRef.current = resizeObserver;
+      window.addEventListener("resize", handleResize, { passive: true });
+      cleanupFn = () => {
+        window.removeEventListener("resize", handleResize);
+        resizeObserver.disconnect();
+        if (resizeTimeout !== null) {
+          cancelAnimationFrame(resizeTimeout);
+        }
+      };
     };
-    updateSize();
-    resizeObserverRef.current = new ResizeObserver(updateSize);
-    if (containerRef.current)
-      resizeObserverRef.current.observe(containerRef.current);
+
+    initResizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (
+        entry &&
+        entry.contentRect.width > 0 &&
+        entry.contentRect.height > 0
+      ) {
+        initWorker();
+        initResizeObserver?.disconnect();
+      }
+    });
+    initResizeObserver.observe(canvas);
+    initWorker();
+
     return () => {
-      resizeObserverRef.current?.disconnect();
+      initResizeObserver?.disconnect();
+      cleanupFn?.();
+      if (workerRef.current) {
+        workerRef.current.postMessage({ type: "dispose" });
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+      workerInitializedRef.current = false;
+      transferredCanvasRef.current = null;
       resizeObserverRef.current = null;
+      if (throttledSendTargetsRef.current !== null) {
+        cancelAnimationFrame(throttledSendTargetsRef.current);
+        throttledSendTargetsRef.current = null;
+      }
     };
-  }, [size]);
+  }, [workerConfig]);
 
   useEffect(() => {
     if (
       typeof window === "undefined" ||
       !containerRef.current ||
       !trigger?.current
-    )
+    ) {
       return;
-
-    let masterScrollTrigger: ReturnType<
+    }
+    let scrollTrigger: ReturnType<
       typeof import("gsap/ScrollTrigger").ScrollTrigger.create
     > | null = null;
-    let isActive = true;
-
-    const initScrollTrigger = async () => {
-      if (!isActive) return;
-
+    let active = true;
+    const init = async () => {
+      if (!active) return;
       const ScrollTrigger = await getScrollTrigger();
-
-      if (!isActive || !containerRef.current || !trigger?.current) return;
-
-      const fromRotation = from?.rotation ?? { x: 0, y: 0, z: 0 };
-      const fromScale = from?.scale ?? 1;
-      const fromYPercent = from?.yPercent ?? 0;
-      const totalStaggerDelay = stagger ? (texts.length - 1) * staggerDelay : 0;
-
-      masterScrollTrigger = ScrollTrigger.create({
+      if (!active || !trigger?.current || !containerRef.current) return;
+      const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+      const staggerOffset = stagger ? Math.max(staggerDelay, 0) : 0;
+      scrollTrigger = ScrollTrigger.create({
         trigger: trigger.current,
         start,
         end,
@@ -499,54 +379,43 @@ export function AnimatedMultiCubeScene({
         markers: showMarkers,
         onUpdate: (self) => {
           const progress = self.progress;
-          targetYPercentRef.current =
-            fromYPercent +
-            ((to.yPercent ?? fromYPercent) - fromYPercent) * progress;
-          if (containerRef.current) {
-            containerRef.current.style.transform = `translateY(${targetYPercentRef.current}%)`;
-          }
-
-          for (let index = 0; index < texts.length; index++) {
-            const offset = stagger ? index * staggerDelay : 0;
-            const prog = stagger
-              ? Math.max(
-                  0,
-                  Math.min(1, (progress - offset) / (1 - totalStaggerDelay))
-                )
-              : progress;
-
-            const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-            const rotX =
-              lerp(fromRotation.x ?? 0, to.rotation.x ?? 0, prog) ?? 0;
-            const rotY =
-              lerp(fromRotation.y ?? 0, to.rotation.y ?? 0, prog) ?? 0;
-            const rotZ =
-              lerp(fromRotation.z ?? 0, to.rotation.z ?? 0, prog) ?? 0;
-            const scale = lerp(fromScale, to.scale ?? 1, prog);
-
-            const rotationRef = targetRotationRefs[index];
-            if (rotationRef) {
-              rotationRef.current.x = rotX;
-              rotationRef.current.y = rotY;
-              rotationRef.current.z = rotZ;
+          targetScaleRef.current = lerp(fromScale, toScale, progress);
+          const totalCount = faceTexts.length;
+          for (let index = 0; index < totalCount; index += 1) {
+            let offsetProgress: number;
+            if (stagger) {
+              const startProgress = index * staggerOffset;
+              const endProgress = 1.0;
+              const progressRange = endProgress - startProgress;
+              if (progressRange > 0) {
+                offsetProgress = clamp01((progress - startProgress) / progressRange);
+              } else {
+                offsetProgress = progress >= startProgress ? 1.0 : 0.0;
+              }
+            } else {
+              offsetProgress = progress;
             }
-            if (index === 0) {
-              targetScaleRef.current = scale;
+            const rotation = targetRotationsRef.current[index];
+            if (!rotation) {
+              targetRotationsRef.current[index] = {
+                x: lerp(fromRotationX, toRotationX, offsetProgress),
+                y: lerp(fromRotationY, toRotationY, offsetProgress),
+                z: lerp(fromRotationZ, toRotationZ, offsetProgress),
+              };
+            } else {
+              rotation.x = lerp(fromRotationX, toRotationX, offsetProgress);
+              rotation.y = lerp(fromRotationY, toRotationY, offsetProgress);
+              rotation.z = lerp(fromRotationZ, toRotationZ, offsetProgress);
             }
           }
+          throttledSendTargets();
         },
       });
     };
-
-    if (typeof requestIdleCallback !== "undefined") {
-      requestIdleCallback(() => initScrollTrigger(), { timeout: 2000 });
-    } else {
-      setTimeout(() => initScrollTrigger(), 100);
-    }
-
+    init();
     return () => {
-      isActive = false;
-      masterScrollTrigger?.kill();
+      active = false;
+      scrollTrigger?.kill();
     };
   }, [
     trigger,
@@ -555,108 +424,71 @@ export function AnimatedMultiCubeScene({
     scrub,
     showMarkers,
     invalidateOnRefresh,
-    from,
-    to,
-    texts.length,
+    fromRotationX,
+    fromRotationY,
+    fromRotationZ,
+    toRotationX,
+    toRotationY,
+    toRotationZ,
+    fromScale,
+    toScale,
+    faceTexts.length,
     stagger,
     staggerDelay,
-    targetRotationRefs,
+    throttledSendTargets,
   ]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-
     const container = containerRef.current;
-
-    const getCubeIndexFromY = (clientY: number): number => {
-      const rect = container.getBoundingClientRect();
-      const normalizedY = (clientY - rect.top) / rect.height;
-      return Math.max(
-        0,
-        Math.min(texts.length - 1, Math.floor(normalizedY * texts.length))
-      );
-    };
-
+    if (!container) return;
     const handleStart = (clientX: number, clientY: number) => {
+      const cubeIndex = getCubeIndexFromY(clientY, container);
+      if (cubeIndex === null) return;
       isDraggingRef.current = true;
-      dragStartRef.current = { x: clientX, y: clientY };
-      draggedCubeIndexRef.current = getCubeIndexFromY(clientY);
-      dragStartRotationsRef.current = dragRotationRefs.map(
-        (ref) => ref.current
-      );
-      isHorizontalDragRef.current = false;
+      draggedCubeIndexRef.current = cubeIndex;
+      dragStartXRef.current = clientX;
+      if (dragRotationsRef.current.length !== faceTexts.length) {
+        dragRotationsRef.current = Array(faceTexts.length).fill(0);
+      }
+      if (dragStartRotationsRef.current.length !== faceTexts.length) {
+        dragStartRotationsRef.current = dragRotationsRef.current.slice();
+      } else {
+        dragStartRotationsRef.current = dragRotationsRef.current.slice();
+      }
       container.style.cursor = "grabbing";
     };
-
     const handleMove = (clientX: number) => {
-      if (!isDraggingRef.current || draggedCubeIndexRef.current === -1) return;
-      if (!isHorizontalDragRef.current) return;
-
-      const rotationDelta =
-        ((clientX - dragStartRef.current.x) / container.offsetWidth) *
-        Math.PI *
-        2;
+      if (!isDraggingRef.current || draggedCubeIndexRef.current === null) return;
+      const width = container.offsetWidth || 1;
+      const delta = ((clientX - dragStartXRef.current) / width) * Math.PI * 2;
       const cubeIndex = draggedCubeIndexRef.current;
-      const next =
-        (dragStartRotationsRef.current[cubeIndex] ?? 0) + rotationDelta;
-      const rotationRef = dragRotationRefs[cubeIndex];
-      if (rotationRef) {
-        rotationRef.current = next;
-      }
+      const startRotation = dragStartRotationsRef.current[cubeIndex] ?? 0;
+      dragRotationsRef.current[cubeIndex] = startRotation + delta;
+      throttledSendTargets();
     };
-
     const handleEnd = () => {
       isDraggingRef.current = false;
-      draggedCubeIndexRef.current = -1;
-      isHorizontalDragRef.current = false;
+      draggedCubeIndexRef.current = null;
       container.style.cursor = "grab";
     };
-
     const handleMouseDown = (event: MouseEvent) => {
       handleStart(event.clientX, event.clientY);
-      isHorizontalDragRef.current = true;
     };
-    const handleMouseMove = (event: MouseEvent) => handleMove(event.clientX);
-
+    const handleMouseMove = (event: MouseEvent) => {
+      handleMove(event.clientX);
+    };
     const handleTouchStart = (event: TouchEvent) => {
-      if (event.touches.length === 1) {
-        handleStart(event.touches[0].clientX, event.touches[0].clientY);
-      }
+      if (event.touches.length !== 1) return;
+      handleStart(event.touches[0].clientX, event.touches[0].clientY);
     };
-
     const handleTouchMove = (event: TouchEvent) => {
-      if (
-        !isDraggingRef.current ||
-        event.touches.length !== 1 ||
-        draggedCubeIndexRef.current === -1
-      )
-        return;
-
-      const deltaX = Math.abs(
-        event.touches[0].clientX - dragStartRef.current.x
-      );
-      const deltaY = Math.abs(
-        event.touches[0].clientY - dragStartRef.current.y
-      );
-
-      if (!isHorizontalDragRef.current) {
-        if (deltaY > deltaX && deltaY > 15) {
-          handleEnd();
-          return;
-        }
-        if (deltaX > 5 || (deltaX > deltaY && deltaX > 3)) {
-          isHorizontalDragRef.current = true;
-          event.preventDefault();
-        } else {
-          return;
-        }
-      } else {
-        event.preventDefault();
-      }
-
+      if (!isDraggingRef.current || event.touches.length !== 1) return;
+      event.preventDefault();
       handleMove(event.touches[0].clientX);
     };
-
+    const handleTouchEnd = () => {
+      handleEnd();
+    };
     container.style.cursor = "grab";
     container.addEventListener("mousedown", handleMouseDown);
     window.addEventListener("mousemove", handleMouseMove);
@@ -667,106 +499,36 @@ export function AnimatedMultiCubeScene({
     container.addEventListener("touchmove", handleTouchMove, {
       passive: false,
     });
-    container.addEventListener("touchend", handleEnd);
-
+    container.addEventListener("touchend", handleTouchEnd);
     return () => {
       container.removeEventListener("mousedown", handleMouseDown);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleEnd);
       container.removeEventListener("touchstart", handleTouchStart);
       container.removeEventListener("touchmove", handleTouchMove);
-      container.removeEventListener("touchend", handleEnd);
+      container.removeEventListener("touchend", handleTouchEnd);
+      container.style.cursor = "";
     };
-  }, [texts.length, dragRotationRefs]);
-
-  const defaultColors = useMemo(
-    () => ["#C4A070", "#B88B70", "#C85A3D", "#A85A5A"],
-    []
-  );
-  const initialTranslateY = from?.yPercent ?? 0;
-
-  const interpolateColor = useCallback(
-    (color1: string, color2: string, t: number): string => {
-      const parseHex = (hex: string) =>
-        [hex.slice(1, 3), hex.slice(3, 5), hex.slice(5, 7)].map((value) =>
-          parseInt(value, 16)
-        );
-      const [r1, g1, b1] = parseHex(color1);
-      const [r2, g2, b2] = parseHex(color2);
-      const [r, g, b] = [
-        r1 + (r2 - r1) * t,
-        g1 + (g2 - g1) * t,
-        b1 + (b2 - b1) * t,
-      ].map((value) => Math.round(value).toString(16).padStart(2, "0"));
-      return `#${r}${g}${b}`;
-    },
-    []
-  );
-
-  const generateGradientColors = useCallback(
-    (count: number): string[] => {
-      if (count <= defaultColors.length) return defaultColors.slice(0, count);
-      const gradientColors = [...defaultColors];
-      const steps = count - defaultColors.length;
-      for (let index = 0; index < steps; index++) {
-        const t = (index + 1) / (steps + 1);
-        gradientColors.push(
-          interpolateColor(
-            gradientColors[gradientColors.length - 1],
-            "#8B5AAB",
-            t
-          )
-        );
-      }
-      return gradientColors.reverse();
-    },
-    [defaultColors, interpolateColor]
-  );
-
-  const cubeColors = useMemo(
-    () =>
-      colors.length >= texts.length
-        ? colors.slice(0, texts.length)
-        : generateGradientColors(texts.length),
-    [colors, texts.length, generateGradientColors]
-  );
+  }, [getCubeIndexFromY, faceTexts.length, sendTargets]);
 
   return (
     <div
       ref={containerRef}
       className={className}
-      style={{
-        transform: `translateY(${initialTranslateY}%)`,
-      }}
       role="region"
-      aria-label="Animated text cubes"
+      aria-label="Animated cubes"
     >
       <div className="sr-only" aria-live="polite">
         <ul>
-          {texts.map((text, index) => (
+          {faceTexts.map((text, index) => (
             <li key={index}>{text}</li>
           ))}
         </ul>
       </div>
-      <MultiCubeScene
-        groupRefs={groupRefs}
-        targetRotationRefs={targetRotationRefs}
-        targetScaleRef={targetScaleRef}
-        texts={texts}
-        size={finalSize}
-        heightRatio={heightRatio}
-        widthRatio={widthRatio}
-        colors={cubeColors}
-        textColor={textColor}
-        textSize={textSize}
-        cameraPosition={cameraPosition}
-        cameraFov={cameraFov}
-        maxWidth={maxWidth}
-        spacing={spacing}
-        dragRotationRefs={dragRotationRefs}
-        fillMode={fillMode}
-        strokeWidth={strokeWidth}
-        matchTextColor={matchTextColor}
+      <canvas
+        ref={canvasRef}
+        style={{ width: "100%", height: "100%", display: "block" }}
+        aria-hidden="true"
       />
     </div>
   );

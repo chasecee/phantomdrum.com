@@ -6,40 +6,10 @@ import {
   useState,
   RefObject,
   useMemo,
-  memo,
-  MutableRefObject,
+  useCallback,
 } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Edges } from "@react-three/drei";
-import { EffectComposer, DotScreen } from "@react-three/postprocessing";
-import { DoubleSide } from "three";
-import { cubeLabelSlugMap, cubeLabelSlugify } from "@/config/cubeLabels";
 import { getScrollTrigger } from "@/app/lib/gsap";
-import { getCylinderGeometry } from "@/app/lib/three/geometryCache";
-import {
-  getCubeLabelAsset,
-  type LabelGeometryAsset,
-} from "@/app/lib/three/labelGeometry";
-import type { GroupRef, Rotation } from "./types";
-
-interface PolyColumnProps {
-  groupRef: GroupRef;
-  targetRotationRef: MutableRefObject<Rotation>;
-  targetScaleRef: MutableRefObject<number>;
-  dragRotationRef: MutableRefObject<number>;
-  labelAssets: Map<string, LabelGeometryAsset>;
-  faceSlugs: Array<string | null>;
-  faceTexts: string[];
-  radius: number;
-  height: number;
-  bodyColor: string;
-  edgeColor: string;
-  textSize: number;
-  strokeWidth: number;
-  labelRotation: number;
-  fitVertical: boolean;
-  verticalPadding: number;
-}
+import type { Rotation } from "./types";
 
 export interface AnimatedPolyColumnProps {
   texts: string[];
@@ -73,153 +43,20 @@ export interface AnimatedPolyColumnProps {
   verticalPadding?: number;
 }
 
-function SmoothColumnMotion({
-  groupRef,
-  targetRotationRef,
-  targetScaleRef,
-  dragRotationRef,
-}: {
-  groupRef: GroupRef;
-  targetRotationRef: MutableRefObject<Rotation>;
-  targetScaleRef: MutableRefObject<number>;
-  dragRotationRef: MutableRefObject<number>;
-}) {
-  useFrame(() => {
-    if (!groupRef.current) return;
-    const g = groupRef.current;
-    const targetRotation = targetRotationRef.current;
-    const targetScale = targetScaleRef.current;
-    const dragRotation = dragRotationRef.current;
-    g.rotation.x += (targetRotation.x - g.rotation.x) * 0.1;
-    g.rotation.y += (targetRotation.y + dragRotation - g.rotation.y) * 0.1;
-    g.rotation.z += (targetRotation.z - g.rotation.z) * 0.1;
-    const scaleDelta = (targetScale - g.scale.x) * 0.1;
-    g.scale.x += scaleDelta;
-    g.scale.y += scaleDelta;
-    g.scale.z += scaleDelta;
-  });
-  return null;
-}
-
-const PolyColumn = memo(function PolyColumn({
-  groupRef,
-  targetRotationRef,
-  targetScaleRef,
-  dragRotationRef,
-  labelAssets,
-  faceSlugs,
-  faceTexts,
-  radius,
-  height,
-  bodyColor,
-  edgeColor,
-  textSize,
-  strokeWidth,
-  labelRotation,
-  fitVertical,
-  verticalPadding,
-}: PolyColumnProps) {
-  const segments = faceTexts.length;
-  const geometry = useMemo(
-    () => getCylinderGeometry(radius, height, segments),
-    [radius, height, segments]
-  );
-  const angleStep = useMemo(
-    () => (segments > 0 ? (Math.PI * 2) / segments : 0),
-    [segments]
-  );
-  const angles = useMemo(
-    () => Array.from({ length: segments }, (_, index) => index * angleStep),
-    [segments, angleStep]
-  );
-  const apothem = useMemo(
-    () => radius * Math.cos(Math.PI / segments),
-    [radius, segments]
-  );
-  const textOffset = apothem * 0.01;
-  const faceWidth = useMemo(
-    () => 2 * apothem * Math.tan(Math.PI / segments),
-    [apothem, segments]
-  );
-  const textMaxWidth = faceWidth * (fitVertical ? 0.95 : 0.85);
-  const resolvedPadding = Math.min(Math.max(verticalPadding, 0), 0.5);
-  const verticalAllowance = fitVertical
-    ? height * Math.max(0.1, 1 - resolvedPadding)
-    : height * Math.max(0.25, Math.min(0.65, textSize));
-
-  return (
-    <>
-      <SmoothColumnMotion
-        groupRef={groupRef}
-        targetRotationRef={targetRotationRef}
-        targetScaleRef={targetScaleRef}
-        dragRotationRef={dragRotationRef}
-      />
-      <group ref={groupRef}>
-        <mesh geometry={geometry} renderOrder={0}>
-          <meshBasicMaterial color={bodyColor} depthWrite />
-        </mesh>
-        <Edges
-          geometry={geometry}
-          color={edgeColor}
-          lineWidth={strokeWidth}
-          renderOrder={1}
-          depthTest
-          depthWrite={false}
-          polygonOffset
-          polygonOffsetFactor={-1}
-          polygonOffsetUnits={-1}
-        />
-        {angles.map((angle, index) => {
-          const slug = faceSlugs[index];
-          const text = faceTexts[index];
-          if (!slug || !text) return null;
-          const labelAsset = labelAssets.get(slug);
-          if (!labelAsset) return null;
-          const originalWidth = labelAsset.width;
-          const originalHeight = labelAsset.height;
-          const hasDimensions = originalWidth > 0 && originalHeight > 0;
-          const rotation = labelRotation;
-          const cos = Math.cos(rotation);
-          const sin = Math.sin(rotation);
-          const rotatedWidth = hasDimensions
-            ? Math.abs(originalWidth * cos) + Math.abs(originalHeight * sin)
-            : 0;
-          const rotatedHeight = hasDimensions
-            ? Math.abs(originalWidth * sin) + Math.abs(originalHeight * cos)
-            : 0;
-          const scale = hasDimensions
-            ? Math.min(
-                textMaxWidth / Math.max(rotatedWidth, Number.EPSILON),
-                verticalAllowance / Math.max(rotatedHeight, Number.EPSILON)
-              )
-            : 1;
-          return (
-            <group key={`${slug}-${index}`} rotation={[0, angle, 0]}>
-              <mesh
-                geometry={labelAsset.geometry}
-                position={[0, 0, apothem + textOffset]}
-                scale={[scale, scale, 1]}
-                rotation={[0, 0, rotation]}
-                renderOrder={2}
-              >
-                <meshBasicMaterial
-                  color={edgeColor}
-                  depthWrite={false}
-                  polygonOffset
-                  polygonOffsetFactor={-0.5}
-                  polygonOffsetUnits={-0.5}
-                  toneMapped={false}
-                  side={DoubleSide}
-                />
-              </mesh>
-            </group>
-          );
-        })}
-      </group>
-    </>
-  );
-});
+type PolyColumnWorkerConfig = {
+  texts: string[];
+  radius: number;
+  height: number;
+  bodyColor: string;
+  edgeColor: string;
+  textSize: number;
+  strokeWidth: number;
+  labelRotation: number;
+  fitVertical: boolean;
+  verticalPadding: number;
+  cameraPosition: [number, number, number];
+  cameraFov: number;
+};
 
 export function AnimatedPolyColumnScene({
   texts,
@@ -240,13 +77,18 @@ export function AnimatedPolyColumnScene({
   cameraFov = 18,
   className,
   strokeWidth = 5,
-  labelRotation: incomingLabelRotation = 0,
+  labelRotation: incomingLabelRotation = Math.PI / 2,
   fitVertical = true,
   verticalPadding = 0.06,
 }: AnimatedPolyColumnProps) {
-  const columnGroupRef = useRef<GroupRef["current"]>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const workerRef = useRef<Worker | null>(null);
+  const workerInitializedRef = useRef(false);
+  const transferredCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const workerConfigRef = useRef<PolyColumnWorkerConfig | null>(null);
+  const dprRef = useRef<number>(1);
   const [dynamicRadius, setDynamicRadius] = useState(() => radius ?? 1);
   const [dynamicHeight, setDynamicHeight] = useState(() => height ?? 2.2);
   const targetRotationRef = useRef<Rotation>({
@@ -268,6 +110,68 @@ export function AnimatedPolyColumnScene({
   const finalEdgeColor = edgeColor ?? "#C4A070";
   const initialTranslateY = from?.yPercent ?? 0;
 
+  const faceTexts = useMemo(() => texts, [texts]);
+
+  const workerConfig = useMemo<PolyColumnWorkerConfig>(
+    () => ({
+      texts: faceTexts,
+      radius: finalRadius,
+      height: finalHeight,
+      bodyColor: finalBodyColor,
+      edgeColor: finalEdgeColor,
+      textSize,
+      strokeWidth,
+      labelRotation: incomingLabelRotation,
+      fitVertical,
+      verticalPadding,
+      cameraPosition,
+      cameraFov,
+    }),
+    [
+      faceTexts,
+      finalRadius,
+      finalHeight,
+      finalBodyColor,
+      finalEdgeColor,
+      textSize,
+      strokeWidth,
+      incomingLabelRotation,
+      fitVertical,
+      verticalPadding,
+      cameraPosition,
+      cameraFov,
+    ]
+  );
+
+  const sendTargetsRef = useRef<(() => void) | null>(null);
+  sendTargetsRef.current = () => {
+    const worker = workerRef.current;
+    if (!worker || !workerInitializedRef.current) return;
+    worker.postMessage({
+      type: "targets",
+      rotation: {
+        x: targetRotationRef.current.x,
+        y: targetRotationRef.current.y,
+        z: targetRotationRef.current.z,
+      },
+      scale: targetScaleRef.current,
+      drag: dragRotationRef.current,
+    });
+  };
+
+  const throttledSendTargetsRef = useRef<number | null>(null);
+  const throttledSendTargets = useCallback(() => {
+    if (throttledSendTargetsRef.current !== null) return;
+    throttledSendTargetsRef.current = requestAnimationFrame(() => {
+      sendTargetsRef.current?.();
+      throttledSendTargetsRef.current = null;
+    });
+  }, []);
+
+  useEffect(() => {
+    workerConfigRef.current = workerConfig;
+  }, [workerConfig]);
+
   useEffect(() => {
     if (!containerRef.current) return;
     containerRef.current.style.transform = `translateY(${targetYPercentRef.current}%)`;
@@ -285,13 +189,13 @@ export function AnimatedPolyColumnScene({
     if (containerRef.current) {
       containerRef.current.style.transform = `translateY(${targetYPercentRef.current}%)`;
     }
+    sendTargetsRef.current?.();
   }, [
     from?.rotation?.x,
     from?.rotation?.y,
     from?.rotation?.z,
     from?.scale,
     from?.yPercent,
-    dragRotationRef,
   ]);
 
   useEffect(() => {
@@ -326,6 +230,128 @@ export function AnimatedPolyColumnScene({
       resizeObserverRef.current = null;
     };
   }, [radius, height]);
+
+  useEffect(() => {
+    if (!workerInitializedRef.current || !workerRef.current) return;
+    workerRef.current.postMessage({
+      type: "config",
+      config: workerConfig,
+    });
+    sendTargetsRef.current?.();
+  }, [workerConfig]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    if (transferredCanvasRef.current === canvas) return;
+    const config = workerConfigRef.current;
+    if (!config) return;
+
+    let initResizeObserver: ResizeObserver | null = null;
+    let cleanupFn: (() => void) | null = null;
+
+    const initWorker = () => {
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width || canvas.clientWidth || 0;
+      const height = rect.height || canvas.clientHeight || 0;
+      if (width === 0 || height === 0) return;
+
+      if (transferredCanvasRef.current === canvas) return;
+      transferredCanvasRef.current = canvas;
+      const worker = new Worker(
+        new URL("../../../workers/polyColumn.worker.ts", import.meta.url),
+        { type: "module" }
+      );
+      workerRef.current = worker;
+      let offscreen: OffscreenCanvas;
+      try {
+        offscreen = canvas.transferControlToOffscreen();
+      } catch {
+        transferredCanvasRef.current = null;
+        worker.terminate();
+        workerRef.current = null;
+        return;
+      }
+      dprRef.current = Math.min(window.devicePixelRatio ?? 1, 1.5);
+      worker.postMessage(
+        {
+          type: "init",
+          canvas: offscreen,
+          config,
+          dimensions: { width, height, dpr: dprRef.current },
+        },
+        [offscreen]
+      );
+      workerInitializedRef.current = true;
+      sendTargetsRef.current?.();
+      let resizeTimeout: number | null = null;
+      const handleResize = () => {
+        if (resizeTimeout !== null) return;
+        resizeTimeout = requestAnimationFrame(() => {
+          if (!workerRef.current) {
+            resizeTimeout = null;
+            return;
+          }
+          const nextWidth = canvas.clientWidth || 1;
+          const nextHeight = canvas.clientHeight || 1;
+          const currentDpr = Math.min(window.devicePixelRatio ?? 1, 1.5);
+          if (currentDpr !== dprRef.current) {
+            dprRef.current = currentDpr;
+          }
+          workerRef.current.postMessage({
+            type: "resize",
+            width: nextWidth,
+            height: nextHeight,
+            dpr: dprRef.current,
+          });
+          resizeTimeout = null;
+        });
+      };
+      const resizeObserver = new ResizeObserver(handleResize);
+      resizeObserver.observe(canvas);
+      resizeObserverRef.current = resizeObserver;
+      window.addEventListener("resize", handleResize, { passive: true });
+      cleanupFn = () => {
+        window.removeEventListener("resize", handleResize);
+        resizeObserver.disconnect();
+        if (resizeTimeout !== null) {
+          cancelAnimationFrame(resizeTimeout);
+        }
+      };
+    };
+
+    initResizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (
+        entry &&
+        entry.contentRect.width > 0 &&
+        entry.contentRect.height > 0
+      ) {
+        initWorker();
+        initResizeObserver?.disconnect();
+      }
+    });
+    initResizeObserver.observe(canvas);
+    initWorker();
+
+    return () => {
+      initResizeObserver?.disconnect();
+      cleanupFn?.();
+      if (workerRef.current) {
+        workerRef.current.postMessage({ type: "dispose" });
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+      workerInitializedRef.current = false;
+      transferredCanvasRef.current = null;
+      resizeObserverRef.current = null;
+      if (throttledSendTargetsRef.current !== null) {
+        cancelAnimationFrame(throttledSendTargetsRef.current);
+        throttledSendTargetsRef.current = null;
+      }
+    };
+  }, [workerConfig]);
 
   useEffect(() => {
     if (
@@ -388,6 +414,7 @@ export function AnimatedPolyColumnScene({
           if (containerRef.current) {
             containerRef.current.style.transform = `translateY(${targetYPercentRef.current}%)`;
           }
+          throttledSendTargets();
         },
       });
     };
@@ -397,7 +424,17 @@ export function AnimatedPolyColumnScene({
       isActive = false;
       scrollTrigger?.kill();
     };
-  }, [trigger, start, end, scrub, showMarkers, invalidateOnRefresh, from, to]);
+  }, [
+    trigger,
+    start,
+    end,
+    scrub,
+    showMarkers,
+    invalidateOnRefresh,
+    from,
+    to,
+    throttledSendTargets,
+  ]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -417,6 +454,7 @@ export function AnimatedPolyColumnScene({
       const rotationDelta =
         ((clientX - dragStartRef.current.x) / width) * Math.PI * 2;
       dragRotationRef.current = dragStartRotationRef.current + rotationDelta;
+      throttledSendTargets();
     };
 
     const handleEnd = () => {
@@ -489,47 +527,7 @@ export function AnimatedPolyColumnScene({
       container.removeEventListener("touchend", handleTouchEnd);
       container.style.cursor = "";
     };
-  }, [dragRotationRef]);
-
-  const faceTexts = useMemo(() => texts, [texts]);
-
-  const faceSlugs = useMemo(
-    () =>
-      faceTexts.map((text) =>
-        text ? cubeLabelSlugMap.get(text) ?? cubeLabelSlugify(text) : null
-      ),
-    [faceTexts]
-  );
-
-  const uniqueSlugs = useMemo(
-    () =>
-      Array.from(
-        new Set(faceSlugs.filter((slug): slug is string => Boolean(slug)))
-      ),
-    [faceSlugs]
-  );
-
-  const labelAssets = useMemo(() => {
-    const map = new Map<string, LabelGeometryAsset>();
-    uniqueSlugs.forEach((slug) => {
-      const asset = getCubeLabelAsset(slug);
-      if (asset) {
-        map.set(slug, asset);
-      }
-    });
-    return map;
-  }, [uniqueSlugs]);
-
-  const glConfig = useMemo(
-    () => ({
-      antialias: true,
-      alpha: true,
-      depth: true,
-      stencil: false,
-      powerPreference: "high-performance" as const,
-    }),
-    []
-  );
+  }, [throttledSendTargets]);
 
   return (
     <div
@@ -543,38 +541,16 @@ export function AnimatedPolyColumnScene({
     >
       <div className="sr-only" aria-live="polite">
         <ul>
-          {texts.map((text, index) => (
+          {faceTexts.map((text, index) => (
             <li key={index}>{text}</li>
           ))}
         </ul>
       </div>
-      <Canvas
-        camera={{ position: cameraPosition, fov: cameraFov }}
-        gl={glConfig}
-        dpr={[1, 1.5]}
-      >
-        <EffectComposer>
-          <DotScreen angle={Math.PI / 12} scale={1.1} />
-        </EffectComposer>
-        <PolyColumn
-          groupRef={columnGroupRef}
-          targetRotationRef={targetRotationRef}
-          targetScaleRef={targetScaleRef}
-          dragRotationRef={dragRotationRef}
-          labelAssets={labelAssets}
-          faceSlugs={faceSlugs}
-          faceTexts={faceTexts}
-          radius={finalRadius}
-          height={finalHeight}
-          bodyColor={finalBodyColor}
-          edgeColor={finalEdgeColor}
-          textSize={textSize}
-          strokeWidth={strokeWidth}
-          labelRotation={incomingLabelRotation}
-          fitVertical={fitVertical}
-          verticalPadding={verticalPadding}
-        />
-      </Canvas>
+      <canvas
+        ref={canvasRef}
+        style={{ width: "100%", height: "100%", display: "block" }}
+        aria-hidden="true"
+      />
     </div>
   );
 }

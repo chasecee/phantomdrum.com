@@ -1,81 +1,48 @@
 "use client";
 
-import { RefObject, useRef, useState, useEffect, Suspense } from "react";
-import dynamic from "next/dynamic";
+import { RefObject, useRef } from "react";
+import { AnimatedMultiCubeScene } from "../content/three/AnimatedMultiCubeScene";
+import HalftoneEffect from "../content/HalftoneEffect";
 
-const AnimatedMultiCube = dynamic(
-  () =>
-    import(
-      /* webpackChunkName: "animated-multicube" */ "../content/AnimatedMultiCube"
-    ),
-  { ssr: false }
-);
+const CUBE_TEXTS = [
+  "GHOST GRADE",
+  "FARM-FRESH",
+  "ABSTRACT YET FAMILIAR",
+  "CLASSIC SUNDAY DINNER",
+  "BIG OL BEATS",
+];
 
 export default function CubeSection() {
   const multiCubeContainerRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && !hasLoaded) {
-            setIsVisible(true);
-            setHasLoaded(true);
-          }
-        });
-      },
-      {
-        rootMargin: "500px", // Start loading 500px before the element comes into view
-        threshold: 0.1,
-      }
-    );
-
-    if (multiCubeContainerRef.current) {
-      observer.observe(multiCubeContainerRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [hasLoaded]);
 
   return (
-    <div
-      ref={multiCubeContainerRef}
-      className="aspect-[1.5/1] my-[20vw] w-full relative mix-blend-screen"
-    >
-      {isVisible ? (
-        <Suspense fallback={<div className="absolute inset-0" />}>
-          <AnimatedMultiCube
-            texts={[
-              "GHOST GRADE",
-              "FARM-FRESH",
-              "ABSTRACT YET FAMILIAR",
-              "CLASSIC SUNDAY DINNER",
-              "BIG OL BEATS",
-            ]}
-            trigger={multiCubeContainerRef as RefObject<HTMLElement>}
-            start="40% 80%"
-            end="60% 20%"
-            from={{ rotation: { x: 0.01, y: 0, z: 0 } }}
-            to={{
-              rotation: { x: -0.01, y: -Math.PI * 0.5, z: 0 },
-            }}
-            className="absolute inset-0"
-            heightRatio={0.175}
-            widthRatio={1.1}
-            size={3}
-            spacing={0.1}
-            stagger={true}
-            staggerDelay={0.1}
-            fillMode="outline"
-            strokeWidth={10}
-            matchTextColor={true}
-          />
-        </Suspense>
-      ) : (
-        <div className="absolute inset-0 bg-black" />
-      )}
-    </div>
+    <HalftoneEffect>
+      <div
+        ref={multiCubeContainerRef}
+        className="aspect-square my-[20vw] w-full relative border-2 border-amber-500"
+      >
+        <AnimatedMultiCubeScene
+          texts={CUBE_TEXTS}
+          trigger={multiCubeContainerRef as RefObject<HTMLElement>}
+          start="40% 80%"
+          end="60% 30%"
+          from={{ rotation: { x: 0.01, y: 0, z: 0 } }}
+          to={{
+            rotation: { x: -0.01, y: -Math.PI * 0.5, z: 0 },
+          }}
+          className="absolute inset-0"
+          heightRatio={0.22}
+          widthRatio={1}
+          size={3}
+          spacing={0.1}
+          stagger={true}
+          staggerDelay={0.1}
+          fillMode="outline"
+          strokeWidth={10}
+          showMarkers={true}
+          matchTextColor={true}
+        />
+      </div>
+    </HalftoneEffect>
   );
 }
