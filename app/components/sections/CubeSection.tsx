@@ -19,7 +19,7 @@ export default function CubeSection() {
     <HalftoneEffect>
       <div
         ref={multiCubeContainerRef}
-        className="aspect-square my-[20vw] w-full relative border-2 border-amber-500"
+        className="aspect-square my-[20vw] w-full relative"
       >
         <AnimatedMultiCubeScene
           texts={CUBE_TEXTS}

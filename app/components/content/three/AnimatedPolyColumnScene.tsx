@@ -104,17 +104,24 @@ export function AnimatedPolyColumnScene({
   const dragStartRotationRef = useRef(0);
   const isHorizontalDragRef = useRef(false);
 
-  const finalRadius = radius ?? dynamicRadius;
-  const finalHeight = height ?? dynamicHeight;
-  const finalBodyColor = bodyColor ?? "#0E0E0E";
-  const finalEdgeColor = edgeColor ?? "#C4A070";
-  const initialTranslateY = from?.yPercent ?? 0;
-
-  const faceTexts = useMemo(() => texts, [texts]);
+  const finalRadius = useMemo(
+    () => radius ?? dynamicRadius,
+    [radius, dynamicRadius]
+  );
+  const finalHeight = useMemo(
+    () => height ?? dynamicHeight,
+    [height, dynamicHeight]
+  );
+  const finalBodyColor = useMemo(() => bodyColor ?? "#0E0E0E", [bodyColor]);
+  const finalEdgeColor = useMemo(() => edgeColor ?? "#C4A070", [edgeColor]);
+  const initialTranslateY = useMemo(
+    () => from?.yPercent ?? 0,
+    [from?.yPercent]
+  );
 
   const workerConfig = useMemo<PolyColumnWorkerConfig>(
     () => ({
-      texts: faceTexts,
+      texts,
       radius: finalRadius,
       height: finalHeight,
       bodyColor: finalBodyColor,
@@ -128,7 +135,7 @@ export function AnimatedPolyColumnScene({
       cameraFov,
     }),
     [
-      faceTexts,
+      texts,
       finalRadius,
       finalHeight,
       finalBodyColor,
@@ -144,20 +151,22 @@ export function AnimatedPolyColumnScene({
   );
 
   const sendTargetsRef = useRef<(() => void) | null>(null);
-  sendTargetsRef.current = () => {
-    const worker = workerRef.current;
-    if (!worker || !workerInitializedRef.current) return;
-    worker.postMessage({
-      type: "targets",
-      rotation: {
-        x: targetRotationRef.current.x,
-        y: targetRotationRef.current.y,
-        z: targetRotationRef.current.z,
-      },
-      scale: targetScaleRef.current,
-      drag: dragRotationRef.current,
-    });
-  };
+  useEffect(() => {
+    sendTargetsRef.current = () => {
+      const worker = workerRef.current;
+      if (!worker || !workerInitializedRef.current) return;
+      worker.postMessage({
+        type: "targets",
+        rotation: {
+          x: targetRotationRef.current.x,
+          y: targetRotationRef.current.y,
+          z: targetRotationRef.current.z,
+        },
+        scale: targetScaleRef.current,
+        drag: dragRotationRef.current,
+      });
+    };
+  });
 
   const throttledSendTargetsRef = useRef<number | null>(null);
   const throttledSendTargets = useCallback(() => {
@@ -370,16 +379,12 @@ export function AnimatedPolyColumnScene({
       if (!isActive) return;
       const ScrollTrigger = await getScrollTrigger();
       if (!isActive || !containerRef.current || !trigger?.current) return;
-      const fromRotation = {
-        x: from?.rotation?.x ?? 0,
-        y: from?.rotation?.y ?? 0,
-        z: from?.rotation?.z ?? 0,
-      };
-      const toRotation = {
-        x: to?.rotation?.x ?? fromRotation.x,
-        y: to?.rotation?.y ?? fromRotation.y + Math.PI * 2,
-        z: to?.rotation?.z ?? fromRotation.z,
-      };
+      const fromRotationX = from?.rotation?.x ?? 0;
+      const fromRotationY = from?.rotation?.y ?? 0;
+      const fromRotationZ = from?.rotation?.z ?? 0;
+      const toRotationX = to?.rotation?.x ?? fromRotationX;
+      const toRotationY = to?.rotation?.y ?? fromRotationY + Math.PI * 2;
+      const toRotationZ = to?.rotation?.z ?? fromRotationZ;
       const fromScale = from?.scale ?? 1;
       const toScale = to?.scale ?? fromScale;
       const fromYPercent = from?.yPercent ?? 0;
@@ -395,18 +400,18 @@ export function AnimatedPolyColumnScene({
         onUpdate: (self) => {
           const progress = self.progress;
           targetRotationRef.current.x = lerp(
-            fromRotation.x,
-            toRotation.x,
+            fromRotationX,
+            toRotationX,
             progress
           );
           targetRotationRef.current.y = lerp(
-            fromRotation.y,
-            toRotation.y,
+            fromRotationY,
+            toRotationY,
             progress
           );
           targetRotationRef.current.z = lerp(
-            fromRotation.z,
-            toRotation.z,
+            fromRotationZ,
+            toRotationZ,
             progress
           );
           targetScaleRef.current = lerp(fromScale, toScale, progress);
@@ -431,8 +436,16 @@ export function AnimatedPolyColumnScene({
     scrub,
     showMarkers,
     invalidateOnRefresh,
-    from,
-    to,
+    from?.rotation?.x,
+    from?.rotation?.y,
+    from?.rotation?.z,
+    from?.scale,
+    from?.yPercent,
+    to?.rotation?.x,
+    to?.rotation?.y,
+    to?.rotation?.z,
+    to?.scale,
+    to?.yPercent,
     throttledSendTargets,
   ]);
 
@@ -541,8 +554,8 @@ export function AnimatedPolyColumnScene({
     >
       <div className="sr-only" aria-live="polite">
         <ul>
-          {faceTexts.map((text, index) => (
-            <li key={index}>{text}</li>
+          {texts.map((text, index) => (
+            <li key={`${text}-${index}`}>{text}</li>
           ))}
         </ul>
       </div>
