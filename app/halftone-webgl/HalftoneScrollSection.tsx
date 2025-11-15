@@ -9,17 +9,17 @@ import {
 } from "../canvas/CanvasHalftoneWebGL";
 
 const INITIAL_PARAMS = {
-  halftoneSize: 15,
-  dotSpacing: 20,
-  rgbOffset: 11,
-  effectIntensity: 0.5,
+  halftoneSize: 50,
+  dotSpacing: 80,
+  rgbOffset: 50,
+  effectIntensity: 1,
 };
 
 const TARGET_PARAMS = {
   halftoneSize: 4,
-  dotSpacing: 6,
-  rgbOffset: 1,
-  effectIntensity: 0.5,
+  dotSpacing: 8,
+  rgbOffset: 0.5,
+  effectIntensity: 1,
 };
 
 export function HalftoneScrollSection() {
@@ -43,11 +43,11 @@ export function HalftoneScrollSection() {
         ease: "linear",
         scrollTrigger: {
           trigger: scrollSectionRef.current,
-          start: "top 70%",
-          end: "bottom 30%",
-          scrub: true,
+          start: "50% 90%",
+          end: "50% 10%",
+          scrub: 1,
           invalidateOnRefresh: true,
-          markers: false,
+          markers: true,
         },
         onUpdate: () => {
           if (!canvasRef.current || rafId !== null) return;
@@ -75,28 +75,17 @@ export function HalftoneScrollSection() {
   return (
     <section
       ref={scrollSectionRef}
-      className="relative w-full flex flex-col gap-8 py-24 aspect-1/4"
+      className="relative w-full flex flex-col gap-8 aspect-1/4"
     >
-      <div className="sticky top-12 w-full mx-auto">
+      <div className="sticky top-0 w-full mx-auto aspect-square">
         <CanvasHalftoneWebGL
           ref={canvasRef}
           width={1024}
-          height={512}
+          height={1024}
           imageSrc="/img/chase.png"
           params={INITIAL_PARAMS}
           className="w-full h-auto"
         />
-      </div>
-      <div className="flex flex-col gap-6 text-sm text-neutral-400 max-w-xl">
-        <p>
-          Scroll to scrub the halftone parameters. The WebGL worker only updates
-          uniforms once per animation frame, so even aggressive wheel events
-          won’t spam renders.
-        </p>
-        <p>
-          Try flicking the page quickly—frames stay pinned at display refresh
-          while the worker coasts off the main thread.
-        </p>
       </div>
     </section>
   );

@@ -1,7 +1,5 @@
 import Image from "next/image";
 import styles from "./HeroSection.module.css";
-import HalftoneEffect from "../content/HalftoneEffect";
-
 export default function HeroSectionText() {
   return (
     <div className="relative aspect-1/2 w-full">

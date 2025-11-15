@@ -5,7 +5,6 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
-  useState,
   useCallback,
 } from "react";
 
@@ -16,6 +15,7 @@ export type HalftoneWebGLParams = {
   effectIntensity: number;
   brightness: number;
   contrast: number;
+  patternRotation: number;
 };
 
 export type CanvasHalftoneWebGLProps = {
@@ -25,6 +25,7 @@ export type CanvasHalftoneWebGLProps = {
   params?: Partial<HalftoneWebGLParams>;
   className?: string;
   style?: React.CSSProperties;
+  suspendWhenHidden?: boolean;
 };
 
 export type CanvasHalftoneWebGLHandle = {
@@ -38,6 +39,49 @@ const DEFAULT_PARAMS: HalftoneWebGLParams = {
   effectIntensity: 1,
   brightness: 1,
   contrast: 1,
+  patternRotation: 45,
+};
+
+type WorkerParamPayload = {
+  halftoneSize: number;
+  dotSpacing: number;
+  rgbOffset: number;
+  effectIntensity: number;
+  brightness: number;
+  contrast: number;
+  patternRotation: number;
+};
+
+const degToRad = (value: number) => (value * Math.PI) / 180;
+
+const mergeParamsWithDefaults = (
+  params?: Partial<HalftoneWebGLParams>
+): WorkerParamPayload => ({
+  halftoneSize: params?.halftoneSize ?? DEFAULT_PARAMS.halftoneSize,
+  dotSpacing: params?.dotSpacing ?? DEFAULT_PARAMS.dotSpacing,
+  rgbOffset: params?.rgbOffset ?? DEFAULT_PARAMS.rgbOffset,
+  effectIntensity: params?.effectIntensity ?? DEFAULT_PARAMS.effectIntensity,
+  brightness: params?.brightness ?? DEFAULT_PARAMS.brightness,
+  contrast: params?.contrast ?? DEFAULT_PARAMS.contrast,
+  patternRotation: degToRad(
+    params?.patternRotation ?? DEFAULT_PARAMS.patternRotation
+  ),
+});
+
+const convertPartialParams = (
+  next: Partial<HalftoneWebGLParams>
+): Partial<WorkerParamPayload> => {
+  const result: Partial<WorkerParamPayload> = {};
+  if (next.halftoneSize !== undefined) result.halftoneSize = next.halftoneSize;
+  if (next.dotSpacing !== undefined) result.dotSpacing = next.dotSpacing;
+  if (next.rgbOffset !== undefined) result.rgbOffset = next.rgbOffset;
+  if (next.effectIntensity !== undefined)
+    result.effectIntensity = next.effectIntensity;
+  if (next.brightness !== undefined) result.brightness = next.brightness;
+  if (next.contrast !== undefined) result.contrast = next.contrast;
+  if (next.patternRotation !== undefined)
+    result.patternRotation = degToRad(next.patternRotation);
+  return result;
 };
 
 export const CanvasHalftoneWebGL = forwardRef<
@@ -51,18 +95,21 @@ export const CanvasHalftoneWebGL = forwardRef<
     params,
     className = "",
     style,
+    suspendWhenHidden = true,
   }: CanvasHalftoneWebGLProps,
   ref
 ) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
   const workerReadyRef = useRef(false);
-  const lastParamsRef = useRef<HalftoneWebGLParams>({
-    ...DEFAULT_PARAMS,
-    ...params,
-  });
-  const visibilityRef = useRef(false);
-  const [isWorkerSupported, setIsWorkerSupported] = useState(true);
+  const lastParamsRef = useRef<WorkerParamPayload>(
+    mergeParamsWithDefaults(params)
+  );
+  const visibilityRef = useRef(suspendWhenHidden ? false : true);
+  const supportsOffscreen =
+    typeof window === "undefined"
+      ? true
+      : typeof OffscreenCanvas !== "undefined";
 
   const postVisibility = useCallback((isVisible: boolean) => {
     visibilityRef.current = isVisible;
@@ -87,7 +134,7 @@ export const CanvasHalftoneWebGL = forwardRef<
       updateParams: (next: Partial<HalftoneWebGLParams>) => {
         lastParamsRef.current = {
           ...lastParamsRef.current,
-          ...next,
+          ...convertPartialParams(next),
         };
         syncParamsToWorker();
       },
@@ -96,23 +143,15 @@ export const CanvasHalftoneWebGL = forwardRef<
   );
 
   useEffect(() => {
-    lastParamsRef.current = {
-      ...DEFAULT_PARAMS,
-      ...params,
-    };
+    lastParamsRef.current = mergeParamsWithDefaults(params);
     syncParamsToWorker();
   }, [params, syncParamsToWorker]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!supportsOffscreen || typeof window === "undefined") return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     if (workerRef.current) return;
-
-    if (typeof OffscreenCanvas === "undefined") {
-      setIsWorkerSupported(false);
-      return;
-    }
 
     const worker = new Worker(
       new URL("../workers/halftoneWebgl.worker.ts", import.meta.url),
@@ -126,7 +165,6 @@ export const CanvasHalftoneWebGL = forwardRef<
       console.error("Failed to transfer canvas to worker", error);
       worker.terminate();
       workerRef.current = null;
-      setIsWorkerSupported(false);
       return;
     }
 
@@ -155,7 +193,11 @@ export const CanvasHalftoneWebGL = forwardRef<
 
     workerReadyRef.current = true;
     syncParamsToWorker();
-    postVisibility(visibilityRef.current);
+    if (!suspendWhenHidden) {
+      postVisibility(true);
+    } else {
+      postVisibility(visibilityRef.current);
+    }
 
     const handleResize = () => {
       if (!workerRef.current) return;
@@ -177,9 +219,17 @@ export const CanvasHalftoneWebGL = forwardRef<
       worker.terminate();
       workerRef.current = null;
     };
-  }, [imageSrc, width, height, postVisibility, syncParamsToWorker]);
+  }, [
+    imageSrc,
+    width,
+    height,
+    postVisibility,
+    syncParamsToWorker,
+    supportsOffscreen,
+  ]);
 
   useEffect(() => {
+    if (!suspendWhenHidden) return;
     if (typeof window === "undefined") return;
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -195,8 +245,7 @@ export const CanvasHalftoneWebGL = forwardRef<
       (entries) => {
         const entry = entries[0];
         if (!entry) return;
-        const isVisible =
-          entry.isIntersecting || entry.intersectionRatio > 0;
+        const isVisible = entry.isIntersecting || entry.intersectionRatio > 0;
         if (isVisible) {
           postVisibility(true);
           return;
@@ -205,8 +254,7 @@ export const CanvasHalftoneWebGL = forwardRef<
         const viewportHeight = window.innerHeight || 0;
         const buffer = viewportHeight * 0.3;
         const bufferedVisible =
-          bounds.top < viewportHeight + buffer &&
-          bounds.bottom > -buffer;
+          bounds.top < viewportHeight + buffer && bounds.bottom > -buffer;
         postVisibility(bufferedVisible);
       },
       {
@@ -222,9 +270,16 @@ export const CanvasHalftoneWebGL = forwardRef<
       observer.disconnect();
       postVisibility(false);
     };
-  }, [postVisibility]);
+  }, [postVisibility, suspendWhenHidden]);
 
-  if (!isWorkerSupported) {
+  useEffect(() => {
+    if (suspendWhenHidden) return;
+    return () => {
+      postVisibility(false);
+    };
+  }, [postVisibility, suspendWhenHidden]);
+
+  if (!supportsOffscreen) {
     return (
       <div className={className} style={style}>
         <p className="text-red-500 text-sm">
@@ -251,4 +306,3 @@ export const CanvasHalftoneWebGL = forwardRef<
 });
 
 CanvasHalftoneWebGL.displayName = "CanvasHalftoneWebGL";
-

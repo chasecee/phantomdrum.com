@@ -56,6 +56,7 @@ type HalftoneParams = {
   effectIntensity: number;
   brightness: number;
   contrast: number;
+  patternRotation: number;
 };
 
 const state = {
@@ -86,6 +87,7 @@ const fragmentShader = /* glsl */ `
   uniform float uBrightness;
   uniform float uContrast;
   uniform vec2 uUvScale;
+  uniform float uPatternRotation;
 
   varying vec2 vUv;
 
@@ -105,11 +107,21 @@ const fragmentShader = /* glsl */ `
 
   void main() {
     vec2 centeredPixel = (vUv - 0.5) * uResolution;
-    vec2 grid = (floor(centeredPixel / uDotSpacing) + 0.5) * uDotSpacing;
-    vec2 local = centeredPixel - grid;
+    float cosP = cos(uPatternRotation);
+    float sinP = sin(uPatternRotation);
+    vec2 rotationMatrix = vec2(
+      cosP * centeredPixel.x - sinP * centeredPixel.y,
+      sinP * centeredPixel.x + cosP * centeredPixel.y
+    );
+    vec2 rotatedGrid = (floor(rotationMatrix / uDotSpacing) + 0.5) * uDotSpacing;
+    vec2 local = rotationMatrix - rotatedGrid;
     float dist = length(local);
 
-    vec2 worldPos = grid + uResolution * 0.5;
+    vec2 inverseRotatedGrid = vec2(
+      cosP * rotatedGrid.x + sinP * rotatedGrid.y,
+      -sinP * rotatedGrid.x + cosP * rotatedGrid.y
+    );
+    vec2 worldPos = inverseRotatedGrid + uResolution * 0.5;
     vec2 uv = worldPos / uResolution;
 
     vec3 baseColor = sampleTexture(uv, vec2(0.0));
@@ -172,6 +184,7 @@ const createMaterial = () => {
     uBrightness: { value: state.params?.brightness ?? 1 },
     uContrast: { value: state.params?.contrast ?? 1 },
     uUvScale: { value: new Vector2(1, 1) },
+    uPatternRotation: { value: state.params?.patternRotation ?? 0 },
   };
 
   const material = new ShaderMaterial({
@@ -207,6 +220,7 @@ const updateUniforms = () => {
   state.uniforms.uIntensity.value = state.params.effectIntensity;
   state.uniforms.uBrightness.value = state.params.brightness;
   state.uniforms.uContrast.value = state.params.contrast;
+  state.uniforms.uPatternRotation.value = state.params.patternRotation;
 };
 
 const updateUvScale = () => {
