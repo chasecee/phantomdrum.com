@@ -3,19 +3,17 @@ import {
   DoubleSide,
   EdgesGeometry,
   Group,
-  LineBasicMaterial,
-  LineSegments,
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
   Scene,
+  Vector2,
   Vector3,
   WebGLRenderer,
 } from "three";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
-import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
-import { DotScreenShader } from "three/examples/jsm/shaders/DotScreenShader.js";
+import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
+import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { getCylinderGeometry } from "@/app/lib/three/geometryCache";
 import {
   getCubeLabelAsset,
@@ -80,9 +78,11 @@ type WorkerMessage =
 type ColumnInstance = {
   group: Group;
   bodyMaterial: MeshBasicMaterial;
-  edgeLine?: LineSegments;
-  edgeMaterial?: LineBasicMaterial;
-  edgeGeometry?: EdgesGeometry;
+  edge?: {
+    line: LineSegments2;
+    material: LineMaterial;
+    geometry: LineSegmentsGeometry;
+  };
   labelMaterials: MeshBasicMaterial[];
   labelGroups: Group[];
 };
@@ -90,7 +90,6 @@ type ColumnInstance = {
 const state = {
   config: null as PolyColumnConfig | null,
   renderer: null as WebGLRenderer | null,
-  composer: null as EffectComposer | null,
   camera: null as PerspectiveCamera | null,
   scene: null as Scene | null,
   column: null as ColumnInstance | null,
@@ -100,19 +99,34 @@ const state = {
   targetScale: 1,
   dragRotation: 0,
   syncedOnce: false,
+  dimensions: null as Dimensions | null,
 };
 
 const smoothing = 0.1;
 const up = new Vector3(0, 1, 0);
 
+const edgesGeometryToLineSegmentsGeometry = (
+  edgesGeometry: EdgesGeometry
+): LineSegmentsGeometry => {
+  const positions: number[] = [];
+  const positionAttribute = edgesGeometry.attributes.position;
+  for (let i = 0; i < positionAttribute.count; i++) {
+    const x = positionAttribute.getX(i);
+    const y = positionAttribute.getY(i);
+    const z = positionAttribute.getZ(i);
+    positions.push(x, y, z);
+  }
+  const lineSegmentsGeometry = new LineSegmentsGeometry();
+  lineSegmentsGeometry.setPositions(positions);
+  return lineSegmentsGeometry;
+};
+
 const disposeColumn = () => {
   if (!state.column || !state.scene) return;
   state.column.labelMaterials.forEach((material) => material.dispose());
-  if (state.column.edgeMaterial) {
-    state.column.edgeMaterial.dispose();
-  }
-  if (state.column.edgeGeometry) {
-    state.column.edgeGeometry.dispose();
+  if (state.column.edge) {
+    state.column.edge.material.dispose();
+    state.column.edge.geometry.dispose();
   }
   state.column.bodyMaterial.dispose();
   state.column.labelGroups.forEach((group) => {
@@ -139,8 +153,7 @@ const computeLabelScale = (
   }
   const angleStep = (Math.PI * 2) / segments;
   const apothem = radius * Math.cos(Math.PI / Math.max(segments, 3));
-  const faceWidth =
-    segments > 0 ? 2 * apothem * Math.tan(angleStep / 2) : 0;
+  const faceWidth = segments > 0 ? 2 * apothem * Math.tan(angleStep / 2) : 0;
   const textMaxWidth = faceWidth * (fitVertical ? 0.95 : 0.85);
   const resolvedPadding = Math.min(Math.max(verticalPadding, 0), 0.5);
   const verticalAllowance = fitVertical
@@ -177,14 +190,29 @@ const rebuildColumn = () => {
   const cylinder = new Mesh(geometry, bodyMaterial);
   cylinder.renderOrder = 0;
   columnGroup.add(cylinder);
-  const edgesGeometry = new EdgesGeometry(geometry);
-  const edgeMaterial = new LineBasicMaterial({
-    color: new Color(config.edgeColor),
+  
+  const scaledGeometry = geometry.clone().scale(1.0025, 1.0025, 1.0025);
+  const edgesGeometry = new EdgesGeometry(scaledGeometry);
+  const lineSegmentsGeometry = edgesGeometryToLineSegmentsGeometry(edgesGeometry);
+  edgesGeometry.dispose();
+  scaledGeometry.dispose();
+  
+  const edgeColor = new Color(config.edgeColor);
+  const lineWidth = config.strokeWidth;
+  const resolution = state.dimensions
+    ? new Vector2(
+        state.dimensions.width * state.dimensions.dpr,
+        state.dimensions.height * state.dimensions.dpr
+      )
+    : new Vector2(1, 1);
+  const edgeMaterial = new LineMaterial({
+    color: edgeColor.getHex(),
+    linewidth: lineWidth,
+    resolution,
     depthTest: true,
     depthWrite: false,
   });
-  edgeMaterial.linewidth = config.strokeWidth;
-  const edges = new LineSegments(edgesGeometry, edgeMaterial);
+  const edges = new LineSegments2(lineSegmentsGeometry, edgeMaterial);
   edges.renderOrder = 1;
   columnGroup.add(edges);
   const labelMaterials: MeshBasicMaterial[] = [];
@@ -236,9 +264,11 @@ const rebuildColumn = () => {
   state.column = {
     group: columnGroup,
     bodyMaterial,
-    edgeLine: edges,
-    edgeMaterial,
-    edgeGeometry: edgesGeometry,
+    edge: {
+      line: edges,
+      material: edgeMaterial,
+      geometry: lineSegmentsGeometry,
+    },
     labelMaterials,
     labelGroups,
   };
@@ -263,6 +293,7 @@ const ensureRenderer = (canvas: OffscreenCanvas, dimensions: Dimensions) => {
   if (state.renderer) return;
   ensureScene();
   if (!state.scene || !state.camera) return;
+  state.dimensions = { ...dimensions };
   const renderer = new WebGLRenderer({
     canvas,
     antialias: true,
@@ -274,19 +305,7 @@ const ensureRenderer = (canvas: OffscreenCanvas, dimensions: Dimensions) => {
   renderer.setPixelRatio(dimensions.dpr);
   renderer.setSize(dimensions.width, dimensions.height, false);
   renderer.setClearColor(0x000000, 0);
-  const composer = new EffectComposer(renderer);
-  composer.setPixelRatio(dimensions.dpr);
-  composer.setSize(
-    Math.max(dimensions.width * dimensions.dpr, 1),
-    Math.max(dimensions.height * dimensions.dpr, 1)
-  );
-  composer.addPass(new RenderPass(state.scene, state.camera));
-  const dotScreen = new ShaderPass(DotScreenShader);
-  dotScreen.uniforms["scale"].value = 2.5;
-  dotScreen.uniforms["angle"].value = Math.PI / 12;
-  composer.addPass(dotScreen);
   state.renderer = renderer;
-  state.composer = composer;
   renderer.setAnimationLoop(updateFrame);
 };
 
@@ -300,52 +319,63 @@ const updateCamera = () => {
 };
 
 const handleResize = (dimensions: Dimensions) => {
-  if (!state.renderer || !state.camera || !state.composer) return;
+  if (!state.renderer || !state.camera) return;
+  const current = state.dimensions;
+  if (
+    current &&
+    current.width === dimensions.width &&
+    current.height === dimensions.height &&
+    current.dpr === dimensions.dpr
+  ) {
+    return;
+  }
+  state.dimensions = { ...dimensions };
   const aspect =
     dimensions.height > 0 ? dimensions.width / dimensions.height : 1;
   state.renderer.setPixelRatio(dimensions.dpr);
   state.renderer.setSize(dimensions.width, dimensions.height, false);
-  state.composer.setPixelRatio(dimensions.dpr);
-  state.composer.setSize(
-    Math.max(dimensions.width * dimensions.dpr, 1),
-    Math.max(dimensions.height * dimensions.dpr, 1)
-  );
   state.camera.aspect = aspect;
   state.camera.updateProjectionMatrix();
+  const resolution = new Vector2(
+    dimensions.width * dimensions.dpr,
+    dimensions.height * dimensions.dpr
+  );
+  if (state.column?.edge?.material) {
+    state.column.edge.material.resolution.copy(resolution);
+  }
 };
 
 const updateFrame = () => {
-  if (!state.composer || !state.column) {
-    state.composer?.render();
-    return;
+  if (!state.renderer || !state.scene || !state.camera) return;
+  if (state.column) {
+    const group = state.column.group;
+    if (!state.syncedOnce) {
+      state.currentRotation = {
+        x: state.targetRotation.x,
+        y: state.targetRotation.y + state.dragRotation,
+        z: state.targetRotation.z,
+      };
+      state.currentScale = state.targetScale;
+      state.syncedOnce = true;
+    } else {
+      state.currentRotation.x +=
+        (state.targetRotation.x - state.currentRotation.x) * smoothing;
+      const targetY = state.targetRotation.y + state.dragRotation;
+      state.currentRotation.y +=
+        (targetY - state.currentRotation.y) * smoothing;
+      state.currentRotation.z +=
+        (state.targetRotation.z - state.currentRotation.z) * smoothing;
+      state.currentScale +=
+        (state.targetScale - state.currentScale) * smoothing;
+    }
+    group.rotation.set(
+      state.currentRotation.x,
+      state.currentRotation.y,
+      state.currentRotation.z
+    );
+    group.scale.setScalar(state.currentScale);
   }
-  const group = state.column.group;
-  if (!state.syncedOnce) {
-    state.currentRotation = {
-      x: state.targetRotation.x,
-      y: state.targetRotation.y + state.dragRotation,
-      z: state.targetRotation.z,
-    };
-    state.currentScale = state.targetScale;
-    state.syncedOnce = true;
-  } else {
-    state.currentRotation.x +=
-      (state.targetRotation.x - state.currentRotation.x) * smoothing;
-    const targetY = state.targetRotation.y + state.dragRotation;
-    state.currentRotation.y +=
-      (targetY - state.currentRotation.y) * smoothing;
-    state.currentRotation.z +=
-      (state.targetRotation.z - state.currentRotation.z) * smoothing;
-    state.currentScale +=
-      (state.targetScale - state.currentScale) * smoothing;
-  }
-  group.rotation.set(
-    state.currentRotation.x,
-    state.currentRotation.y,
-    state.currentRotation.z
-  );
-  group.scale.setScalar(state.currentScale);
-  state.composer.render();
+  state.renderer.render(state.scene, state.camera);
 };
 
 const dispose = () => {
@@ -354,9 +384,7 @@ const dispose = () => {
     state.renderer.setAnimationLoop(null);
     state.renderer.dispose();
   }
-  state.composer?.dispose();
   state.renderer = null;
-  state.composer = null;
   state.camera = null;
   state.scene = null;
   state.currentRotation = { x: 0, y: 0, z: 0 };
@@ -377,8 +405,8 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
       updateCamera();
       rebuildColumn();
       handleResize(message.dimensions);
-      if (state.composer) {
-        state.composer.render();
+      if (state.renderer && state.scene && state.camera) {
+        state.renderer.render(state.scene, state.camera);
       }
       break;
     }
@@ -421,5 +449,3 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
       break;
   }
 };
-
-

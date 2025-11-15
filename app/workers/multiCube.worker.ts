@@ -18,27 +18,6 @@ import {
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
-import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
-import { DotScreenShader } from "three/examples/jsm/shaders/DotScreenShader.js";
-
-const ColorDotScreenShader = {
-  uniforms: {
-    ...DotScreenShader.uniforms,
-  },
-  vertexShader: DotScreenShader.vertexShader,
-  fragmentShader: DotScreenShader.fragmentShader.replace(
-    `float average = ( color.r + color.g + color.b ) / 3.0;
-
-			gl_FragColor = vec4( vec3( average * 10.0 - 5.0 + pattern() ), color.a );`,
-    `float patternValue = pattern();
-			float threshold = ( patternValue * 10.0 - 5.0 ) * 0.1;
-			vec3 dotColor = color.rgb * (1.0 + threshold);
-			gl_FragColor = vec4( dotColor, color.a );`
-  ),
-};
-
 import { cubeLabelSlugMap, cubeLabelSlugify } from "@/config/cubeLabels";
 import { getCubeLabelAsset } from "@/app/lib/three/labelGeometry";
 import { getBoxGeometry } from "@/app/lib/three/geometryCache";
@@ -115,7 +94,6 @@ type CubeInstance = {
 const state = {
   config: null as MultiCubeConfig | null,
   renderer: null as WebGLRenderer | null,
-  composer: null as EffectComposer | null,
   camera: null as PerspectiveCamera | null,
   scene: null as Scene | null,
   cubes: [] as CubeInstance[],
@@ -182,22 +160,11 @@ const ensureRenderer = (canvas: OffscreenCanvas, dimensions: Dimensions) => {
     0.1,
     1000
   );
-  const composer = new EffectComposer(renderer);
-  state.composer = composer;
-  if (state.scene && state.camera) {
-    const renderPass = new RenderPass(state.scene, state.camera);
-    composer.addPass(renderPass);
-    // Temporarily disabled to test colors
-    // const dotScreen = new ShaderPass(ColorDotScreenShader);
-    // dotScreen.uniforms["scale"].value = 4;
-    // dotScreen.uniforms["angle"].value = Math.PI / 12;
-    // composer.addPass(dotScreen);
-  }
   renderer.setAnimationLoop(updateFrame);
 };
 
 const handleResize = (dimensions: Dimensions) => {
-  if (!state.renderer || !state.camera || !state.composer) return;
+  if (!state.renderer || !state.camera) return;
   const current = state.dimensions;
   if (
     current &&
@@ -212,10 +179,6 @@ const handleResize = (dimensions: Dimensions) => {
     dimensions.height > 0 ? dimensions.width / dimensions.height : 1;
   state.renderer.setPixelRatio(dimensions.dpr);
   state.renderer.setSize(dimensions.width, dimensions.height, false);
-  state.composer.setSize(
-    Math.max(dimensions.width * dimensions.dpr, 1),
-    Math.max(dimensions.height * dimensions.dpr, 1)
-  );
   state.camera.aspect = aspect;
   state.camera.updateProjectionMatrix();
   const resolution = new Vector3(
@@ -431,34 +394,31 @@ const updateCamera = () => {
 };
 
 const updateFrame = () => {
-  if (!state.renderer || !state.composer || !state.cubes.length) {
-    if (state.composer) {
-      state.composer.render();
-    }
-    return;
+  if (!state.renderer || !state.scene || !state.camera) return;
+  if (state.cubes.length > 0) {
+    const smoothingFactor = smoothing;
+    state.cubes.forEach((cube, index) => {
+      const target = state.rotations[index] ?? { x: 0, y: 0, z: 0 };
+      const drag = state.dragRotations[index] ?? 0;
+      const current = cube.currentRotation;
+      if (!state.syncedOnce) {
+        current.x = target.x;
+        current.y = target.y + drag;
+        current.z = target.z;
+        cube.currentScale = state.scaleTarget;
+      } else {
+        current.x += (target.x - current.x) * smoothingFactor;
+        current.y += (target.y + drag - current.y) * smoothingFactor;
+        current.z += (target.z - current.z) * smoothingFactor;
+        cube.currentScale +=
+          (state.scaleTarget - cube.currentScale) * smoothingFactor;
+      }
+      cube.group.rotation.set(current.x, current.y, current.z);
+      cube.group.scale.setScalar(cube.currentScale);
+    });
+    state.syncedOnce = true;
   }
-  const smoothingFactor = smoothing;
-  state.cubes.forEach((cube, index) => {
-    const target = state.rotations[index] ?? { x: 0, y: 0, z: 0 };
-    const drag = state.dragRotations[index] ?? 0;
-    const current = cube.currentRotation;
-    if (!state.syncedOnce) {
-      current.x = target.x;
-      current.y = target.y + drag;
-      current.z = target.z;
-      cube.currentScale = state.scaleTarget;
-    } else {
-      current.x += (target.x - current.x) * smoothingFactor;
-      current.y += (target.y + drag - current.y) * smoothingFactor;
-      current.z += (target.z - current.z) * smoothingFactor;
-      cube.currentScale +=
-        (state.scaleTarget - cube.currentScale) * smoothingFactor;
-    }
-    cube.group.rotation.set(current.x, current.y, current.z);
-    cube.group.scale.setScalar(cube.currentScale);
-  });
-  state.syncedOnce = true;
-  state.composer.render();
+  state.renderer.render(state.scene, state.camera);
 };
 
 const handleTargets = (message: TargetsMessage) => {
@@ -503,12 +463,10 @@ const dispose = () => {
     state.renderer.setAnimationLoop(null);
     state.renderer.dispose();
   }
-  state.composer?.dispose();
   clearCubes();
   state.renderer = null;
   state.scene = null;
   state.camera = null;
-  state.composer = null;
   state.config = null;
   state.rotations = [];
   state.dragRotations = [];
@@ -532,8 +490,8 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
       updateCamera();
       rebuildCubes();
       handleResize(message.dimensions);
-      if (state.composer) {
-        state.composer.render();
+      if (state.renderer && state.scene && state.camera) {
+        state.renderer.render(state.scene, state.camera);
       }
       break;
     }

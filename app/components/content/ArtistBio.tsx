@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 export default function ArtistBio() {
   return (
     <div className="text-[clamp(1.25rem,3vw,2rem)] my-[10vw] space-y-8 px-8 max-w-[1000px] mx-auto">
@@ -12,7 +13,15 @@ export default function ArtistBio() {
           Chase&nbsp;Cee
         </Link>
         , a producer and technologist mixing retro texture with modern
-        precision.
+        precision. Previously known as{" "}
+        <Link
+          href="https://lilcha.se"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Lil Cha
+        </Link>
+        ,
       </p>
 
       <p>

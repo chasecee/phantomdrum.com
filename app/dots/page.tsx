@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef } from "react";
-import Image from "next/image";
+import { useMemo, useRef } from "react";
+import type { CSSProperties } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import AnimatedHalftoneMask from "./AnimatedHalftoneMask";
@@ -13,18 +13,25 @@ if (typeof window !== "undefined") {
 }
 
 const START_RADIUS = 5;
-const END_RADIUS = 2;
+const END_RADIUS = 0.1;
 
-const START_OFFSET = 15;
+const START_OFFSET = START_RADIUS * 4;
 const END_OFFSET = 0;
 
-const START_SPACING = 40;
-const END_SPACING = END_RADIUS * 2;
+const START_SPACING = START_RADIUS * 3;
+const END_SPACING = 0.1;
 const SCROLL_START = "40% 100%";
 const SCROLL_END = "60% 0%";
 
 export default function RGBChannelHalftone() {
   const channels = useRGBChannels("/img/chase.png");
+  const channelBlendStyle = useMemo<CSSProperties>(
+    () => ({
+      mixBlendMode: "lighten",
+      willChange: "transform",
+    }),
+    []
+  );
 
   const redChannelRef = useRef<HTMLDivElement>(null);
   const greenChannelRef = useRef<HTMLDivElement>(null);
@@ -57,13 +64,11 @@ export default function RGBChannelHalftone() {
           <div
             ref={redChannelRef}
             className="absolute inset-0 pointer-events-none"
-            style={{
-              mixBlendMode: "lighten",
-              willChange: "transform",
-            }}
+            style={channelBlendStyle}
           >
             <AnimatedHalftoneMask
               containerRef={containerRef}
+              imageSrc={channels.red}
               startRadius={START_RADIUS}
               endRadius={END_RADIUS}
               startSpacing={START_SPACING}
@@ -71,27 +76,17 @@ export default function RGBChannelHalftone() {
               scrollStart={SCROLL_START}
               scrollEnd={SCROLL_END}
               className="relative w-full h-full"
-            >
-              <Image
-                src={channels.red}
-                alt=""
-                fill
-                unoptimized
-                className="object-cover object-center"
-              />
-            </AnimatedHalftoneMask>
+            />
           </div>
 
           <div
             ref={greenChannelRef}
             className="absolute inset-0 pointer-events-none"
-            style={{
-              mixBlendMode: "lighten",
-              willChange: "transform",
-            }}
+            style={channelBlendStyle}
           >
             <AnimatedHalftoneMask
               containerRef={containerRef}
+              imageSrc={channels.green}
               startRadius={START_RADIUS}
               endRadius={END_RADIUS}
               startSpacing={START_SPACING}
@@ -100,27 +95,17 @@ export default function RGBChannelHalftone() {
               scrollEnd={SCROLL_END}
               className="relative w-full h-full"
               showMarkers={true}
-            >
-              <Image
-                src={channels.green}
-                alt=""
-                fill
-                unoptimized
-                className="object-cover object-center"
-              />
-            </AnimatedHalftoneMask>
+            />
           </div>
 
           <div
             ref={blueChannelRef}
             className="absolute inset-0 pointer-events-none"
-            style={{
-              mixBlendMode: "lighten",
-              willChange: "transform",
-            }}
+            style={channelBlendStyle}
           >
             <AnimatedHalftoneMask
               containerRef={containerRef}
+              imageSrc={channels.blue}
               startRadius={START_RADIUS}
               endRadius={END_RADIUS}
               startSpacing={START_SPACING}
@@ -128,15 +113,7 @@ export default function RGBChannelHalftone() {
               scrollStart={SCROLL_START}
               scrollEnd={SCROLL_END}
               className="relative w-full h-full"
-            >
-              <Image
-                src={channels.blue}
-                alt=""
-                fill
-                unoptimized
-                className="object-cover object-center"
-              />
-            </AnimatedHalftoneMask>
+            />
           </div>
         </div>
       </div>
