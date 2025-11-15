@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${spaceMono.variable} ${brygada1918.variable} antialiased bg-black`}
+        className={`${spaceMono.variable} ${brygada1918.variable}  bg-black`}
       >
         {children}
       </body>

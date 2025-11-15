@@ -71,12 +71,15 @@ type ResizeMessage = {
 
 type DisposeMessage = { type: "dispose" };
 
+type VisibilityMessage = { type: "visibility"; isVisible: boolean };
+
 type WorkerMessage =
   | InitMessage
   | ConfigMessage
   | TargetsMessage
   | ResizeMessage
-  | DisposeMessage;
+  | DisposeMessage
+  | VisibilityMessage;
 
 type CubeInstance = {
   group: Group;
@@ -102,10 +105,15 @@ const state = {
   scaleTarget: 1,
   syncedOnce: false,
   dimensions: null as Dimensions | null,
+  isVisible: false,
+  isAnimating: false,
+  idleFrames: 0,
 };
 
 const smoothing = 0.1;
 const up = new Vector3(0, 1, 0);
+const MOTION_EPSILON = 0.00035;
+const IDLE_FRAMES_BEFORE_PAUSE = 45;
 
 const buildRotationsArray = (length: number) => {
   const rotations: Rotation[] = [];
@@ -113,6 +121,44 @@ const buildRotationsArray = (length: number) => {
     rotations.push({ x: 0, y: 0, z: 0 });
   }
   return rotations;
+};
+
+const startAnimationLoop = () => {
+  if (!state.renderer || state.isAnimating) return;
+  state.idleFrames = 0;
+  state.renderer.setAnimationLoop(updateFrame);
+  state.isAnimating = true;
+};
+
+const stopAnimationLoop = () => {
+  if (!state.renderer || !state.isAnimating) return;
+  state.renderer.setAnimationLoop(null);
+  state.isAnimating = false;
+  state.idleFrames = 0;
+};
+
+const renderOnce = () => {
+  if (!state.renderer || !state.scene || !state.camera) return;
+  state.renderer.render(state.scene, state.camera);
+};
+
+const snapSceneToTargets = () => {
+  if (!state.scene || state.cubes.length === 0) return;
+  state.cubes.forEach((cube, index) => {
+    const rotation = state.rotations[index] ?? { x: 0, y: 0, z: 0 };
+    const drag = state.dragRotations[index] ?? 0;
+    cube.currentRotation.x = rotation.x;
+    cube.currentRotation.y = rotation.y + drag;
+    cube.currentRotation.z = rotation.z;
+    cube.currentScale = state.scaleTarget;
+    cube.group.rotation.set(
+      cube.currentRotation.x,
+      cube.currentRotation.y,
+      cube.currentRotation.z
+    );
+    cube.group.scale.setScalar(cube.currentScale);
+  });
+  state.syncedOnce = true;
 };
 
 const clearCubes = () => {
@@ -160,7 +206,6 @@ const ensureRenderer = (canvas: OffscreenCanvas, dimensions: Dimensions) => {
     0.1,
     1000
   );
-  renderer.setAnimationLoop(updateFrame);
 };
 
 const handleResize = (dimensions: Dimensions) => {
@@ -395,7 +440,9 @@ const updateCamera = () => {
 
 const updateFrame = () => {
   if (!state.renderer || !state.scene || !state.camera) return;
-  if (state.cubes.length > 0) {
+  let maxDelta = 0;
+  const hasCubes = state.cubes.length > 0;
+  if (hasCubes) {
     const smoothingFactor = smoothing;
     state.cubes.forEach((cube, index) => {
       const target = state.rotations[index] ?? { x: 0, y: 0, z: 0 };
@@ -413,12 +460,32 @@ const updateFrame = () => {
         cube.currentScale +=
           (state.scaleTarget - cube.currentScale) * smoothingFactor;
       }
+      const deltaX = Math.abs(target.x - current.x);
+      const deltaY = Math.abs(target.y + drag - current.y);
+      const deltaZ = Math.abs(target.z - current.z);
+      const deltaScale = Math.abs(state.scaleTarget - cube.currentScale);
+      maxDelta = Math.max(maxDelta, deltaX, deltaY, deltaZ, deltaScale);
       cube.group.rotation.set(current.x, current.y, current.z);
       cube.group.scale.setScalar(cube.currentScale);
     });
     state.syncedOnce = true;
   }
   state.renderer.render(state.scene, state.camera);
+  if (!hasCubes) {
+    stopAnimationLoop();
+    return;
+  }
+  if (maxDelta < MOTION_EPSILON) {
+    state.idleFrames += 1;
+  } else {
+    state.idleFrames = 0;
+  }
+  const idleThreshold = state.isVisible
+    ? IDLE_FRAMES_BEFORE_PAUSE
+    : Math.min(10, IDLE_FRAMES_BEFORE_PAUSE);
+  if (state.idleFrames >= idleThreshold) {
+    stopAnimationLoop();
+  }
 };
 
 const handleTargets = (message: TargetsMessage) => {
@@ -456,6 +523,13 @@ const handleTargets = (message: TargetsMessage) => {
       cube.group.scale.setScalar(scale);
     });
   }
+  if (state.isVisible) {
+    startAnimationLoop();
+  } else {
+    stopAnimationLoop();
+    snapSceneToTargets();
+    renderOnce();
+  }
 };
 
 const dispose = () => {
@@ -472,6 +546,8 @@ const dispose = () => {
   state.dragRotations = [];
   state.scaleTarget = 1;
   state.syncedOnce = false;
+  state.isAnimating = false;
+  state.idleFrames = 0;
 };
 
 self.onmessage = (event: MessageEvent<WorkerMessage>) => {
@@ -492,6 +568,9 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
       handleResize(message.dimensions);
       if (state.renderer && state.scene && state.camera) {
         state.renderer.render(state.scene, state.camera);
+      }
+      if (state.isVisible) {
+        startAnimationLoop();
       }
       break;
     }
@@ -514,6 +593,17 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
         height: message.height,
         dpr: message.dpr,
       });
+      break;
+    }
+    case "visibility": {
+      state.isVisible = message.isVisible;
+      if (state.isVisible) {
+        startAnimationLoop();
+      } else {
+        stopAnimationLoop();
+        snapSceneToTargets();
+        renderOnce();
+      }
       break;
     }
     case "dispose": {

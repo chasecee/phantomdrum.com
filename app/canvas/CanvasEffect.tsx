@@ -57,6 +57,8 @@ type WorkerRenderError = {
 
 type WorkerResponse = WorkerRenderComplete | WorkerRenderError;
 
+const HALFTONE_RENDER_DPR = 0.5;
+
 export const CanvasEffects = forwardRef<
   CanvasEffectsHandle,
   CanvasEffectsProps
@@ -284,26 +286,35 @@ export const CanvasEffects = forwardRef<
     const sourceCtx = sourceCanvas.getContext("2d");
     if (!ctx || !sourceCtx) return;
 
-    renderContextRef.current = ctx;
-    currentWidthRef.current = width;
-    currentHeightRef.current = height;
+    const renderWidth = Math.max(
+      1,
+      Math.round(width * HALFTONE_RENDER_DPR)
+    );
+    const renderHeight = Math.max(
+      1,
+      Math.round(height * HALFTONE_RENDER_DPR)
+    );
 
-    canvas.width = width;
-    canvas.height = height;
-    sourceCanvas.width = width;
-    sourceCanvas.height = height;
+    renderContextRef.current = ctx;
+    currentWidthRef.current = renderWidth;
+    currentHeightRef.current = renderHeight;
+
+    canvas.width = renderWidth;
+    canvas.height = renderHeight;
+    sourceCanvas.width = renderWidth;
+    sourceCanvas.height = renderHeight;
 
     sourceCtx.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
 
     if (sourceImage) {
       const scale = Math.max(
-        width / sourceImage.width,
-        height / sourceImage.height
+        renderWidth / sourceImage.width,
+        renderHeight / sourceImage.height
       );
-      const x = (width - sourceImage.width * scale) / 2;
-      const y = (height - sourceImage.height * scale) / 2;
+      const x = (renderWidth - sourceImage.width * scale) / 2;
+      const y = (renderHeight - sourceImage.height * scale) / 2;
       sourceCtx.fillStyle = "#000000";
-      sourceCtx.fillRect(0, 0, width, height);
+      sourceCtx.fillRect(0, 0, renderWidth, renderHeight);
       sourceCtx.drawImage(
         sourceImage,
         x,
@@ -312,15 +323,20 @@ export const CanvasEffects = forwardRef<
         sourceImage.height * scale
       );
     } else {
-      const gradient = sourceCtx.createLinearGradient(0, 0, width, height);
+      const gradient = sourceCtx.createLinearGradient(
+        0,
+        0,
+        renderWidth,
+        renderHeight
+      );
       gradient.addColorStop(0, "#0f0f0f");
       gradient.addColorStop(1, "#1a1a1a");
       sourceCtx.fillStyle = gradient;
-      sourceCtx.fillRect(0, 0, width, height);
+      sourceCtx.fillRect(0, 0, renderWidth, renderHeight);
     }
 
     sourceCtx.filter = "none";
-    const imageData = sourceCtx.getImageData(0, 0, width, height);
+    const imageData = sourceCtx.getImageData(0, 0, renderWidth, renderHeight);
 
     syncSourceToWorker(imageData);
   }, [sourceImage, brightness, contrast, width, height, syncSourceToWorker]);

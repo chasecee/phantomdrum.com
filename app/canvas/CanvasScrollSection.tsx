@@ -74,6 +74,7 @@ export function CanvasScrollSection() {
     if (!scrollSectionRef.current) return;
 
     const scrubProxy: AnimatedParams = { ...INITIAL_PARAMS };
+    let rafId: number | null = null;
 
     const ctx = gsap.context(() => {
       gsap.to(scrubProxy, {
@@ -91,18 +92,24 @@ export function CanvasScrollSection() {
           markers: false,
         },
         onUpdate: () => {
-          if (!canvasRef.current) return;
-          canvasRef.current.updateParams({
-            halftoneSize: scrubProxy.halftoneSize,
-            dotSpacing: scrubProxy.dotSpacing,
-            rgbOffsetX: scrubProxy.rgbOffsetX,
-            rgbOffsetY: scrubProxy.rgbOffsetY,
+          if (!canvasRef.current || rafId !== null) return;
+          rafId = requestAnimationFrame(() => {
+            rafId = null;
+            canvasRef.current?.updateParams({
+              halftoneSize: scrubProxy.halftoneSize,
+              dotSpacing: scrubProxy.dotSpacing,
+              rgbOffsetX: scrubProxy.rgbOffsetX,
+              rgbOffsetY: scrubProxy.rgbOffsetY,
+            });
           });
         },
       });
     }, scrollSectionRef);
 
     return () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
       ctx.revert();
     };
   }, []);
@@ -110,7 +117,7 @@ export function CanvasScrollSection() {
   return (
     <section
       ref={scrollSectionRef}
-      className="relative w-full px-8 aspect-1/3 mix-blend-difference"
+      className="relative w-full px-8 aspect-1/3 mix-blend-difference-off"
     >
       <div className="sticky top-8 w-full mx-auto">
         <CanvasEffects ref={canvasRef} {...CANVAS_STATIC_PROPS} />

@@ -68,12 +68,15 @@ type ResizeMessage = {
 
 type DisposeMessage = { type: "dispose" };
 
+type VisibilityMessage = { type: "visibility"; isVisible: boolean };
+
 type WorkerMessage =
   | InitMessage
   | ConfigMessage
   | TargetsMessage
   | ResizeMessage
-  | DisposeMessage;
+  | DisposeMessage
+  | VisibilityMessage;
 
 type ColumnInstance = {
   group: Group;
@@ -100,10 +103,52 @@ const state = {
   dragRotation: 0,
   syncedOnce: false,
   dimensions: null as Dimensions | null,
+  isVisible: false,
+  isAnimating: false,
+  idleFrames: 0,
 };
 
 const smoothing = 0.1;
 const up = new Vector3(0, 1, 0);
+const MOTION_EPSILON = 0.00035;
+const IDLE_FRAMES_BEFORE_PAUSE = 45;
+
+const startAnimationLoop = () => {
+  if (!state.renderer || state.isAnimating) return;
+  state.idleFrames = 0;
+  state.renderer.setAnimationLoop(updateFrame);
+  state.isAnimating = true;
+};
+
+const stopAnimationLoop = () => {
+  if (!state.renderer || !state.isAnimating) return;
+  state.renderer.setAnimationLoop(null);
+  state.isAnimating = false;
+  state.idleFrames = 0;
+};
+
+const renderOnce = () => {
+  if (!state.renderer || !state.scene || !state.camera) return;
+  state.renderer.render(state.scene, state.camera);
+};
+
+const snapColumnToTargets = () => {
+  if (!state.column) return;
+  const group = state.column.group;
+  state.currentRotation = {
+    x: state.targetRotation.x,
+    y: state.targetRotation.y + state.dragRotation,
+    z: state.targetRotation.z,
+  };
+  state.currentScale = state.targetScale;
+  group.rotation.set(
+    state.currentRotation.x,
+    state.currentRotation.y,
+    state.currentRotation.z
+  );
+  group.scale.setScalar(state.currentScale);
+  state.syncedOnce = true;
+};
 
 const edgesGeometryToLineSegmentsGeometry = (
   edgesGeometry: EdgesGeometry
@@ -306,7 +351,6 @@ const ensureRenderer = (canvas: OffscreenCanvas, dimensions: Dimensions) => {
   renderer.setSize(dimensions.width, dimensions.height, false);
   renderer.setClearColor(0x000000, 0);
   state.renderer = renderer;
-  renderer.setAnimationLoop(updateFrame);
 };
 
 const updateCamera = () => {
@@ -347,6 +391,7 @@ const handleResize = (dimensions: Dimensions) => {
 
 const updateFrame = () => {
   if (!state.renderer || !state.scene || !state.camera) return;
+  let maxDelta = 0;
   if (state.column) {
     const group = state.column.group;
     if (!state.syncedOnce) {
@@ -368,6 +413,12 @@ const updateFrame = () => {
       state.currentScale +=
         (state.targetScale - state.currentScale) * smoothing;
     }
+    const rotationYTarget = state.targetRotation.y + state.dragRotation;
+    const deltaX = Math.abs(state.targetRotation.x - state.currentRotation.x);
+    const deltaY = Math.abs(rotationYTarget - state.currentRotation.y);
+    const deltaZ = Math.abs(state.targetRotation.z - state.currentRotation.z);
+    const deltaScale = Math.abs(state.targetScale - state.currentScale);
+    maxDelta = Math.max(deltaX, deltaY, deltaZ, deltaScale);
     group.rotation.set(
       state.currentRotation.x,
       state.currentRotation.y,
@@ -376,6 +427,21 @@ const updateFrame = () => {
     group.scale.setScalar(state.currentScale);
   }
   state.renderer.render(state.scene, state.camera);
+  if (!state.column) {
+    stopAnimationLoop();
+    return;
+  }
+  if (maxDelta < MOTION_EPSILON) {
+    state.idleFrames += 1;
+  } else {
+    state.idleFrames = 0;
+  }
+  const idleThreshold = state.isVisible
+    ? IDLE_FRAMES_BEFORE_PAUSE
+    : Math.min(10, IDLE_FRAMES_BEFORE_PAUSE);
+  if (state.idleFrames >= idleThreshold) {
+    stopAnimationLoop();
+  }
 };
 
 const dispose = () => {
@@ -394,6 +460,9 @@ const dispose = () => {
   state.dragRotation = 0;
   state.syncedOnce = false;
   state.config = null;
+  state.isVisible = false;
+  state.isAnimating = false;
+  state.idleFrames = 0;
 };
 
 self.onmessage = (event: MessageEvent<WorkerMessage>) => {
@@ -408,6 +477,9 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
       if (state.renderer && state.scene && state.camera) {
         state.renderer.render(state.scene, state.camera);
       }
+      if (state.isVisible) {
+        startAnimationLoop();
+      }
       break;
     }
     case "config": {
@@ -415,6 +487,12 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
       state.config = message.config;
       updateCamera();
       rebuildColumn();
+      if (state.isVisible) {
+        startAnimationLoop();
+      } else {
+        snapColumnToTargets();
+        renderOnce();
+      }
       break;
     }
     case "targets": {
@@ -429,6 +507,21 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
           z: state.targetRotation.z,
         };
         state.currentScale = state.targetScale;
+        if (state.column) {
+          state.column.group.rotation.set(
+            state.currentRotation.x,
+            state.currentRotation.y,
+            state.currentRotation.z
+          );
+          state.column.group.scale.setScalar(state.currentScale);
+        }
+      }
+      if (state.isVisible) {
+        startAnimationLoop();
+      } else {
+        stopAnimationLoop();
+        snapColumnToTargets();
+        renderOnce();
       }
       break;
     }
@@ -439,6 +532,17 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
         height: message.height,
         dpr: message.dpr,
       });
+      break;
+    }
+    case "visibility": {
+      state.isVisible = message.isVisible;
+      if (state.isVisible) {
+        startAnimationLoop();
+      } else {
+        stopAnimationLoop();
+        snapColumnToTargets();
+        renderOnce();
+      }
       break;
     }
     case "dispose": {

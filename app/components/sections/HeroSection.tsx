@@ -8,7 +8,7 @@ import HalftoneEffect from "../content/HalftoneEffect";
 export default function HeroSection() {
   return (
     <div className="relative aspect-1/2 w-full">
-      <div className="sticky top-6 z-10 mix-blend-difference px-6">
+      <div className="sticky top-6 z-10 mix-blend-difference-off px-6">
         <div
           className="relative w-full aspect-887/488"
           style={{ overflow: "visible" }}

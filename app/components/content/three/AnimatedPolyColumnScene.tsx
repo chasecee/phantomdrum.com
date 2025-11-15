@@ -103,6 +103,7 @@ export function AnimatedPolyColumnScene({
   const dragStartRef = useRef({ x: 0, y: 0 });
   const dragStartRotationRef = useRef(0);
   const isHorizontalDragRef = useRef(false);
+  const lastVisibilityRef = useRef(false);
 
   const finalRadius = useMemo(
     () => radius ?? dynamicRadius,
@@ -177,9 +178,77 @@ export function AnimatedPolyColumnScene({
     });
   }, []);
 
+  const syncVisibilityToWorker = useCallback(() => {
+    if (!workerRef.current || !workerInitializedRef.current) return;
+    workerRef.current.postMessage({
+      type: "visibility",
+      isVisible: lastVisibilityRef.current,
+    });
+  }, []);
+
+  const updateWorkerVisibility = useCallback(
+    (isVisible: boolean) => {
+      if (lastVisibilityRef.current === isVisible) return;
+      lastVisibilityRef.current = isVisible;
+      syncVisibilityToWorker();
+    },
+    [syncVisibilityToWorker]
+  );
+
   useEffect(() => {
     workerConfigRef.current = workerConfig;
   }, [workerConfig]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const container = containerRef.current;
+    if (!container) return;
+
+    if (!("IntersectionObserver" in window)) {
+      updateWorkerVisibility(true);
+      return () => {
+        if (lastVisibilityRef.current) {
+          lastVisibilityRef.current = false;
+          syncVisibilityToWorker();
+        }
+      };
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        const isVisible =
+          entry.isIntersecting || entry.intersectionRatio > 0;
+        if (isVisible) {
+          updateWorkerVisibility(true);
+          return;
+        }
+        const bounds = entry.boundingClientRect;
+        const viewportHeight = window.innerHeight || 0;
+        const buffer = viewportHeight * 0.25;
+        const bufferedVisible =
+          bounds.top < viewportHeight + buffer &&
+          bounds.bottom > -buffer;
+        updateWorkerVisibility(bufferedVisible);
+      },
+      {
+        root: null,
+        rootMargin: "30% 0px",
+        threshold: [0, 0.1, 0.25, 0.5, 0.75],
+      }
+    );
+
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+      if (lastVisibilityRef.current) {
+        lastVisibilityRef.current = false;
+        syncVisibilityToWorker();
+      }
+    };
+  }, [updateWorkerVisibility, syncVisibilityToWorker]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -294,6 +363,7 @@ export function AnimatedPolyColumnScene({
       );
       workerInitializedRef.current = true;
       sendTargetsRef.current?.();
+      syncVisibilityToWorker();
       let resizeTimeout: number | null = null;
       const handleResize = () => {
         if (resizeTimeout !== null) return;
