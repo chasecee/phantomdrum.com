@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   CanvasHalftoneWebGL,
   type CanvasHalftoneWebGLHandle,
+  type HalftoneWebGLParams,
 } from "../canvas/CanvasHalftoneWebGL";
 import type {
   AspectRatioInput,
@@ -17,7 +18,7 @@ import type {
   ResolvedAspectRatio,
 } from "./halftoneTypes";
 
-const DEFAULT_ASPECT_RATIO_BASE = { width: 1, height: 1.1 };
+const DEFAULT_ASPECT_RATIO_BASE = { width: 1, height: 1.5 };
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
@@ -52,13 +53,14 @@ const DEFAULT_ASPECT_RATIO = createAspectRatioValue(
 );
 
 const DEFAULT_INITIAL_PARAMS: HalftoneParamsPreset = {
-  halftoneSize: 44,
-  dotSpacing: 2,
-  rgbOffset: -250,
-  rgbOffsetAngle: -90,
+  halftoneSize: 33,
+  dotSpacing: 3,
+  rgbOffset: -255,
+  rgbOffsetAngle: 90,
   effectIntensity: 1,
   patternRotation: 55,
   zoom: 2,
+  translateY: 0,
 };
 
 const DEFAULT_TARGET_PARAMS: HalftoneParamsPreset = {
@@ -69,13 +71,22 @@ const DEFAULT_TARGET_PARAMS: HalftoneParamsPreset = {
   effectIntensity: 0,
   patternRotation: 55,
   zoom: 0.66,
+  translateY: 210,
+};
+
+const toRendererParams = (
+  params: HalftoneParamsPreset
+): Partial<HalftoneWebGLParams> => {
+  const { translateY: _translateY, ...rest } = params;
+  void _translateY;
+  return rest;
 };
 
 const DEFAULT_PATTERN_ROTATION = DEFAULT_INITIAL_PARAMS.patternRotation;
 
 const DEFAULT_SCROLL_SETTINGS: ScrollTriggerSettings = {
-  start: "0% 50%",
-  end: "30% 0%",
+  start: "15% 30%",
+  end: "80% 0%",
   scrub: true,
   markers: true,
 };
@@ -217,6 +228,7 @@ export function HalftoneScrollSection({
   const scrollSectionRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<CanvasHalftoneWebGLHandle>(null);
   const responsiveContainerRef = useRef<HTMLDivElement>(null);
+  const translateYValueRef = useRef(0);
 
   const {
     aspectRatio,
@@ -228,6 +240,11 @@ export function HalftoneScrollSection({
     initialParams,
     targetParams,
   } = useMemo(() => resolveConfig(config), [config]);
+
+  const rendererInitialParams = useMemo(
+    () => toRendererParams(initialParams),
+    [initialParams]
+  );
 
   const [canvasDimensions, setCanvasDimensions] = useState(() => ({
     ...fallbackCanvasSize,
@@ -251,6 +268,21 @@ export function HalftoneScrollSection({
     });
   }, [aspectRatio.scalar]);
 
+  const applyTranslateY = useCallback((value?: number) => {
+    const node = responsiveContainerRef.current;
+    if (!node) return;
+    const nextValue = Number.isFinite(value) ? Number(value) : 0;
+    if (translateYValueRef.current === nextValue) return;
+    translateYValueRef.current = nextValue;
+    if (nextValue === 0) {
+      node.style.transform = "";
+      node.style.willChange = "";
+      return;
+    }
+    node.style.transform = `translate3d(0, ${nextValue}px, 0)`;
+    node.style.willChange = "transform";
+  }, []);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!scrollSectionRef.current) return;
@@ -267,7 +299,8 @@ export function HalftoneScrollSection({
         effectIntensity: targetParams.effectIntensity,
         patternRotation: targetParams.patternRotation,
         zoom: targetParams.zoom,
-        ease: "linear",
+        translateY: targetParams.translateY,
+        ease: "power1.inOut",
         scrollTrigger: {
           trigger: scrollSectionRef.current,
           start: scroll.start,
@@ -277,10 +310,13 @@ export function HalftoneScrollSection({
           markers: scroll.markers,
         },
         onUpdate: () => {
-          if (!canvasRef.current || rafId !== null) return;
+          if (rafId !== null) return;
           rafId = requestAnimationFrame(() => {
             rafId = null;
-            canvasRef.current?.updateParams(proxy);
+            applyTranslateY(proxy.translateY);
+            if (canvasRef.current) {
+              canvasRef.current.updateParams(toRendererParams(proxy));
+            }
           });
         },
       });
@@ -292,7 +328,11 @@ export function HalftoneScrollSection({
       }
       ctx.revert();
     };
-  }, [initialParams, scroll, targetParams]);
+  }, [applyTranslateY, initialParams, scroll, targetParams]);
+
+  useEffect(() => {
+    applyTranslateY(initialParams.translateY);
+  }, [applyTranslateY, initialParams.translateY]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -317,7 +357,7 @@ export function HalftoneScrollSection({
       className="w-full relative  "
       style={{
         width: responsiveWidthValue,
-        aspectRatio: `${aspectRatio.width}/${aspectRatio.height * 2}`,
+        aspectRatio: `${aspectRatio.width}/${aspectRatio.height * 1}`,
       }}
     >
       <div
@@ -342,10 +382,10 @@ export function HalftoneScrollSection({
             width={canvasDimensions.width}
             height={canvasDimensions.height}
             imageSrc={imageSrc}
-            params={initialParams}
+            params={rendererInitialParams}
             suspendWhenHidden={false}
             imageFit={keepImageInView ? "contain" : "cover"}
-            className="w-full h-full border-0 border-purple-500"
+            className="w-full h-full"
           />
         </div>
       </div>

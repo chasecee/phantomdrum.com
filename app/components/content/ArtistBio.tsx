@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function ArtistBio() {
   return (
-    <div className="text-[clamp(1.25rem,3vw,2rem)] my-[10vw] space-y-8 px-8 max-w-[1000px] mx-auto">
+    <div className="text-[clamp(1.25rem,3vw,2rem)] my-[10vw] space-y-8 px-6 max-w-[1200px] mx-auto">
       <p>
         <strong>Phantom Drum</strong> is the work of{" "}
         <Link

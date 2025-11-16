@@ -22,6 +22,7 @@ export type HalftoneParamsPreset = {
   effectIntensity: number;
   patternRotation: number;
   zoom: number;
+  translateY: number;
 };
 
 export type ScrollTriggerSettings = {
