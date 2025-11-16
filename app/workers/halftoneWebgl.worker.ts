@@ -19,6 +19,7 @@ type InitMessage = {
     height: number;
     dpr: number;
     imageSrc: string;
+    fitMode: "cover" | "contain";
   };
   params: HalftoneParams;
 };
@@ -53,10 +54,12 @@ type HalftoneParams = {
   halftoneSize: number;
   dotSpacing: number;
   rgbOffset: number;
+  rgbOffsetAngle: number;
   effectIntensity: number;
   brightness: number;
   contrast: number;
   patternRotation: number;
+  zoom: number;
 };
 
 const state = {
@@ -73,6 +76,7 @@ const state = {
   isVisible: false,
   isAnimating: false,
   needsRender: true,
+  fitMode: "cover" as "cover" | "contain",
 };
 
 const fragmentShader = /* glsl */ `
@@ -82,7 +86,7 @@ const fragmentShader = /* glsl */ `
   uniform vec2 uResolution;
   uniform float uDotSpacing;
   uniform float uHalftoneSize;
-  uniform float uRgbOffset;
+  uniform vec2 uRgbOffsetVector;
   uniform float uIntensity;
   uniform float uBrightness;
   uniform float uContrast;
@@ -128,9 +132,9 @@ const fragmentShader = /* glsl */ `
     float intensity = computeLuminance(baseColor) * uIntensity;
     float dotRadius = uHalftoneSize * max(intensity, 0.05);
 
-    vec3 rColor = sampleTexture(uv, vec2(uRgbOffset / uResolution.x, uRgbOffset / uResolution.y));
+    vec3 rColor = sampleTexture(uv, uRgbOffsetVector);
     vec3 gColor = sampleTexture(uv, vec2(0.0));
-    vec3 bColor = sampleTexture(uv, vec2(-uRgbOffset / uResolution.x, -uRgbOffset / uResolution.y));
+    vec3 bColor = sampleTexture(uv, -uRgbOffsetVector);
 
     float rDot = step(dist, dotRadius * rColor.r);
     float gDot = step(dist, dotRadius * gColor.g);
@@ -179,7 +183,7 @@ const createMaterial = () => {
     },
     uDotSpacing: { value: state.params?.dotSpacing ?? 16 },
     uHalftoneSize: { value: state.params?.halftoneSize ?? 6 },
-    uRgbOffset: { value: state.params?.rgbOffset ?? 0.5 },
+    uRgbOffsetVector: { value: new Vector2(0, 0) },
     uIntensity: { value: state.params?.effectIntensity ?? 1 },
     uBrightness: { value: state.params?.brightness ?? 1 },
     uContrast: { value: state.params?.contrast ?? 1 },
@@ -216,16 +220,24 @@ const updateUniforms = () => {
   if (!state.uniforms || !state.params) return;
   state.uniforms.uDotSpacing.value = state.params.dotSpacing;
   state.uniforms.uHalftoneSize.value = state.params.halftoneSize;
-  state.uniforms.uRgbOffset.value = state.params.rgbOffset;
+  const angle = state.params.rgbOffsetAngle ?? 0;
+  const magnitude = state.params.rgbOffset ?? 0;
+  const x = Math.cos(angle) * magnitude;
+  const y = Math.sin(angle) * magnitude;
+  const width = Math.max(1, state.dimensions.width);
+  const height = Math.max(1, state.dimensions.height);
+  state.uniforms.uRgbOffsetVector.value.set(x / width, y / height);
   state.uniforms.uIntensity.value = state.params.effectIntensity;
   state.uniforms.uBrightness.value = state.params.brightness;
   state.uniforms.uContrast.value = state.params.contrast;
   state.uniforms.uPatternRotation.value = state.params.patternRotation;
+  updateUvScale();
 };
 
 const updateUvScale = () => {
   if (!state.uniforms) return;
-  state.uniforms.uUvScale.value.set(1, 1);
+  const zoom = Math.max(0.01, state.params?.zoom ?? 1);
+  state.uniforms.uUvScale.value.set(zoom, zoom);
 };
 
 const buildTextureFromSource = () => {
@@ -238,9 +250,12 @@ const buildTextureFromSource = () => {
 
   const imageWidth = state.sourceBitmap.width;
   const imageHeight = state.sourceBitmap.height;
-  const coverScale = Math.max(width / imageWidth, height / imageHeight);
-  const drawWidth = imageWidth * coverScale;
-  const drawHeight = imageHeight * coverScale;
+  const scale =
+    state.fitMode === "contain"
+      ? Math.min(width / imageWidth, height / imageHeight)
+      : Math.max(width / imageWidth, height / imageHeight);
+  const drawWidth = imageWidth * scale;
+  const drawHeight = imageHeight * scale;
   const offsetX = (width - drawWidth) / 2;
   const offsetY = (height - drawHeight) / 2;
 
@@ -350,6 +365,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
         dpr: message.config.dpr,
       };
       state.imageSrc = message.config.imageSrc;
+      state.fitMode = message.config.fitMode ?? "cover";
       state.params = message.params;
       ensureRenderer(message.canvas);
       ensureScene();

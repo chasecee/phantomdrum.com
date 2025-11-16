@@ -12,10 +12,12 @@ export type HalftoneWebGLParams = {
   halftoneSize: number;
   dotSpacing: number;
   rgbOffset: number;
+  rgbOffsetAngle: number;
   effectIntensity: number;
   brightness: number;
   contrast: number;
   patternRotation: number;
+  zoom: number;
 };
 
 export type CanvasHalftoneWebGLProps = {
@@ -26,6 +28,7 @@ export type CanvasHalftoneWebGLProps = {
   className?: string;
   style?: React.CSSProperties;
   suspendWhenHidden?: boolean;
+  imageFit?: "cover" | "contain";
 };
 
 export type CanvasHalftoneWebGLHandle = {
@@ -36,20 +39,24 @@ const DEFAULT_PARAMS: HalftoneWebGLParams = {
   halftoneSize: 6,
   dotSpacing: 16,
   rgbOffset: 0.8,
+  rgbOffsetAngle: 45,
   effectIntensity: 1,
   brightness: 1,
   contrast: 1,
   patternRotation: 45,
+  zoom: 1,
 };
 
 type WorkerParamPayload = {
   halftoneSize: number;
   dotSpacing: number;
   rgbOffset: number;
+  rgbOffsetAngle: number;
   effectIntensity: number;
   brightness: number;
   contrast: number;
   patternRotation: number;
+  zoom: number;
 };
 
 const degToRad = (value: number) => (value * Math.PI) / 180;
@@ -60,12 +67,16 @@ const mergeParamsWithDefaults = (
   halftoneSize: params?.halftoneSize ?? DEFAULT_PARAMS.halftoneSize,
   dotSpacing: params?.dotSpacing ?? DEFAULT_PARAMS.dotSpacing,
   rgbOffset: params?.rgbOffset ?? DEFAULT_PARAMS.rgbOffset,
+  rgbOffsetAngle: degToRad(
+    params?.rgbOffsetAngle ?? DEFAULT_PARAMS.rgbOffsetAngle
+  ),
   effectIntensity: params?.effectIntensity ?? DEFAULT_PARAMS.effectIntensity,
   brightness: params?.brightness ?? DEFAULT_PARAMS.brightness,
   contrast: params?.contrast ?? DEFAULT_PARAMS.contrast,
   patternRotation: degToRad(
     params?.patternRotation ?? DEFAULT_PARAMS.patternRotation
   ),
+  zoom: params?.zoom ?? DEFAULT_PARAMS.zoom,
 });
 
 const convertPartialParams = (
@@ -75,12 +86,15 @@ const convertPartialParams = (
   if (next.halftoneSize !== undefined) result.halftoneSize = next.halftoneSize;
   if (next.dotSpacing !== undefined) result.dotSpacing = next.dotSpacing;
   if (next.rgbOffset !== undefined) result.rgbOffset = next.rgbOffset;
+  if (next.rgbOffsetAngle !== undefined)
+    result.rgbOffsetAngle = degToRad(next.rgbOffsetAngle);
   if (next.effectIntensity !== undefined)
     result.effectIntensity = next.effectIntensity;
   if (next.brightness !== undefined) result.brightness = next.brightness;
   if (next.contrast !== undefined) result.contrast = next.contrast;
   if (next.patternRotation !== undefined)
     result.patternRotation = degToRad(next.patternRotation);
+  if (next.zoom !== undefined) result.zoom = next.zoom;
   return result;
 };
 
@@ -96,6 +110,7 @@ export const CanvasHalftoneWebGL = forwardRef<
     className = "",
     style,
     suspendWhenHidden = true,
+    imageFit = "cover",
   }: CanvasHalftoneWebGLProps,
   ref
 ) {
@@ -107,6 +122,7 @@ export const CanvasHalftoneWebGL = forwardRef<
   );
   const visibilityRef = useRef(suspendWhenHidden ? false : true);
   const devicePixelRatioRef = useRef(1);
+  const canvasSizeRef = useRef({ width, height });
   const supportsOffscreen =
     typeof window === "undefined"
       ? true
@@ -187,6 +203,7 @@ export const CanvasHalftoneWebGL = forwardRef<
           height,
           dpr: devicePixelRatio,
           imageSrc: resolvedImageSrc,
+          fitMode: imageFit,
         },
         params: lastParamsRef.current,
       },
@@ -209,10 +226,12 @@ export const CanvasHalftoneWebGL = forwardRef<
         return;
       }
       devicePixelRatioRef.current = nextDpr;
+      const { width: currentWidth, height: currentHeight } =
+        canvasSizeRef.current;
       workerRef.current.postMessage({
         type: "resize",
-        width,
-        height,
+        width: currentWidth,
+        height: currentHeight,
         dpr: nextDpr,
       });
     };
@@ -230,11 +249,23 @@ export const CanvasHalftoneWebGL = forwardRef<
     imageSrc,
     width,
     height,
+    imageFit,
     postVisibility,
     syncParamsToWorker,
     supportsOffscreen,
     suspendWhenHidden,
   ]);
+
+  useEffect(() => {
+    canvasSizeRef.current = { width, height };
+    if (!workerRef.current || !workerReadyRef.current) return;
+    workerRef.current.postMessage({
+      type: "resize",
+      width,
+      height,
+      dpr: devicePixelRatioRef.current,
+    });
+  }, [height, width]);
 
   useEffect(() => {
     if (!suspendWhenHidden) return;
