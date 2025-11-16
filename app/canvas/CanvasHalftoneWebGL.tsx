@@ -7,6 +7,7 @@ import {
   useRef,
   useCallback,
 } from "react";
+import { HalftoneRendererCore } from "../halftone-webgl/HalftoneRendererCore";
 
 export type HalftoneWebGLParams = {
   halftoneSize: number;
@@ -60,6 +61,15 @@ type WorkerParamPayload = {
 };
 
 const degToRad = (value: number) => (value * Math.PI) / 180;
+const clampDevicePixelRatio = (value: number) => Math.min(value || 1, 1.5);
+const resolveImageSrc = (src: string) => {
+  if (typeof window === "undefined") return src;
+  try {
+    return new URL(src, window.location.origin).toString();
+  } catch {
+    return src;
+  }
+};
 
 const mergeParamsWithDefaults = (
   params?: Partial<HalftoneWebGLParams>
@@ -117,32 +127,48 @@ export const CanvasHalftoneWebGL = forwardRef<
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
   const workerReadyRef = useRef(false);
+  const fallbackRendererRef = useRef<HalftoneRendererCore | null>(null);
+  const fallbackReadyRef = useRef(false);
   const lastParamsRef = useRef<WorkerParamPayload>(
     mergeParamsWithDefaults(params)
   );
   const visibilityRef = useRef(suspendWhenHidden ? false : true);
   const devicePixelRatioRef = useRef(1);
   const canvasSizeRef = useRef({ width, height });
+  const lastImageConfigRef = useRef({
+    src: resolveImageSrc(imageSrc),
+    fit: imageFit,
+  });
   const supportsOffscreen =
     typeof window === "undefined"
       ? true
-      : typeof OffscreenCanvas !== "undefined";
+      : typeof OffscreenCanvas !== "undefined" &&
+        typeof HTMLCanvasElement !== "undefined" &&
+        "transferControlToOffscreen" in HTMLCanvasElement.prototype;
 
   const postVisibility = useCallback((isVisible: boolean) => {
     visibilityRef.current = isVisible;
-    if (!workerRef.current || !workerReadyRef.current) return;
-    workerRef.current.postMessage({
-      type: "visibility",
-      isVisible,
-    });
+    if (workerRef.current && workerReadyRef.current) {
+      workerRef.current.postMessage({
+        type: "visibility",
+        isVisible,
+      });
+    }
+    if (fallbackRendererRef.current && fallbackReadyRef.current) {
+      fallbackRendererRef.current.setVisibility(isVisible);
+    }
   }, []);
 
-  const syncParamsToWorker = useCallback(() => {
-    if (!workerRef.current || !workerReadyRef.current) return;
-    workerRef.current.postMessage({
-      type: "params",
-      params: lastParamsRef.current,
-    });
+  const syncParamsToRenderer = useCallback(() => {
+    if (workerRef.current && workerReadyRef.current) {
+      workerRef.current.postMessage({
+        type: "params",
+        params: lastParamsRef.current,
+      });
+    }
+    if (fallbackRendererRef.current && fallbackReadyRef.current) {
+      fallbackRendererRef.current.updateParams(lastParamsRef.current);
+    }
   }, []);
 
   useImperativeHandle(
@@ -153,16 +179,16 @@ export const CanvasHalftoneWebGL = forwardRef<
           ...lastParamsRef.current,
           ...convertPartialParams(next),
         };
-        syncParamsToWorker();
+        syncParamsToRenderer();
       },
     }),
-    [syncParamsToWorker]
+    [syncParamsToRenderer]
   );
 
   useEffect(() => {
     lastParamsRef.current = mergeParamsWithDefaults(params);
-    syncParamsToWorker();
-  }, [params, syncParamsToWorker]);
+    syncParamsToRenderer();
+  }, [params, syncParamsToRenderer]);
 
   useEffect(() => {
     if (!supportsOffscreen || typeof window === "undefined") return;
@@ -185,25 +211,26 @@ export const CanvasHalftoneWebGL = forwardRef<
       return;
     }
 
-    const devicePixelRatio = Math.min(window.devicePixelRatio ?? 1, 1.5);
+    const devicePixelRatio = clampDevicePixelRatio(window.devicePixelRatio ?? 1);
     devicePixelRatioRef.current = devicePixelRatio;
-    let resolvedImageSrc = imageSrc;
-    try {
-      resolvedImageSrc = new URL(imageSrc, window.location.origin).toString();
-    } catch {
-      resolvedImageSrc = imageSrc;
-    }
+    const resolvedImageSrc = resolveImageSrc(lastImageConfigRef.current.src);
+    lastImageConfigRef.current = {
+      src: resolvedImageSrc,
+      fit: lastImageConfigRef.current.fit,
+    };
+    const { width: initialWidth, height: initialHeight } =
+      canvasSizeRef.current;
 
     worker.postMessage(
       {
         type: "init",
         canvas: offscreen,
         config: {
-          width,
-          height,
+          width: initialWidth,
+          height: initialHeight,
           dpr: devicePixelRatio,
           imageSrc: resolvedImageSrc,
-          fitMode: imageFit,
+          fitMode: lastImageConfigRef.current.fit,
         },
         params: lastParamsRef.current,
       },
@@ -211,61 +238,152 @@ export const CanvasHalftoneWebGL = forwardRef<
     );
 
     workerReadyRef.current = true;
-    syncParamsToWorker();
+    syncParamsToRenderer();
     if (!suspendWhenHidden) {
       postVisibility(true);
     } else {
       postVisibility(visibilityRef.current);
     }
 
-    const handleResize = () => {
-      if (!workerRef.current) return;
-      if (typeof window === "undefined") return;
-      const nextDpr = Math.min(window.devicePixelRatio ?? 1, 1.5);
-      if (Math.abs(nextDpr - devicePixelRatioRef.current) < 0.01) {
-        return;
-      }
-      devicePixelRatioRef.current = nextDpr;
-      const { width: currentWidth, height: currentHeight } =
-        canvasSizeRef.current;
-      workerRef.current.postMessage({
-        type: "resize",
-        width: currentWidth,
-        height: currentHeight,
-        dpr: nextDpr,
-      });
-    };
-
-    window.addEventListener("resize", handleResize, { passive: true });
-
     return () => {
-      window.removeEventListener("resize", handleResize);
       workerReadyRef.current = false;
       worker.postMessage({ type: "dispose" });
       worker.terminate();
       workerRef.current = null;
     };
   }, [
-    imageSrc,
-    width,
-    height,
-    imageFit,
     postVisibility,
-    syncParamsToWorker,
     supportsOffscreen,
     suspendWhenHidden,
+    syncParamsToRenderer,
+  ]);
+
+  useEffect(() => {
+    if (supportsOffscreen || typeof window === "undefined") return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    if (fallbackRendererRef.current) return;
+
+    const renderer = new HalftoneRendererCore(canvas);
+    fallbackRendererRef.current = renderer;
+    const devicePixelRatio = clampDevicePixelRatio(window.devicePixelRatio ?? 1);
+    devicePixelRatioRef.current = devicePixelRatio;
+    const resolvedImageSrc = resolveImageSrc(lastImageConfigRef.current.src);
+    lastImageConfigRef.current = {
+      src: resolvedImageSrc,
+      fit: lastImageConfigRef.current.fit,
+    };
+    const { width: initialWidth, height: initialHeight } =
+      canvasSizeRef.current;
+
+    let cancelled = false;
+    renderer
+      .init(
+        {
+          width: initialWidth,
+          height: initialHeight,
+          dpr: devicePixelRatio,
+          imageSrc: resolvedImageSrc,
+          fitMode: lastImageConfigRef.current.fit,
+        },
+        lastParamsRef.current
+      )
+      .then(() => {
+        if (cancelled) return;
+        fallbackReadyRef.current = true;
+        syncParamsToRenderer();
+        if (!suspendWhenHidden) {
+          postVisibility(true);
+        } else {
+          postVisibility(visibilityRef.current);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to initialize inline halftone renderer", error);
+      });
+
+    return () => {
+      cancelled = true;
+      fallbackReadyRef.current = false;
+      renderer.dispose();
+      fallbackRendererRef.current = null;
+    };
+  }, [
+    postVisibility,
+    supportsOffscreen,
+    suspendWhenHidden,
+    syncParamsToRenderer,
   ]);
 
   useEffect(() => {
     canvasSizeRef.current = { width, height };
-    if (!workerRef.current || !workerReadyRef.current) return;
-    workerRef.current.postMessage({
-      type: "resize",
-      width,
-      height,
-      dpr: devicePixelRatioRef.current,
-    });
+    if (workerRef.current && workerReadyRef.current) {
+      workerRef.current.postMessage({
+        type: "resize",
+        width,
+        height,
+        dpr: devicePixelRatioRef.current,
+      });
+      return;
+    }
+    if (fallbackRendererRef.current && fallbackReadyRef.current) {
+      fallbackRendererRef.current.resize(
+        width,
+        height,
+        devicePixelRatioRef.current
+      );
+    }
   }, [height, width]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => {
+      const nextDpr = clampDevicePixelRatio(window.devicePixelRatio ?? 1);
+      if (Math.abs(nextDpr - devicePixelRatioRef.current) < 0.01) {
+        return;
+      }
+      devicePixelRatioRef.current = nextDpr;
+      const { width: currentWidth, height: currentHeight } =
+        canvasSizeRef.current;
+      if (workerRef.current && workerReadyRef.current) {
+        workerRef.current.postMessage({
+          type: "resize",
+          width: currentWidth,
+          height: currentHeight,
+          dpr: nextDpr,
+        });
+      } else if (fallbackRendererRef.current && fallbackReadyRef.current) {
+        fallbackRendererRef.current.resize(currentWidth, currentHeight, nextDpr);
+      }
+    };
+
+    window.addEventListener("resize", handleResize, { passive: true });
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const resolvedImageSrc = resolveImageSrc(imageSrc);
+    if (
+      lastImageConfigRef.current.src === resolvedImageSrc &&
+      lastImageConfigRef.current.fit === imageFit
+    ) {
+      return;
+    }
+    lastImageConfigRef.current = { src: resolvedImageSrc, fit: imageFit };
+    if (workerRef.current && workerReadyRef.current) {
+      workerRef.current.postMessage({
+        type: "image",
+        imageSrc: resolvedImageSrc,
+        fitMode: imageFit,
+      });
+    }
+    if (fallbackRendererRef.current && fallbackReadyRef.current) {
+      void fallbackRendererRef.current.updateImage(resolvedImageSrc, imageFit);
+    }
+  }, [imageFit, imageSrc]);
 
   useEffect(() => {
     if (!suspendWhenHidden) return;
@@ -317,16 +435,6 @@ export const CanvasHalftoneWebGL = forwardRef<
       postVisibility(false);
     };
   }, [postVisibility, suspendWhenHidden]);
-
-  if (!supportsOffscreen) {
-    return (
-      <div className={className} style={style}>
-        <p className="text-red-500 text-sm">
-          WebGL halftone preview requires OffscreenCanvas support.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <canvas

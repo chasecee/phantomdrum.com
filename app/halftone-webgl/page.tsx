@@ -14,7 +14,7 @@ export default function HalftoneWebGLDemoPage() {
     >
       <div className="relative max-w-[1500px] mx-auto">
         <div className="bg-linear-to-b from-slate-900/50 to-amber-800/20">
-          <div className="px-6 sticky top-0 z-1 mix-blend-color-dodge">
+          <div className="px-6 relative top-0 z-1 mix-blend-color-dodge">
             <HeroLogoText />
           </div>
           <HalftoneScrollSection />
