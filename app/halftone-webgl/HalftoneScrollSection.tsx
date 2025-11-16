@@ -10,17 +10,17 @@ import {
 
 const INITIAL_PARAMS = {
   halftoneSize: 20,
-  dotSpacing: 40,
+  dotSpacing: 20,
   rgbOffset: 150,
-  effectIntensity: 1,
+  effectIntensity: 0.5,
   patternRotation: 45,
 };
 
 const TARGET_PARAMS = {
-  halftoneSize: 10,
-  dotSpacing: 2,
+  halftoneSize: 5,
+  dotSpacing: 1,
   rgbOffset: 0,
-  effectIntensity: 0.5,
+  effectIntensity: 1,
   patternRotation: 45,
 };
 
@@ -84,8 +84,8 @@ export function HalftoneScrollSection() {
       <div className="sticky top-0 w-full mx-auto aspect-square">
         <CanvasHalftoneWebGL
           ref={canvasRef}
-          width={768}
-          height={768}
+          width={1024}
+          height={1024}
           imageSrc="/img/chase.png"
           params={INITIAL_PARAMS}
           suspendWhenHidden={false}
