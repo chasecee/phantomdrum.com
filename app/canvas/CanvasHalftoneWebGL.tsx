@@ -106,6 +106,7 @@ export const CanvasHalftoneWebGL = forwardRef<
     mergeParamsWithDefaults(params)
   );
   const visibilityRef = useRef(suspendWhenHidden ? false : true);
+  const devicePixelRatioRef = useRef(1);
   const supportsOffscreen =
     typeof window === "undefined"
       ? true
@@ -169,6 +170,7 @@ export const CanvasHalftoneWebGL = forwardRef<
     }
 
     const devicePixelRatio = Math.min(window.devicePixelRatio ?? 1, 1.5);
+    devicePixelRatioRef.current = devicePixelRatio;
     let resolvedImageSrc = imageSrc;
     try {
       resolvedImageSrc = new URL(imageSrc, window.location.origin).toString();
@@ -201,7 +203,12 @@ export const CanvasHalftoneWebGL = forwardRef<
 
     const handleResize = () => {
       if (!workerRef.current) return;
+      if (typeof window === "undefined") return;
       const nextDpr = Math.min(window.devicePixelRatio ?? 1, 1.5);
+      if (Math.abs(nextDpr - devicePixelRatioRef.current) < 0.01) {
+        return;
+      }
+      devicePixelRatioRef.current = nextDpr;
       workerRef.current.postMessage({
         type: "resize",
         width,

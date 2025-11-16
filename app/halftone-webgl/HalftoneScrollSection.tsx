@@ -9,8 +9,8 @@ import {
 } from "../canvas/CanvasHalftoneWebGL";
 
 const INITIAL_PARAMS = {
-  halftoneSize: 20,
-  dotSpacing: 20,
+  halftoneSize: 50,
+  dotSpacing: 100,
   rgbOffset: 150,
   effectIntensity: 0.5,
   patternRotation: 45,
@@ -18,7 +18,7 @@ const INITIAL_PARAMS = {
 
 const TARGET_PARAMS = {
   halftoneSize: 5,
-  dotSpacing: 1,
+  dotSpacing: 2,
   rgbOffset: 0,
   effectIntensity: 1,
   patternRotation: 45,
@@ -48,7 +48,7 @@ export function HalftoneScrollSection() {
           trigger: scrollSectionRef.current,
           start: "50% 90%",
           end: "50% 10%",
-          scrub: 1,
+          scrub: true,
           invalidateOnRefresh: true,
           markers: true,
         },
