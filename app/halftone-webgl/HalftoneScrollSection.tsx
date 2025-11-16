@@ -9,17 +9,19 @@ import {
 } from "../canvas/CanvasHalftoneWebGL";
 
 const INITIAL_PARAMS = {
-  halftoneSize: 50,
-  dotSpacing: 80,
-  rgbOffset: 50,
+  halftoneSize: 20,
+  dotSpacing: 40,
+  rgbOffset: 150,
   effectIntensity: 1,
+  patternRotation: 45,
 };
 
 const TARGET_PARAMS = {
-  halftoneSize: 4,
-  dotSpacing: 8,
-  rgbOffset: 0.5,
-  effectIntensity: 1,
+  halftoneSize: 10,
+  dotSpacing: 2,
+  rgbOffset: 0,
+  effectIntensity: 0.5,
+  patternRotation: 45,
 };
 
 export function HalftoneScrollSection() {
@@ -40,6 +42,7 @@ export function HalftoneScrollSection() {
         dotSpacing: TARGET_PARAMS.dotSpacing,
         rgbOffset: TARGET_PARAMS.rgbOffset,
         effectIntensity: TARGET_PARAMS.effectIntensity,
+        patternRotation: TARGET_PARAMS.patternRotation,
         ease: "linear",
         scrollTrigger: {
           trigger: scrollSectionRef.current,
@@ -53,12 +56,7 @@ export function HalftoneScrollSection() {
           if (!canvasRef.current || rafId !== null) return;
           rafId = requestAnimationFrame(() => {
             rafId = null;
-            canvasRef.current?.updateParams({
-              halftoneSize: proxy.halftoneSize,
-              dotSpacing: proxy.dotSpacing,
-              rgbOffset: proxy.rgbOffset,
-              effectIntensity: proxy.effectIntensity,
-            });
+            canvasRef.current?.updateParams(proxy);
           });
         },
       });
@@ -75,15 +73,22 @@ export function HalftoneScrollSection() {
   return (
     <section
       ref={scrollSectionRef}
-      className="relative w-full flex flex-col gap-8 aspect-1/4"
+      style={{
+        backgroundImage: "url(/img/optimized/noise.webp)",
+        backgroundSize: "min(100%, 1128px)",
+        backgroundPosition: "center",
+        containerType: "inline-size",
+      }}
+      className="relative w-full aspect-1/4 mix-blend-difference"
     >
       <div className="sticky top-0 w-full mx-auto aspect-square">
         <CanvasHalftoneWebGL
           ref={canvasRef}
-          width={1024}
-          height={1024}
+          width={768}
+          height={768}
           imageSrc="/img/chase.png"
           params={INITIAL_PARAMS}
+          suspendWhenHidden={false}
           className="w-full h-auto"
         />
       </div>

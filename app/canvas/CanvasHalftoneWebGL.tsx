@@ -226,6 +226,7 @@ export const CanvasHalftoneWebGL = forwardRef<
     postVisibility,
     syncParamsToWorker,
     supportsOffscreen,
+    suspendWhenHidden,
   ]);
 
   useEffect(() => {
