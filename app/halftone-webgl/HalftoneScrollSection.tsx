@@ -58,7 +58,7 @@ const DEFAULT_INITIAL_PARAMS: HalftoneParamsPreset = {
   rgbOffsetAngle: -90,
   effectIntensity: 1,
   patternRotation: 55,
-  zoom: 1.2,
+  zoom: 3,
 };
 
 const DEFAULT_TARGET_PARAMS: HalftoneParamsPreset = {
@@ -74,7 +74,7 @@ const DEFAULT_TARGET_PARAMS: HalftoneParamsPreset = {
 const DEFAULT_PATTERN_ROTATION = DEFAULT_INITIAL_PARAMS.patternRotation;
 
 const DEFAULT_SCROLL_SETTINGS: ScrollTriggerSettings = {
-  start: "50% 50%",
+  start: "50% 80%",
   end: "50% 20%",
   scrub: true,
   markers: true,
@@ -314,13 +314,21 @@ export function HalftoneScrollSection({
   return (
     <section
       ref={scrollSectionRef}
-      className="absolute inset-0 w-full h-svh border-amber-700 border-[10px]"
+      className="w-full mt-[max(10vw,10vh)] h-[200vw] "
       style={{
         width: responsiveWidthValue,
         aspectRatio: `${aspectRatio.width}/${aspectRatio.height * 2}`,
       }}
     >
-      <div className="sticky top-0  flex w-full justify-center">
+      <div
+        className="sticky top-[min(50vw,50vh)] flex w-full justify-center"
+        style={{
+          maskImage: "linear-gradient(to bottom, transparent, black 50%)",
+          maskSize: "100% 100%",
+          maskPosition: "top",
+          maskRepeat: "no-repeat",
+        }}
+      >
         <div
           ref={responsiveContainerRef}
           className="mx-auto"
@@ -337,7 +345,7 @@ export function HalftoneScrollSection({
             params={initialParams}
             suspendWhenHidden={false}
             imageFit={keepImageInView ? "contain" : "cover"}
-            className="w-full h-full border-2 border-purple-500"
+            className="w-full h-full border-0 border-purple-500"
           />
         </div>
       </div>

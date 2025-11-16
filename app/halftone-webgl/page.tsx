@@ -14,12 +14,10 @@ export default function HalftoneWebGLDemoPage() {
     >
       <div className="relative max-w-[1500px] mx-auto">
         <div className="bg-linear-to-b from-slate-900/50 to-amber-800/20">
-          <HalftoneScrollSection />
-          <div className="py-[100vw]">
-            <div className="px-6 sticky bottom-0 left-0 right-0 z-1 mix-blend-color-dodge">
-              <HeroLogoText />
-            </div>
+          <div className="px-6 sticky top-0 z-1 mix-blend-color-dodge">
+            <HeroLogoText />
           </div>
+          <HalftoneScrollSection />
         </div>
       </div>
       <div className="h-[200vw] w-full border-2 border-emerald-500" />
