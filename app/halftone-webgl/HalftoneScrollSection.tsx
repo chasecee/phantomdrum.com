@@ -58,24 +58,24 @@ const DEFAULT_INITIAL_PARAMS: HalftoneParamsPreset = {
   rgbOffsetAngle: -90,
   effectIntensity: 1,
   patternRotation: 55,
-  zoom: 3,
+  zoom: 4,
 };
 
 const DEFAULT_TARGET_PARAMS: HalftoneParamsPreset = {
   halftoneSize: 11,
-  dotSpacing: 2,
+  dotSpacing: 1,
   rgbOffset: 0,
   rgbOffsetAngle: 45,
-  effectIntensity: 1,
+  effectIntensity: 0,
   patternRotation: 55,
-  zoom: 1.1,
+  zoom: 1.2,
 };
 
 const DEFAULT_PATTERN_ROTATION = DEFAULT_INITIAL_PARAMS.patternRotation;
 
 const DEFAULT_SCROLL_SETTINGS: ScrollTriggerSettings = {
   start: "50% 80%",
-  end: "50% 20%",
+  end: "50% 35%",
   scrub: true,
   markers: true,
 };
@@ -323,7 +323,7 @@ export function HalftoneScrollSection({
       <div
         className="sticky top-[min(50vw,50vh)] flex w-full justify-center"
         style={{
-          maskImage: "linear-gradient(to bottom, transparent, black 50%)",
+          maskImage: "linear-gradient(to bottom, transparent, black 15%)",
           maskSize: "100% 100%",
           maskPosition: "top",
           maskRepeat: "no-repeat",
