@@ -48,7 +48,7 @@ export function HalftoneScrollSection() {
           trigger: scrollSectionRef.current,
           start: "50% 90%",
           end: "50% 10%",
-          scrub: true,
+          scrub: 2,
           invalidateOnRefresh: true,
           markers: true,
         },
