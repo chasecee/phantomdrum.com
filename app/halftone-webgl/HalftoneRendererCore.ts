@@ -55,7 +55,8 @@ const fragmentShader = /* glsl */ `
     vec2 coverUv = (uv - 0.5) * uUvScale + 0.5;
     coverUv = clamp(coverUv, vec2(0.0), vec2(1.0));
     vec2 flippedUv = vec2(coverUv.x, 1.0 - coverUv.y);
-    vec3 color = texture2D(uTexture, flippedUv + offset).rgb;
+    vec2 offsetUv = clamp(flippedUv + offset, vec2(0.0), vec2(1.0));
+    vec3 color = texture2D(uTexture, offsetUv).rgb;
     color = (color - 0.5) * uContrast + 0.5;
     color *= uBrightness;
     return clamp(color, 0.0, 1.0);

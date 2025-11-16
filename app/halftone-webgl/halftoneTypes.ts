@@ -14,15 +14,17 @@ export type AspectRatioInput =
   | `${number}:${number}`
   | `${number}/${number}`;
 
+export type ResponsiveNumeric = number | `${number}%`;
+
 export type HalftoneParamsPreset = {
-  halftoneSize: number;
-  dotSpacing: number;
-  rgbOffset: number;
+  halftoneSize: ResponsiveNumeric;
+  dotSpacing: ResponsiveNumeric;
+  rgbOffset: ResponsiveNumeric;
   rgbOffsetAngle: number;
   effectIntensity: number;
   patternRotation: number;
   zoom: number;
-  translateY: number;
+  translateY: ResponsiveNumeric;
 };
 
 export type ScrollTriggerSettings = {

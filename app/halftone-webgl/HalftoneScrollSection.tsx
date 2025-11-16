@@ -53,29 +53,81 @@ const DEFAULT_ASPECT_RATIO = createAspectRatioValue(
 );
 
 const DEFAULT_INITIAL_PARAMS: HalftoneParamsPreset = {
-  halftoneSize: 33,
-  dotSpacing: 3,
-  rgbOffset: -255,
+  halftoneSize: "1%",
+  dotSpacing: ".1%",
+  rgbOffset: "20%",
   rgbOffsetAngle: 90,
   effectIntensity: 1,
   patternRotation: 55,
   zoom: 2,
-  translateY: 0,
+  translateY: "0%",
 };
 
 const DEFAULT_TARGET_PARAMS: HalftoneParamsPreset = {
-  halftoneSize: 9,
-  dotSpacing: 1,
-  rgbOffset: 0,
+  halftoneSize: "0.83%",
+  dotSpacing: "0.09%",
+  rgbOffset: "0%",
   rgbOffsetAngle: 45,
   effectIntensity: 0,
   patternRotation: 55,
   zoom: 0.66,
-  translateY: 210,
+  translateY: "32%",
+};
+
+type ResolvedHalftoneParams = Omit<
+  HalftoneParamsPreset,
+  "halftoneSize" | "dotSpacing" | "rgbOffset" | "translateY"
+> & {
+  halftoneSize: number;
+  dotSpacing: number;
+  rgbOffset: number;
+  translateY: number;
+};
+
+const isPercentValue = (value: string) => value.trim().endsWith("%");
+
+const resolveResponsiveParamValue = (
+  value: HalftoneParamsPreset["halftoneSize"],
+  basis: number
+) => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    const numericPortion = isPercentValue(trimmed)
+      ? trimmed.slice(0, -1)
+      : trimmed;
+    const numeric = Number(numericPortion);
+    if (!Number.isFinite(numeric)) {
+      return 0;
+    }
+    if (isPercentValue(trimmed)) {
+      return (numeric / 100) * basis;
+    }
+    return numeric;
+  }
+  return value;
+};
+
+const resolveHalftoneParamsForCanvas = (
+  params: HalftoneParamsPreset,
+  widthBasis: number,
+  heightBasis: number
+): ResolvedHalftoneParams => {
+  const resolvedWidth = Math.max(1, widthBasis);
+  const resolvedHeight = Math.max(1, heightBasis);
+  return {
+    ...params,
+    halftoneSize: resolveResponsiveParamValue(
+      params.halftoneSize,
+      resolvedWidth
+    ),
+    dotSpacing: resolveResponsiveParamValue(params.dotSpacing, resolvedWidth),
+    rgbOffset: resolveResponsiveParamValue(params.rgbOffset, resolvedWidth),
+    translateY: resolveResponsiveParamValue(params.translateY, resolvedHeight),
+  };
 };
 
 const toRendererParams = (
-  params: HalftoneParamsPreset
+  params: ResolvedHalftoneParams
 ): Partial<HalftoneWebGLParams> => {
   const { translateY: _translateY, ...rest } = params;
   void _translateY;
@@ -85,7 +137,7 @@ const toRendererParams = (
 const DEFAULT_PATTERN_ROTATION = DEFAULT_INITIAL_PARAMS.patternRotation;
 
 const DEFAULT_SCROLL_SETTINGS: ScrollTriggerSettings = {
-  start: "15% 30%",
+  start: "15% 28%",
   end: "80% 0%",
   scrub: true,
   markers: true,
@@ -241,14 +293,30 @@ export function HalftoneScrollSection({
     targetParams,
   } = useMemo(() => resolveConfig(config), [config]);
 
-  const rendererInitialParams = useMemo(
-    () => toRendererParams(initialParams),
-    [initialParams]
-  );
-
   const [canvasDimensions, setCanvasDimensions] = useState(() => ({
     ...fallbackCanvasSize,
   }));
+
+  const canvasWidth = canvasDimensions.width || fallbackCanvasSize.width;
+
+  const canvasHeight = canvasDimensions.height || fallbackCanvasSize.height;
+
+  const resolvedInitialParams = useMemo(
+    () =>
+      resolveHalftoneParamsForCanvas(initialParams, canvasWidth, canvasHeight),
+    [initialParams, canvasWidth, canvasHeight]
+  );
+
+  const resolvedTargetParams = useMemo(
+    () =>
+      resolveHalftoneParamsForCanvas(targetParams, canvasWidth, canvasHeight),
+    [targetParams, canvasWidth, canvasHeight]
+  );
+
+  const rendererInitialParams = useMemo(
+    () => toRendererParams(resolvedInitialParams),
+    [resolvedInitialParams]
+  );
 
   const updateCanvasSize = useCallback(() => {
     const node = responsiveContainerRef.current;
@@ -288,18 +356,18 @@ export function HalftoneScrollSection({
     if (!scrollSectionRef.current) return;
     gsap.registerPlugin(ScrollTrigger);
 
-    const proxy = { ...initialParams };
+    const proxy = { ...resolvedInitialParams };
     let rafId: number | null = null;
 
     const ctx = gsap.context(() => {
       gsap.to(proxy, {
-        halftoneSize: targetParams.halftoneSize,
-        dotSpacing: targetParams.dotSpacing,
-        rgbOffset: targetParams.rgbOffset,
-        effectIntensity: targetParams.effectIntensity,
-        patternRotation: targetParams.patternRotation,
-        zoom: targetParams.zoom,
-        translateY: targetParams.translateY,
+        halftoneSize: resolvedTargetParams.halftoneSize,
+        dotSpacing: resolvedTargetParams.dotSpacing,
+        rgbOffset: resolvedTargetParams.rgbOffset,
+        effectIntensity: resolvedTargetParams.effectIntensity,
+        patternRotation: resolvedTargetParams.patternRotation,
+        zoom: resolvedTargetParams.zoom,
+        translateY: resolvedTargetParams.translateY,
         ease: "power1.inOut",
         scrollTrigger: {
           trigger: scrollSectionRef.current,
@@ -328,11 +396,11 @@ export function HalftoneScrollSection({
       }
       ctx.revert();
     };
-  }, [applyTranslateY, initialParams, scroll, targetParams]);
+  }, [applyTranslateY, resolvedInitialParams, resolvedTargetParams, scroll]);
 
   useEffect(() => {
-    applyTranslateY(initialParams.translateY);
-  }, [applyTranslateY, initialParams.translateY]);
+    applyTranslateY(resolvedInitialParams.translateY);
+  }, [applyTranslateY, resolvedInitialParams.translateY]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
