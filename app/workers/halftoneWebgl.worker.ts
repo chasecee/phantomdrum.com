@@ -2,7 +2,7 @@ import {
   HalftoneRendererCore,
   type HalftoneRendererConfig,
   type HalftoneRendererParams,
-} from "../halftone-webgl/HalftoneRendererCore";
+} from "../halftone-webgl/scroll-section/HalftoneRendererCore";
 
 type InitMessage = {
   type: "init";

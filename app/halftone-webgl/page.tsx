@@ -1,6 +1,8 @@
 import HeroLogoText from "../components/sections/HeroLogoText";
 import { HalftoneScrollSection } from "./HalftoneScrollSection";
 import ArtistBio from "../components/content/ArtistBio";
+import CubeSection from "../components/sections/CubeSection";
+import HalftoneEffect from "../components/content/HalftoneEffect";
 export default function HalftoneWebGLDemoPage() {
   return (
     <div
@@ -22,12 +24,14 @@ export default function HalftoneWebGLDemoPage() {
             maskRepeat: "no-repeat",
           }}
         >
-          <div className="p-6 sticky top-0  z-1 mix-blend-plus-lighter">
-            <HeroLogoText />
+          <div className="px-6 sticky h-0 top-6  z-1 mix-blend-plus-lighter">
+            <HalftoneEffect dotRadius={2} dotSpacing={4}>
+              <HeroLogoText />
+            </HalftoneEffect>
           </div>
           <HalftoneScrollSection />
         </div>
-
+        <CubeSection />
         <div className="h-[200vw] overflow-hidden relative  w-full ">
           <ArtistBio />
         </div>

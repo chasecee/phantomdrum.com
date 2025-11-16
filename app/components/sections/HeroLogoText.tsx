@@ -1,5 +1,3 @@
-import styles from "./HeroSection.module.css";
-
 export default function HeroLogoText() {
   return (
     <div

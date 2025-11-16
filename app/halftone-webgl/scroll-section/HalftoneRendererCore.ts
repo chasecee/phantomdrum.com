@@ -86,7 +86,7 @@ const fragmentShader = /* glsl */ `
     float dotRadius = uHalftoneSize * max(intensity, 0.05);
 
     vec3 rColor = sampleTexture(uv, uRgbOffsetVector);
-    vec3 gColor = sampleTexture(uv, vec2(0.0));
+    vec3 gColor = baseColor;
     vec3 bColor = sampleTexture(uv, -uRgbOffsetVector);
 
     float rDot = step(dist, dotRadius * rColor.r);
@@ -109,6 +109,46 @@ const vertexShader = /* glsl */ `
     gl_Position = vec4(position.xy, 0.0, 1.0);
   }
 `;
+
+const computeCoverSourceRect = (
+  imageWidth: number,
+  imageHeight: number,
+  targetWidth: number,
+  targetHeight: number
+) => {
+  const imageRatio = imageWidth / imageHeight;
+  const targetRatio = targetWidth / targetHeight;
+  if (!Number.isFinite(imageRatio) || !Number.isFinite(targetRatio)) {
+    return { x: 0, y: 0, width: imageWidth, height: imageHeight };
+  }
+  if (Math.abs(imageRatio - targetRatio) < 0.0001) {
+    return { x: 0, y: 0, width: imageWidth, height: imageHeight };
+  }
+  if (targetRatio > imageRatio) {
+    const cropHeight = Math.max(
+      1,
+      Math.min(imageHeight, imageWidth / targetRatio)
+    );
+    const offsetY = (imageHeight - cropHeight) / 2;
+    return {
+      x: 0,
+      y: Math.max(0, offsetY),
+      width: imageWidth,
+      height: cropHeight,
+    };
+  }
+  const cropWidth = Math.max(
+    1,
+    Math.min(imageWidth, imageHeight * targetRatio)
+  );
+  const offsetX = (imageWidth - cropWidth) / 2;
+  return {
+    x: Math.max(0, offsetX),
+    y: 0,
+    width: cropWidth,
+    height: imageHeight,
+  };
+};
 
 type CanvasTarget = OffscreenCanvas | HTMLCanvasElement;
 
@@ -280,17 +320,34 @@ export class HalftoneRendererCore {
 
     const imageWidth = this.sourceBitmap.width;
     const imageHeight = this.sourceBitmap.height;
-    const scale =
-      this.fitMode === "contain"
-        ? Math.min(width / imageWidth, height / imageHeight)
-        : Math.max(width / imageWidth, height / imageHeight);
-    const drawWidth = imageWidth * scale;
-    const drawHeight = imageHeight * scale;
-    const offsetX = (width - drawWidth) / 2;
-    const offsetY = (height - drawHeight) / 2;
-
     ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(this.sourceBitmap, offsetX, offsetY, drawWidth, drawHeight);
+
+    if (this.fitMode === "cover") {
+      const {
+        x,
+        y,
+        width: srcWidth,
+        height: srcHeight,
+      } = computeCoverSourceRect(imageWidth, imageHeight, width, height);
+      ctx.drawImage(
+        this.sourceBitmap,
+        x,
+        y,
+        srcWidth,
+        srcHeight,
+        0,
+        0,
+        width,
+        height
+      );
+    } else {
+      const scale = Math.min(width / imageWidth, height / imageHeight);
+      const drawWidth = imageWidth * scale;
+      const drawHeight = imageHeight * scale;
+      const offsetX = (width - drawWidth) / 2;
+      const offsetY = (height - drawHeight) / 2;
+      ctx.drawImage(this.sourceBitmap, offsetX, offsetY, drawWidth, drawHeight);
+    }
 
     const textureSource =
       "transferToImageBitmap" in surface
@@ -301,7 +358,9 @@ export class HalftoneRendererCore {
       this.texture.dispose();
     }
 
-    const texture = new Texture(textureSource as ImageBitmap | HTMLCanvasElement);
+    const texture = new Texture(
+      textureSource as ImageBitmap | HTMLCanvasElement
+    );
     texture.wrapS = ClampToEdgeWrapping;
     texture.wrapT = ClampToEdgeWrapping;
     texture.minFilter = LinearFilter;
@@ -423,4 +482,3 @@ export class HalftoneRendererCore {
     }
   }
 }
-

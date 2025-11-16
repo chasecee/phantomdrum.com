@@ -40,7 +40,6 @@ export type HalftoneSectionConfigInput = {
   maxWidth?: number;
   minWidth?: number;
   patternRotation?: number;
-  keepImageInView?: boolean;
   imageSrc?: string;
   scroll?: Partial<ScrollTriggerSettings>;
   params?: {
@@ -56,7 +55,6 @@ export type HalftoneSectionConfig = {
     width: number;
     height: number;
   };
-  keepImageInView: boolean;
   imageSrc: string;
   scroll: ScrollTriggerSettings;
   initialParams: HalftoneParamsPreset;

@@ -7,7 +7,7 @@ import {
   useRef,
   useCallback,
 } from "react";
-import { HalftoneRendererCore } from "../halftone-webgl/HalftoneRendererCore";
+import { HalftoneRendererCore } from "../halftone-webgl/scroll-section/HalftoneRendererCore";
 
 export type HalftoneWebGLParams = {
   halftoneSize: number;
@@ -211,7 +211,9 @@ export const CanvasHalftoneWebGL = forwardRef<
       return;
     }
 
-    const devicePixelRatio = clampDevicePixelRatio(window.devicePixelRatio ?? 1);
+    const devicePixelRatio = clampDevicePixelRatio(
+      window.devicePixelRatio ?? 1
+    );
     devicePixelRatioRef.current = devicePixelRatio;
     const resolvedImageSrc = resolveImageSrc(lastImageConfigRef.current.src);
     lastImageConfigRef.current = {
@@ -266,7 +268,9 @@ export const CanvasHalftoneWebGL = forwardRef<
 
     const renderer = new HalftoneRendererCore(canvas);
     fallbackRendererRef.current = renderer;
-    const devicePixelRatio = clampDevicePixelRatio(window.devicePixelRatio ?? 1);
+    const devicePixelRatio = clampDevicePixelRatio(
+      window.devicePixelRatio ?? 1
+    );
     devicePixelRatioRef.current = devicePixelRatio;
     const resolvedImageSrc = resolveImageSrc(lastImageConfigRef.current.src);
     lastImageConfigRef.current = {
@@ -353,7 +357,11 @@ export const CanvasHalftoneWebGL = forwardRef<
           dpr: nextDpr,
         });
       } else if (fallbackRendererRef.current && fallbackReadyRef.current) {
-        fallbackRendererRef.current.resize(currentWidth, currentHeight, nextDpr);
+        fallbackRendererRef.current.resize(
+          currentWidth,
+          currentHeight,
+          nextDpr
+        );
       }
     };
 

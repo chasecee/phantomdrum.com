@@ -1,0 +1,2 @@
+export { HalftoneScrollSection } from "./HalftoneScrollSection";
+
