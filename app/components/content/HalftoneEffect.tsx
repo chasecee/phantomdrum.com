@@ -1,10 +1,15 @@
 "use client";
 
 import { useMemo, ReactNode, cloneElement, isValidElement } from "react";
-import { createDiamondMaskSVG } from "../../lib/maskUtils";
+import {
+  buildHalftonePublicPath,
+  normalizeHalftoneValue,
+} from "../../lib/halftoneAssetKey";
 import { useBreakpoint, getResponsiveValue } from "../../lib/useBreakpoint";
 
-type ResponsiveValue<T> = T | Partial<Record<"sm" | "md" | "lg" | "xl" | "2xl", T>>;
+type ResponsiveValue<T> =
+  | T
+  | Partial<Record<"sm" | "md" | "lg" | "xl" | "2xl", T>>;
 
 export interface HalftoneEffectProps {
   children: ReactNode;
@@ -34,27 +39,42 @@ export default function HalftoneEffect({
   );
 
   const resolvedBlur = useMemo(
-    () => (blur !== undefined ? getResponsiveValue(blur, breakpoint) : undefined),
+    () =>
+      blur !== undefined ? getResponsiveValue(blur, breakpoint) : undefined,
     [blur, breakpoint]
   );
 
-  const maskSVG = useMemo(
-    () => createDiamondMaskSVG(resolvedDotRadius, resolvedDotSpacing),
-    [resolvedDotRadius, resolvedDotSpacing]
+  const normalizedDotRadius = useMemo(
+    () => normalizeHalftoneValue(resolvedDotRadius),
+    [resolvedDotRadius]
+  );
+
+  const normalizedDotSpacing = useMemo(
+    () => normalizeHalftoneValue(resolvedDotSpacing),
+    [resolvedDotSpacing]
+  );
+
+  const maskAssetPath = useMemo(
+    () =>
+      buildHalftonePublicPath({
+        dotRadius: normalizedDotRadius,
+        dotSpacing: normalizedDotSpacing,
+      }),
+    [normalizedDotRadius, normalizedDotSpacing]
   );
 
   const patternSize = useMemo(
-    () => Math.round(resolvedDotSpacing * 1.414213562 * 100) / 100,
-    [resolvedDotSpacing]
+    () => Math.round(normalizedDotSpacing * 1.414213562 * 100) / 100,
+    [normalizedDotSpacing]
   );
 
   const maskStyles = useMemo<React.CSSProperties & Record<string, string>>(
     () => ({
-      "--dot-radius": `${resolvedDotRadius}px`,
-      "--dot-spacing": `${resolvedDotSpacing}px`,
+      "--dot-radius": `${normalizedDotRadius}px`,
+      "--dot-spacing": `${normalizedDotSpacing}px`,
       "--pattern-size": `${patternSize}px`,
-      WebkitMaskImage: `url("${maskSVG}")`,
-      maskImage: `url("${maskSVG}")`,
+      WebkitMaskImage: `url("${maskAssetPath}")`,
+      maskImage: `url("${maskAssetPath}")`,
       WebkitMaskSize: `${patternSize}px ${patternSize}px`,
       maskSize: `${patternSize}px ${patternSize}px`,
       WebkitMaskPosition: "center",
@@ -66,7 +86,13 @@ export default function HalftoneEffect({
         WebkitFilter: `blur(${resolvedBlur}px)`,
       }),
     }),
-    [resolvedDotRadius, resolvedDotSpacing, patternSize, maskSVG, resolvedBlur]
+    [
+      normalizedDotRadius,
+      normalizedDotSpacing,
+      patternSize,
+      maskAssetPath,
+      resolvedBlur,
+    ]
   );
 
   if (isValidElement(children)) {
