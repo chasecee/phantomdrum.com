@@ -1,5 +1,5 @@
 import type { HalftoneWebGLParams } from "../../canvas/CanvasHalftoneWebGL";
-import type { HalftoneParamsPreset } from "../halftoneTypes";
+import type { HalftoneParamsPreset, ResponsiveNumeric } from "../halftoneTypes";
 
 export type ResolvedHalftoneParams = Omit<
   HalftoneParamsPreset,
@@ -8,7 +8,7 @@ export type ResolvedHalftoneParams = Omit<
   halftoneSize: number;
   dotSpacing: number;
   rgbOffset: number;
-  translateY: number;
+  translateY: ResponsiveNumeric;
 };
 
 const isPercentValue = (value: string) => value.trim().endsWith("%");
@@ -41,6 +41,13 @@ export const resolveHalftoneParamsForCanvas = (
 ): ResolvedHalftoneParams => {
   const resolvedWidth = Math.max(1, widthBasis);
   const resolvedHeight = Math.max(1, heightBasis);
+  const translateY: ResponsiveNumeric =
+    typeof params.translateY === "string" && isPercentValue(params.translateY)
+      ? (params.translateY.trim() as ResponsiveNumeric)
+      : (resolveResponsiveParamValue(
+          params.translateY,
+          resolvedHeight
+        ) as number);
   return {
     ...params,
     halftoneSize: resolveResponsiveParamValue(
@@ -49,7 +56,7 @@ export const resolveHalftoneParamsForCanvas = (
     ),
     dotSpacing: resolveResponsiveParamValue(params.dotSpacing, resolvedWidth),
     rgbOffset: resolveResponsiveParamValue(params.rgbOffset, resolvedWidth),
-    translateY: resolveResponsiveParamValue(params.translateY, resolvedHeight),
+    translateY,
   };
 };
 

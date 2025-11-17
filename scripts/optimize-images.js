@@ -24,7 +24,12 @@ async function convertToWebP(inputPath, outputPath) {
 }
 
 async function optimizeImages() {
-  const imagesToOptimize = ["no-bg.png", "noise.png", "planet-cropped.png"];
+  const imagesToOptimize = [
+    "no-bg.png",
+    "noise.png",
+    "planet-cropped.png",
+    "linesbg.png",
+  ];
 
   if (!existsSync(outputDir)) {
     mkdirSync(outputDir, { recursive: true });

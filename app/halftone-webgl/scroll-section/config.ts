@@ -1,8 +1,11 @@
 import type {
   AspectRatioInput,
+  HalftoneLayerConfig,
+  HalftoneLayerDefinitionInput,
   HalftoneParamsPreset,
   HalftoneSectionConfig,
   HalftoneSectionConfigInput,
+  ImageFitMode,
   ResolvedAspectRatio,
   ScrollTriggerSettings,
 } from "../halftoneTypes";
@@ -41,46 +44,81 @@ const DEFAULT_ASPECT_RATIO = createAspectRatioValue(
   DEFAULT_ASPECT_RATIO_BASE.height
 );
 
-const DEFAULT_INITIAL_PARAMS: HalftoneParamsPreset = {
-  halftoneSize: "10%",
-  dotSpacing: ".35%",
-  rgbOffset: "5%",
-  rgbOffsetAngle: 0,
+const BASE_PARAM_TEMPLATE: HalftoneParamsPreset = {
+  halftoneSize: "2%",
+  dotSpacing: ".05%",
+  rgbOffset: "20%",
+  rgbOffsetAngle: 90,
   effectIntensity: 0.1,
   patternRotation: 55,
-  zoom: 0.9,
-  translateY: "-5%",
+  zoom: 1.5,
+  translateY: "10%",
 };
 
-const DEFAULT_TARGET_PARAMS: HalftoneParamsPreset = {
-  halftoneSize: "1%",
-  dotSpacing: "0.01%",
-  rgbOffset: "0%",
-  rgbOffsetAngle: 45,
-  effectIntensity: 1,
-  patternRotation: 55,
-  zoom: 0.5,
-  translateY: "0%",
-};
+const withParams = (
+  overrides: Partial<HalftoneParamsPreset>
+): HalftoneParamsPreset => ({
+  ...BASE_PARAM_TEMPLATE,
+  ...overrides,
+});
+
+const DEFAULT_IMAGE_FIT: ImageFitMode = "contain";
+
+const DEFAULT_LAYER_DEFINITIONS: HalftoneLayerDefinitionInput[] = [
+  {
+    imageSrc: "/img/optimized/linesbg.webp",
+    imageFit: "cover",
+    placement: "background",
+    params: {
+      initial: withParams({
+        halftoneSize: "22%",
+        dotSpacing: "0.5%",
+        rgbOffset: "10%",
+        rgbOffsetAngle: 45,
+        zoom: 1.25,
+      }),
+      target: withParams({
+        halftoneSize: "4%",
+        dotSpacing: "0.05%",
+        rgbOffset: "0%",
+        rgbOffsetAngle: 10,
+        zoom: 0.75,
+        translateY: "0%",
+      }),
+    },
+  },
+  {
+    imageSrc: "/img/optimized/planet-cropped.webp",
+    imageFit: "contain",
+    placement: "foreground",
+    params: {
+      initial: withParams({}),
+      target: withParams({
+        halftoneSize: "5%",
+        dotSpacing: "0.1%",
+        rgbOffset: "1%",
+        effectIntensity: 0.4,
+        zoom: 0.75,
+        translateY: "0%",
+      }),
+    },
+  },
+];
 
 const DEFAULT_SCROLL_SETTINGS: ScrollTriggerSettings = {
-  start: "15% 28%",
-  end: "60% 0%",
+  start: "20% 28%",
+  end: "30% 0%",
   scrub: true,
   markers: true,
 };
-
-const DEFAULT_PATTERN_ROTATION = DEFAULT_INITIAL_PARAMS.patternRotation;
 
 export const HALFTONE_SCROLL_DEFAULTS = {
   aspectRatio: DEFAULT_ASPECT_RATIO,
   viewportWidthRatio: 1,
   maxWidth: 1080,
   minWidth: 320,
-  imageSrc: "/img/webgl.png",
   scroll: DEFAULT_SCROLL_SETTINGS,
-  initialParams: DEFAULT_INITIAL_PARAMS,
-  targetParams: DEFAULT_TARGET_PARAMS,
+  layers: DEFAULT_LAYER_DEFINITIONS,
 };
 
 const parseDelimitedRatio = (value: string): [number, number] | null => {
@@ -128,16 +166,36 @@ const createResponsiveWidthValue = (
     2
   )}vw, ${maxWidth}px)`;
 
-const resolveParams = (
-  base: HalftoneParamsPreset,
-  overrides: Partial<HalftoneParamsPreset> | undefined,
-  rotation: number
-): HalftoneParamsPreset => {
-  const merged = { ...base, ...overrides };
-  if (overrides?.patternRotation === undefined) {
-    merged.patternRotation = rotation;
+const normalizeLayerDefinition = (
+  definition: HalftoneLayerDefinitionInput,
+  fallbackFit: ImageFitMode = DEFAULT_IMAGE_FIT
+): HalftoneLayerConfig => ({
+  imageSrc: definition.imageSrc,
+  imageFit: definition.imageFit ?? fallbackFit,
+  placement: definition.placement ?? "foreground",
+  className: definition.className,
+  initialParams: { ...definition.params.initial },
+  targetParams: { ...definition.params.target },
+});
+
+const resolveBaseLayerIndex = (
+  requestedIndex: number | undefined,
+  layers: HalftoneLayerConfig[]
+): number => {
+  if (
+    typeof requestedIndex === "number" &&
+    requestedIndex >= 0 &&
+    requestedIndex < layers.length
+  ) {
+    return requestedIndex;
   }
-  return merged;
+  const firstForeground = layers.findIndex(
+    (layer) => layer.placement !== "background"
+  );
+  if (firstForeground !== -1) {
+    return firstForeground;
+  }
+  return 0;
 };
 
 export const resolveHalftoneScrollConfig = (
@@ -159,27 +217,20 @@ export const resolveHalftoneScrollConfig = (
     Math.max(config?.minWidth ?? HALFTONE_SCROLL_DEFAULTS.minWidth, 1),
     maxWidth
   );
-  const imageSrc = config?.imageSrc ?? HALFTONE_SCROLL_DEFAULTS.imageSrc;
-  const fallbackPatternRotation =
-    config?.patternRotation ??
-    config?.params?.initial?.patternRotation ??
-    config?.params?.target?.patternRotation ??
-    DEFAULT_PATTERN_ROTATION;
   const scroll: ScrollTriggerSettings = {
     start: config?.scroll?.start ?? HALFTONE_SCROLL_DEFAULTS.scroll.start,
     end: config?.scroll?.end ?? HALFTONE_SCROLL_DEFAULTS.scroll.end,
     scrub: config?.scroll?.scrub ?? HALFTONE_SCROLL_DEFAULTS.scroll.scrub,
     markers: config?.scroll?.markers ?? HALFTONE_SCROLL_DEFAULTS.scroll.markers,
   };
-  const initialParams = resolveParams(
-    HALFTONE_SCROLL_DEFAULTS.initialParams,
-    config?.params?.initial,
-    fallbackPatternRotation
-  );
-  const targetParams = resolveParams(
-    HALFTONE_SCROLL_DEFAULTS.targetParams,
-    config?.params?.target,
-    fallbackPatternRotation
+  const baseLayers =
+    config?.layers?.length && config.layers.length > 0
+      ? config.layers
+      : HALFTONE_SCROLL_DEFAULTS.layers;
+  const layers = baseLayers.map((layer) => normalizeLayerDefinition(layer));
+  const resolvedBaseLayerIndex = resolveBaseLayerIndex(
+    config?.baseLayerIndex,
+    layers
   );
   const responsiveWidthValue = createResponsiveWidthValue(
     minWidth,
@@ -195,9 +246,8 @@ export const resolveHalftoneScrollConfig = (
     aspectRatio,
     responsiveWidthValue,
     fallbackCanvasSize,
-    imageSrc,
     scroll,
-    initialParams,
-    targetParams,
+    layers,
+    baseLayerIndex: resolvedBaseLayerIndex,
   };
 };

@@ -15,6 +15,7 @@ export type AspectRatioInput =
   | `${number}/${number}`;
 
 export type ResponsiveNumeric = number | `${number}%`;
+export type ImageFitMode = "cover" | "contain";
 
 export type HalftoneParamsPreset = {
   halftoneSize: ResponsiveNumeric;
@@ -25,6 +26,17 @@ export type HalftoneParamsPreset = {
   patternRotation: number;
   zoom: number;
   translateY: ResponsiveNumeric;
+};
+
+export type HalftoneLayerDefinitionInput = {
+  imageSrc: string;
+  imageFit?: ImageFitMode;
+  placement?: "background" | "foreground";
+  className?: string;
+  params: {
+    initial: HalftoneParamsPreset;
+    target: HalftoneParamsPreset;
+  };
 };
 
 export type ScrollTriggerSettings = {
@@ -39,13 +51,18 @@ export type HalftoneSectionConfigInput = {
   viewportWidthRatio?: number;
   maxWidth?: number;
   minWidth?: number;
-  patternRotation?: number;
-  imageSrc?: string;
+  baseLayerIndex?: number;
   scroll?: Partial<ScrollTriggerSettings>;
-  params?: {
-    initial?: Partial<HalftoneParamsPreset>;
-    target?: Partial<HalftoneParamsPreset>;
-  };
+  layers?: HalftoneLayerDefinitionInput[];
+};
+
+export type HalftoneLayerConfig = {
+  imageSrc: string;
+  imageFit: ImageFitMode;
+  placement: "background" | "foreground";
+  className?: string;
+  initialParams: HalftoneParamsPreset;
+  targetParams: HalftoneParamsPreset;
 };
 
 export type HalftoneSectionConfig = {
@@ -55,10 +72,9 @@ export type HalftoneSectionConfig = {
     width: number;
     height: number;
   };
-  imageSrc: string;
   scroll: ScrollTriggerSettings;
-  initialParams: HalftoneParamsPreset;
-  targetParams: HalftoneParamsPreset;
+  layers: HalftoneLayerConfig[];
+  baseLayerIndex: number;
 };
 
 export type HalftoneScrollSectionProps = {
