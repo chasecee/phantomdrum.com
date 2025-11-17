@@ -3,10 +3,10 @@ import styles from "./HeroSection.module.css";
 export default function HeroLogoText() {
   return (
     <div
-      className="relative w-full select-none h-[19svh]"
+      className="select-none h-[max(19svh,47cqi)]"
       style={{ overflow: "visible", containerType: "inline-size" }}
     >
-      <div className={`w-full text-neutral-300 ${styles.heroLogo}`}>
+      <div className={`overflow-visible text-neutral-300 ${styles.heroLogo}`}>
         <h1 className="text-[13.5cqi] leading-none font-bold whitespace-nowrap">
           PHANTOM DRUM
         </h1>

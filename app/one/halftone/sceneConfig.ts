@@ -67,7 +67,7 @@ export const oneHalftoneSceneConfig: HalftoneSceneConfig = {
         target: {
           halftoneSize: "4%",
           dotSpacing: "0.1%",
-          rgbOffset: "25%",
+          rgbOffset: "5%",
           rgbOffsetAngle: 0,
           effectIntensity: 0.35,
           patternRotation: 40,
