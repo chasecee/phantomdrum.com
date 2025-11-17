@@ -45,7 +45,7 @@ export function HalftoneLayerCanvas({
         imageSrc={imageSrc}
         imageFit={imageFit}
         params={initialParams}
-        suspendWhenHidden={false}
+        suspendWhenHidden={true}
         paddingRatio={paddingRatio}
         className="w-full h-full"
       />
