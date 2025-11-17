@@ -8,10 +8,10 @@ export const oneHalftoneSceneConfig: HalftoneSceneConfig = {
     viewportRatio: 1,
   },
   scroll: {
-    start: "60% 60%",
-    end: "80% 40%",
+    start: "55% 60%",
+    end: "80% 10%",
     scrub: true,
-    markers: true,
+    markers: process.env.NODE_ENV === "development" ? true : false,
   },
   baseLayerIndex: 1,
   layers: [
@@ -74,7 +74,7 @@ export const oneHalftoneSceneConfig: HalftoneSceneConfig = {
           zoom: 0.65,
           brightness: 1,
           contrast: 1,
-          translateY: "-20%",
+          translateY: "0%",
         },
       },
     },

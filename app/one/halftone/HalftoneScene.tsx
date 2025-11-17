@@ -34,12 +34,9 @@ export function HalftoneScene({
   return (
     <div
       ref={sectionRef}
-      className="h-[90svh] w-full flex relative flex-col justify-center-safe items-center border border-red-500"
+      className="h-[81svh] w-full flex relative flex-col justify-center-safe items-center"
     >
-      <section
-        className="w-full relative top-0 border-red-400 border-2"
-        style={sectionStyle}
-      >
+      <section className="w-full relative top-0 " style={sectionStyle}>
         <div style={maskStyle}>
           <div
             ref={contentRef}

@@ -20,7 +20,7 @@ export default function OnePage() {
             }}
             className="relative"
           >
-            <div className="px-6 sticky top-6 z-10 mix-blend-plus-lighter pointer-events-none">
+            <div className="px-6 sticky top-0 z-10 mix-blend-plus-lighter pointer-events-none">
               <HalftoneEffect dotRadius={2} dotSpacing={4}>
                 <HeroLogoText />
               </HalftoneEffect>

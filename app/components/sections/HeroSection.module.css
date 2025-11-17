@@ -1,6 +1,6 @@
 .heroLogo {
-  transform-origin: top center;
-  transform: scaleY(2);
+  transform-origin: 50% 15%;
+  transform: scaleY(5);
 }
 
 .heroImage {
@@ -10,7 +10,7 @@
 
 @supports (animation-timeline: view()) {
   .heroLogo {
-    transform: scaleY(2);
+    transform: scaleY(5);
     will-change: transform;
     @apply transform-gpu;
     animation-name: hero-logo-scale;
@@ -22,7 +22,7 @@
   }
   @keyframes hero-logo-scale {
     0% {
-      transform: scaleY(2);
+      transform: scaleY(5);
     }
 
     100% {
