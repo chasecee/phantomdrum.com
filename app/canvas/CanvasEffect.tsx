@@ -156,7 +156,7 @@ export const CanvasEffects = forwardRef<
 
     const worker = new Worker(
       new URL("../workers/halftone.worker.ts", import.meta.url),
-      { type: "module" }
+      { type: "module", name: "halftone-effects" }
     );
     workerRef.current = worker;
 

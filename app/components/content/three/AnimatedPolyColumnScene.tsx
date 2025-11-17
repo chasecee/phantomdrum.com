@@ -339,7 +339,7 @@ export function AnimatedPolyColumnScene({
       transferredCanvasRef.current = canvas;
       const worker = new Worker(
         new URL("../../../workers/polyColumn.worker.ts", import.meta.url),
-        { type: "module" }
+        { type: "module", name: "poly-column-scene" }
       );
       workerRef.current = worker;
       let offscreen: OffscreenCanvas;

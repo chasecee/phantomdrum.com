@@ -210,7 +210,7 @@ export const CanvasHalftoneWebGL = forwardRef<
 
     const worker = new Worker(
       new URL("../workers/halftoneWebgl.worker.ts", import.meta.url),
-      { type: "module" }
+      { type: "module", name: "halftone-webgl" }
     );
     workerRef.current = worker;
     let offscreen: OffscreenCanvas;

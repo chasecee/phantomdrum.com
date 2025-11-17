@@ -357,7 +357,7 @@ export function AnimatedMultiCubeScene({
       transferredCanvasRef.current = canvas;
       const worker = new Worker(
         new URL("../../../workers/multiCube.worker.ts", import.meta.url),
-        { type: "module" }
+        { type: "module", name: "multi-cube-scene" }
       );
       workerRef.current = worker;
       let offscreen: OffscreenCanvas;
