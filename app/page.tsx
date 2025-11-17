@@ -7,15 +7,7 @@ import { CanvasScrollSection } from "./canvas/CanvasScrollSection";
 
 export default function Home() {
   return (
-    <div
-      className="w-full max-w-[1500px] mx-auto body-container"
-      style={{
-        backgroundImage: "url(/img/optimized/noise.webp)",
-        backgroundSize: "min(100%, 1128px)",
-        backgroundPosition: "center",
-        containerType: "inline-size",
-      }}
-    >
+    <div className="w-full max-w-[1500px] mx-auto body-container">
       <HeroSectionText />
       <div className="mix-blend-difference">
         <CubeSection />

@@ -7,15 +7,7 @@ import { oneHalftoneSceneConfig } from "./halftone/sceneConfig";
 
 export default function OnePage() {
   return (
-    <div
-      className="w-full"
-      style={{
-        backgroundImage: "url(/img/optimized/noise.webp)",
-        backgroundSize: "min(100%, 1128px)",
-        backgroundPosition: "center",
-        containerType: "inline-size",
-      }}
-    >
+    <div className="w-full">
       <div className="relative max-w-[1500px] mx-auto bg-linear-to-b from-slate-950/60 to-amber-900/20">
         <div
           style={{

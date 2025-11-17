@@ -29,6 +29,7 @@ export type HalftoneRendererConfig = {
   dpr: number;
   imageSrc: string;
   fitMode: "cover" | "contain";
+  padding: number;
 };
 
 const fragmentShader = /* glsl */ `
@@ -164,6 +165,7 @@ export class HalftoneRendererCore {
   private imageSrc = "";
   private sourceBitmap: ImageBitmap | HTMLCanvasElement | null = null;
   private fitMode: "cover" | "contain" = "cover";
+  private paddingPx = 0;
   private isVisible = false;
   private isAnimating = false;
   private needsRender = true;
@@ -180,6 +182,7 @@ export class HalftoneRendererCore {
     };
     this.imageSrc = config.imageSrc;
     this.fitMode = config.fitMode;
+    this.paddingPx = Math.max(0, config.padding ?? 0);
     this.ensureRenderer();
     this.ensureScene();
     await this.loadTexture();
@@ -193,9 +196,12 @@ export class HalftoneRendererCore {
     this.renderOrStart();
   }
 
-  resize(width: number, height: number, dpr: number) {
+  resize(width: number, height: number, dpr: number, padding?: number) {
     if (!this.renderer || !this.uniforms) return;
     this.dimensions = { width, height, dpr };
+    if (typeof padding === "number") {
+      this.paddingPx = Math.max(0, padding);
+    }
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(width, height, false);
     this.uniforms.uResolution.value.set(width, height);
@@ -322,31 +328,57 @@ export class HalftoneRendererCore {
     const imageHeight = this.sourceBitmap.height;
     ctx.clearRect(0, 0, width, height);
 
+    const maxPadding = Math.floor(Math.min(width, height) / 2);
+    const padding = Math.min(
+      maxPadding,
+      Math.max(0, Math.round(this.paddingPx))
+    );
+    const destX = padding;
+    const destY = padding;
+    const destWidth = Math.max(1, width - padding * 2);
+    const destHeight = Math.max(1, height - padding * 2);
+    const availableWidth = destWidth;
+    const availableHeight = destHeight;
+
     if (this.fitMode === "cover") {
       const {
         x,
         y,
         width: srcWidth,
         height: srcHeight,
-      } = computeCoverSourceRect(imageWidth, imageHeight, width, height);
+      } = computeCoverSourceRect(
+        imageWidth,
+        imageHeight,
+        availableWidth,
+        availableHeight
+      );
       ctx.drawImage(
         this.sourceBitmap,
         x,
         y,
         srcWidth,
         srcHeight,
-        0,
-        0,
-        width,
-        height
+        destX,
+        destY,
+        availableWidth,
+        availableHeight
       );
     } else {
-      const scale = Math.min(width / imageWidth, height / imageHeight);
-      const drawWidth = imageWidth * scale;
-      const drawHeight = imageHeight * scale;
-      const offsetX = (width - drawWidth) / 2;
-      const offsetY = (height - drawHeight) / 2;
-      ctx.drawImage(this.sourceBitmap, offsetX, offsetY, drawWidth, drawHeight);
+      const scale = Math.min(
+        availableWidth / imageWidth,
+        availableHeight / imageHeight
+      );
+      const scaledWidth = imageWidth * scale;
+      const scaledHeight = imageHeight * scale;
+      const offsetX = destX + (availableWidth - scaledWidth) / 2;
+      const offsetY = destY + (availableHeight - scaledHeight) / 2;
+      ctx.drawImage(
+        this.sourceBitmap,
+        offsetX,
+        offsetY,
+        scaledWidth,
+        scaledHeight
+      );
     }
 
     const textureSource =

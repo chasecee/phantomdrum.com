@@ -30,6 +30,7 @@ export type CanvasHalftoneWebGLProps = {
   style?: React.CSSProperties;
   suspendWhenHidden?: boolean;
   imageFit?: "cover" | "contain";
+  paddingRatio?: number;
 };
 
 export type CanvasHalftoneWebGLHandle = {
@@ -69,6 +70,11 @@ const resolveImageSrc = (src: string) => {
   } catch {
     return src;
   }
+};
+const clampPaddingRatio = (ratio: number) => Math.min(Math.max(ratio, 0), 0.45);
+const resolvePaddingPixels = (canvasWidth: number, ratio: number) => {
+  if (!Number.isFinite(canvasWidth) || canvasWidth <= 0) return 0;
+  return Math.max(0, Math.round(canvasWidth * clampPaddingRatio(ratio)));
 };
 
 const mergeParamsWithDefaults = (
@@ -121,6 +127,7 @@ export const CanvasHalftoneWebGL = forwardRef<
     style,
     suspendWhenHidden = true,
     imageFit = "cover",
+    paddingRatio = 0,
   }: CanvasHalftoneWebGLProps,
   ref
 ) {
@@ -134,7 +141,12 @@ export const CanvasHalftoneWebGL = forwardRef<
   );
   const visibilityRef = useRef(suspendWhenHidden ? false : true);
   const devicePixelRatioRef = useRef(1);
-  const canvasSizeRef = useRef({ width, height });
+  const normalizedPaddingRatio = clampPaddingRatio(paddingRatio);
+  const canvasSizeRef = useRef({
+    width,
+    height,
+    padding: resolvePaddingPixels(width, normalizedPaddingRatio),
+  });
   const lastImageConfigRef = useRef({
     src: resolveImageSrc(imageSrc),
     fit: imageFit,
@@ -220,8 +232,11 @@ export const CanvasHalftoneWebGL = forwardRef<
       src: resolvedImageSrc,
       fit: lastImageConfigRef.current.fit,
     };
-    const { width: initialWidth, height: initialHeight } =
-      canvasSizeRef.current;
+    const {
+      width: initialWidth,
+      height: initialHeight,
+      padding: initialPadding,
+    } = canvasSizeRef.current;
 
     worker.postMessage(
       {
@@ -233,6 +248,7 @@ export const CanvasHalftoneWebGL = forwardRef<
           dpr: devicePixelRatio,
           imageSrc: resolvedImageSrc,
           fitMode: lastImageConfigRef.current.fit,
+          padding: initialPadding,
         },
         params: lastParamsRef.current,
       },
@@ -277,8 +293,11 @@ export const CanvasHalftoneWebGL = forwardRef<
       src: resolvedImageSrc,
       fit: lastImageConfigRef.current.fit,
     };
-    const { width: initialWidth, height: initialHeight } =
-      canvasSizeRef.current;
+    const {
+      width: initialWidth,
+      height: initialHeight,
+      padding: initialPadding,
+    } = canvasSizeRef.current;
 
     let cancelled = false;
     renderer
@@ -289,6 +308,7 @@ export const CanvasHalftoneWebGL = forwardRef<
           dpr: devicePixelRatio,
           imageSrc: resolvedImageSrc,
           fitMode: lastImageConfigRef.current.fit,
+          padding: initialPadding,
         },
         lastParamsRef.current
       )
@@ -320,13 +340,15 @@ export const CanvasHalftoneWebGL = forwardRef<
   ]);
 
   useEffect(() => {
-    canvasSizeRef.current = { width, height };
+    const paddingPx = resolvePaddingPixels(width, normalizedPaddingRatio);
+    canvasSizeRef.current = { width, height, padding: paddingPx };
     if (workerRef.current && workerReadyRef.current) {
       workerRef.current.postMessage({
         type: "resize",
         width,
         height,
         dpr: devicePixelRatioRef.current,
+        padding: paddingPx,
       });
       return;
     }
@@ -334,10 +356,11 @@ export const CanvasHalftoneWebGL = forwardRef<
       fallbackRendererRef.current.resize(
         width,
         height,
-        devicePixelRatioRef.current
+        devicePixelRatioRef.current,
+        paddingPx
       );
     }
-  }, [height, width]);
+  }, [height, width, normalizedPaddingRatio]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -347,20 +370,25 @@ export const CanvasHalftoneWebGL = forwardRef<
         return;
       }
       devicePixelRatioRef.current = nextDpr;
-      const { width: currentWidth, height: currentHeight } =
-        canvasSizeRef.current;
+      const {
+        width: currentWidth,
+        height: currentHeight,
+        padding: currentPadding,
+      } = canvasSizeRef.current;
       if (workerRef.current && workerReadyRef.current) {
         workerRef.current.postMessage({
           type: "resize",
           width: currentWidth,
           height: currentHeight,
           dpr: nextDpr,
+          padding: currentPadding,
         });
       } else if (fallbackRendererRef.current && fallbackReadyRef.current) {
         fallbackRendererRef.current.resize(
           currentWidth,
           currentHeight,
-          nextDpr
+          nextDpr,
+          currentPadding
         );
       }
     };

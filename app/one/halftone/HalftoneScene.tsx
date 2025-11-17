@@ -29,6 +29,7 @@ export function HalftoneScene({
     contentStyle,
     canvasDimensions,
     layers,
+    paddingRatio,
   } = useHalftoneScene(config);
 
   return (
@@ -51,6 +52,7 @@ export function HalftoneScene({
               width={canvasDimensions.width}
               height={canvasDimensions.height}
               initialParams={layer.initialRendererParams}
+              paddingRatio={paddingRatio}
             />
           ))}
         </div>

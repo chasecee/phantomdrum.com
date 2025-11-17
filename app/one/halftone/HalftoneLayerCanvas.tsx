@@ -17,6 +17,7 @@ type HalftoneLayerCanvasProps = {
   width: number;
   height: number;
   initialParams: HalftoneWebGLParams;
+  paddingRatio: number;
 };
 
 export function HalftoneLayerCanvas({
@@ -29,6 +30,7 @@ export function HalftoneLayerCanvas({
   width,
   height,
   initialParams,
+  paddingRatio,
 }: HalftoneLayerCanvasProps) {
   return (
     <div
@@ -44,6 +46,7 @@ export function HalftoneLayerCanvas({
         imageFit={imageFit}
         params={initialParams}
         suspendWhenHidden={false}
+        paddingRatio={paddingRatio}
         className="w-full h-full"
       />
     </div>

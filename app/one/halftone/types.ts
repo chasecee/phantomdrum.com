@@ -40,4 +40,5 @@ export type HalftoneSceneConfig = {
   };
   layers: HalftoneLayerDefinition[];
   baseLayerIndex?: number;
+  padding?: number;
 };

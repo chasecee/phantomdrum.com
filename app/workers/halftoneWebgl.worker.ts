@@ -13,6 +13,7 @@ type InitMessage = {
     dpr: number;
     imageSrc: string;
     fitMode: "cover" | "contain";
+    padding: number;
   };
   params: HalftoneParams;
 };
@@ -33,6 +34,7 @@ type ResizeMessage = {
   width: number;
   height: number;
   dpr: number;
+  padding: number;
 };
 
 type VisibilityMessage = {
@@ -71,6 +73,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
         dpr: message.config.dpr,
         imageSrc: message.config.imageSrc,
         fitMode: message.config.fitMode ?? "cover",
+        padding: message.config.padding ?? 0,
       };
       await renderer.init(config, message.params);
       break;
@@ -87,7 +90,12 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
     }
     case "resize": {
       withRenderer((instance) =>
-        instance.resize(message.width, message.height, message.dpr)
+        instance.resize(
+          message.width,
+          message.height,
+          message.dpr,
+          message.padding ?? 0
+        )
       );
       break;
     }

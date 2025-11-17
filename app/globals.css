@@ -21,9 +21,13 @@
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image: url("/img/optimized/noise.webp");
+  background-size: min(100%, 1128px);
+  background-position: center;
   color: var(--foreground);
   font-family: var(--font-space-mono);
+  container-type: inline-size;
 }
 
 @layer base {

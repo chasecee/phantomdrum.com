@@ -38,9 +38,15 @@ type NormalizedLayerDefinition = {
   params: HalftoneLayerDefinition["params"];
 };
 
+type TranslateMeta = {
+  unit: "percent" | "px";
+  basis: number;
+};
+
 type ResolvedParamPayload = {
   renderer: HalftoneWebGLParams;
-  translateY: number;
+  translateYValue: number;
+  translateYMeta: TranslateMeta;
 };
 
 type ResolvedLayerParams = {
@@ -65,7 +71,9 @@ type UseHalftoneSceneResult = {
   sectionStyle: CSSProperties;
   contentStyle: CSSProperties;
   canvasDimensions: CanvasDimensions;
+  contentDimensions: CanvasDimensions;
   layers: RuntimeLayer[];
+  paddingRatio: number;
 };
 
 const clamp = (value: number, min: number, max: number) =>
@@ -142,20 +150,31 @@ const resolveParamSet = (
   params: LayerParamSet,
   widthBasis: number,
   heightBasis: number
-): ResolvedParamPayload => ({
-  renderer: {
-    halftoneSize: toResponsiveNumber(params.halftoneSize, widthBasis),
-    dotSpacing: toResponsiveNumber(params.dotSpacing, widthBasis),
-    rgbOffset: toResponsiveNumber(params.rgbOffset, widthBasis),
-    rgbOffsetAngle: params.rgbOffsetAngle,
-    effectIntensity: params.effectIntensity,
-    patternRotation: params.patternRotation,
-    zoom: params.zoom,
-    brightness: params.brightness ?? 1,
-    contrast: params.contrast ?? 1,
-  },
-  translateY: toResponsiveNumber(params.translateY ?? 0, heightBasis),
-});
+): ResolvedParamPayload => {
+  const translateInput = params.translateY ?? 0;
+  const isPercent =
+    typeof translateInput === "string" && translateInput.trim().endsWith("%");
+  const translateYValue = toResponsiveNumber(translateInput, heightBasis);
+
+  return {
+    renderer: {
+      halftoneSize: toResponsiveNumber(params.halftoneSize, widthBasis),
+      dotSpacing: toResponsiveNumber(params.dotSpacing, widthBasis),
+      rgbOffset: toResponsiveNumber(params.rgbOffset, widthBasis),
+      rgbOffsetAngle: params.rgbOffsetAngle,
+      effectIntensity: params.effectIntensity,
+      patternRotation: params.patternRotation,
+      zoom: params.zoom,
+      brightness: params.brightness ?? 1,
+      contrast: params.contrast ?? 1,
+    },
+    translateYValue,
+    translateYMeta: {
+      unit: isPercent ? "percent" : "px",
+      basis: heightBasis,
+    },
+  };
+};
 
 const resolveLayerParams = (
   params: HalftoneLayerDefinition["params"],
@@ -182,13 +201,12 @@ export const useHalftoneScene = (
     const widthMin = Math.max(config.width.min || 1, 200);
     const widthMax = Math.max(widthMin, config.width.max || widthMin);
     const viewportRatio = clamp(config.width.viewportRatio ?? 1, 0.3, 1);
+    const padding = clamp(config.padding ?? 0, 0, 0.45);
     const layers = config.layers.map((layer, index) =>
       normalizeLayer(layer, index)
     );
     const baseLayerIndex = resolveBaseLayerIndex(config.baseLayerIndex, layers);
-    const widthValue = `clamp(${widthMin}px, ${(viewportRatio * 100).toFixed(
-      2
-    )}vw, ${widthMax}px)`;
+    const widthValue = "100%";
 
     return {
       aspectRatio,
@@ -206,23 +224,33 @@ export const useHalftoneScene = (
       },
       layers,
       baseLayerIndex,
+      padding,
     };
   }, [config]);
 
-  const fallbackSize = useMemo<CanvasDimensions>(
-    () => ({
-      width: normalized.width.max,
-      height: Math.round(normalized.width.max * normalized.aspectRatio),
-    }),
-    [normalized.aspectRatio, normalized.width.max]
+  const fallbackMeasurements = useMemo(() => {
+    const measuredWidth = normalized.width.max;
+    const measuredHeight = Math.round(measuredWidth * normalized.aspectRatio);
+    const paddingPx = Math.round(measuredWidth * normalized.padding);
+    const innerWidth = Math.max(1, measuredWidth - paddingPx * 2);
+    const innerHeight = Math.max(1, measuredHeight - paddingPx * 2);
+    return {
+      canvas: { width: measuredWidth, height: measuredHeight },
+      inner: { width: innerWidth, height: innerHeight },
+    };
+  }, [normalized.aspectRatio, normalized.padding, normalized.width.max]);
+
+  const [canvasDimensions, setCanvasDimensions] = useState<CanvasDimensions>(
+    fallbackMeasurements.canvas
+  );
+  const [contentDimensions, setContentDimensions] = useState<CanvasDimensions>(
+    fallbackMeasurements.inner
   );
 
-  const [canvasDimensions, setCanvasDimensions] =
-    useState<CanvasDimensions>(fallbackSize);
-
   useEffect(() => {
-    setCanvasDimensions(fallbackSize);
-  }, [fallbackSize]);
+    setCanvasDimensions(fallbackMeasurements.canvas);
+    setContentDimensions(fallbackMeasurements.inner);
+  }, [fallbackMeasurements]);
 
   const layerCount = normalized.layers.length;
 
@@ -241,17 +269,12 @@ export const useHalftoneScene = (
   }, [layerCount]);
 
   const resolvedLayerParams = useMemo<ResolvedLayerParams[]>(() => {
-    const widthBasis = canvasDimensions.width || fallbackSize.width;
-    const heightBasis = canvasDimensions.height || fallbackSize.height;
+    const widthBasis = Math.max(1, contentDimensions.width);
+    const heightBasis = Math.max(1, contentDimensions.height);
     return normalized.layers.map((layer) =>
       resolveLayerParams(layer.params, widthBasis, heightBasis)
     );
-  }, [
-    canvasDimensions,
-    fallbackSize.height,
-    fallbackSize.width,
-    normalized.layers,
-  ]);
+  }, [contentDimensions.height, contentDimensions.width, normalized.layers]);
 
   const runtimeLayers = useMemo<RuntimeLayer[]>(
     () =>
@@ -275,23 +298,37 @@ export const useHalftoneScene = (
     if (!node) return;
     const measuredWidth = Math.max(1, Math.round(node.offsetWidth));
     if (!measuredWidth) return;
-    const nextHeight = Math.max(
+    const measuredHeight = Math.max(
       1,
       Math.round(measuredWidth * normalized.aspectRatio)
     );
+    const paddingPx = Math.round(measuredWidth * normalized.padding);
+    const innerWidth = Math.max(1, measuredWidth - paddingPx * 2);
+    const innerHeight = Math.max(1, measuredHeight - paddingPx * 2);
+
     setCanvasDimensions((prev) => {
-      if (prev.width === measuredWidth && prev.height === nextHeight) {
+      if (prev.width === measuredWidth && prev.height === measuredHeight) {
         return prev;
       }
       return {
         width: measuredWidth,
-        height: nextHeight,
+        height: measuredHeight,
       };
     });
-  }, [normalized.aspectRatio]);
+
+    setContentDimensions((prev) => {
+      if (prev.width === innerWidth && prev.height === innerHeight) {
+        return prev;
+      }
+      return {
+        width: innerWidth,
+        height: innerHeight,
+      };
+    });
+  }, [normalized.aspectRatio, normalized.padding]);
 
   const applyTranslateY = useCallback(
-    (value: number) => {
+    (value: number, meta?: TranslateMeta | null) => {
       const baseRef = containerRefs[normalized.baseLayerIndex]?.current;
       if (!baseRef) return;
       if (Math.abs(translateValueRef.current - value) < 0.5) return;
@@ -300,7 +337,11 @@ export const useHalftoneScene = (
         gsap.set(baseRef, { clearProps: "transform,willChange" });
         return;
       }
-      gsap.set(baseRef, { y: value, willChange: "transform" });
+      const cssValue =
+        meta && meta.unit === "percent" && meta.basis > 0
+          ? `${(value / meta.basis) * 100}%`
+          : `${value}px`;
+      gsap.set(baseRef, { y: cssValue, willChange: "transform" });
     },
     [containerRefs, normalized.baseLayerIndex]
   );
@@ -321,8 +362,11 @@ export const useHalftoneScene = (
   useEffect(() => {
     if (!resolvedLayerParams.length) return;
     const initialTranslate =
-      resolvedLayerParams[normalized.baseLayerIndex]?.initial.translateY ?? 0;
-    applyTranslateY(initialTranslate);
+      resolvedLayerParams[normalized.baseLayerIndex]?.initial.translateYValue ??
+      0;
+    const initialMeta =
+      resolvedLayerParams[normalized.baseLayerIndex]?.initial.translateYMeta;
+    applyTranslateY(initialTranslate, initialMeta);
   }, [applyTranslateY, normalized.baseLayerIndex, resolvedLayerParams]);
 
   useEffect(() => {
@@ -333,7 +377,8 @@ export const useHalftoneScene = (
 
     const proxies = resolvedLayerParams.map((layer) => ({
       ...layer.initial.renderer,
-      translateY: layer.initial.translateY,
+      translateYValue: layer.initial.translateYValue,
+      translateYMeta: layer.initial.translateYMeta,
     }));
 
     let rafId: number | null = null;
@@ -358,7 +403,7 @@ export const useHalftoneScene = (
           proxies[index],
           {
             ...layer.target.renderer,
-            translateY: layer.target.translateY,
+            translateYValue: layer.target.translateYValue,
           },
           0
         );
@@ -368,12 +413,16 @@ export const useHalftoneScene = (
         if (rafId !== null) return;
         rafId = requestAnimationFrame(() => {
           rafId = null;
-          applyTranslateY(proxies[normalized.baseLayerIndex]?.translateY ?? 0);
+          applyTranslateY(
+            proxies[normalized.baseLayerIndex]?.translateYValue ?? 0,
+            proxies[normalized.baseLayerIndex]?.translateYMeta
+          );
           proxies.forEach((proxy, index) => {
             const ref = canvasRefs[index]?.current;
             if (!ref) return;
-            const { translateY, ...params } = proxy;
-            void translateY;
+            const { translateYValue, translateYMeta, ...params } = proxy;
+            void translateYValue;
+            void translateYMeta;
             ref.updateParams(params);
           });
         });
@@ -416,6 +465,8 @@ export const useHalftoneScene = (
     sectionStyle,
     contentStyle,
     canvasDimensions,
+    contentDimensions,
     layers: runtimeLayers,
+    paddingRatio: normalized.padding,
   };
 };
