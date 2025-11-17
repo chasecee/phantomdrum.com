@@ -46,7 +46,7 @@ export default function Home() {
         </HalftoneEffect> */}
         <div className="h-[400vw] w-full" />
       </div>
-      <PerfHud />
+      {process.env.NODE_ENV === "development" && <PerfHud />}
     </>
   );
 }

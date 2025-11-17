@@ -58,12 +58,12 @@ const INITIAL_STATS: PerfStats = {
 };
 
 const DL_CLASSES =
-  "w-1/3 md:w-1/2 border-r border-current/10 last:border-r-0 shrink-1";
+  "grow min-w-1/4 md:w-1/2 border-r border-current/10 last:border-r-0 shrink-1";
 const DT_CLASSES =
   "py-1 mb-1 px-3 text-[1vw] leading-[1.5] text-current/40 tracking-[0.1em] bg-current/10 border-b border-current/20";
 const DD_CLASSES =
-  "px-3 text-[clamp(1.5vw,1rem,3vw)] leading-[1.5] tabular-nums tracking-tight text-current/80 whitespace-nowrap";
-const DD_BROWSER_CLASSES = `${DD_CLASSES} max-w-[20vw] w-full overflow-hidden`;
+  "px-3 font-bold text-[clamp(1.5vw,1rem,3vw)] leading-[1.5] tabular-nums tracking-tight text-current/80 whitespace-nowrap";
+const DD_BROWSER_CLASSES = `${DD_CLASSES} md:max-w-[20vw] w-full overflow-hidden`;
 
 const FLUSH_INTERVAL_MS = 1000;
 
@@ -391,9 +391,9 @@ export function PerfHud() {
   const browserLabel = stats.browser || "pending";
 
   return (
-    <div className="fixed bottom-0 z-50 w-full">
-      <div className="p-5 font-mono uppercase tracking-[0.2em] text-green-400">
-        <div className="flex md:flex-nowrap overflow-auto flex-row flex-wrap w-full justify-start border border-current/10">
+    <div className="sticky bottom-0 z-50 w-full mix-blend-difference">
+      <div className="p-5 font-mono uppercase tracking-[0.2em] text-green-600">
+        <div className="flex md:flex-nowrap justify-items-stretch justify-stretch overflow-auto flex-row flex-wrap w-full  border border-current/10">
           <dl className={DL_CLASSES}>
             <dt className={DT_CLASSES}>fps</dt>
             <dd className={`${DD_CLASSES} ${fpsColor}`}>{fpsLabel}</dd>
@@ -418,10 +418,10 @@ export function PerfHud() {
             <dt className={DT_CLASSES}>memory</dt>
             <dd className={DD_CLASSES}>{memoryLabel}</dd>
           </dl>
-          <dl className={`${DL_CLASSES} hidden md:block`}>
+          <dl className={`${DL_CLASSES} `}>
             <dt className={DT_CLASSES}>browser</dt>
             <dd className={DD_BROWSER_CLASSES}>
-              <span className="block overflow-hidden text-ellipsis">
+              <span className="block md:overflow-hidden md:text-ellipsis">
                 {browserLabel}
               </span>
             </dd>

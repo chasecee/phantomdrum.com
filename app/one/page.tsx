@@ -35,7 +35,7 @@ export default function OnePage() {
           </div>
         </div>
       </div>
-      <PerfHud />
+      {process.env.NODE_ENV === "development" && <PerfHud />}
     </>
   );
 }
