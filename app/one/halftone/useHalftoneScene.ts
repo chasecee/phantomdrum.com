@@ -35,6 +35,7 @@ type NormalizedLayerDefinition = {
   imageFit: "cover" | "contain";
   placement: "background" | "foreground";
   className?: string;
+  padding: number;
   params: HalftoneLayerDefinition["params"];
 };
 
@@ -63,6 +64,7 @@ type RuntimeLayer = {
   canvasRef: RefObject<CanvasHalftoneWebGLHandle | null>;
   zIndex: number;
   initialRendererParams: HalftoneWebGLParams;
+  paddingRatio: number;
 };
 
 type UseHalftoneSceneResult = {
@@ -73,7 +75,6 @@ type UseHalftoneSceneResult = {
   canvasDimensions: CanvasDimensions;
   contentDimensions: CanvasDimensions;
   layers: RuntimeLayer[];
-  paddingRatio: number;
 };
 
 const clamp = (value: number, min: number, max: number) =>
@@ -93,13 +94,15 @@ const DEFAULT_RENDERER_PARAMS: HalftoneWebGLParams = {
 
 const normalizeLayer = (
   layer: HalftoneLayerDefinition,
-  index: number
+  index: number,
+  globalPadding: number
 ): NormalizedLayerDefinition => ({
   id: layer.id ?? `layer-${index}`,
   imageSrc: layer.imageSrc,
   imageFit: layer.imageFit ?? "cover",
   placement: layer.placement ?? "foreground",
   className: layer.className,
+  padding: layer.padding ?? globalPadding,
   params: layer.params,
 });
 
@@ -185,7 +188,7 @@ const resolveLayerParams = (
   target: resolveParamSet(params.target, width, height),
 });
 
-const toSectionAspectRatio = (aspectRatio: number) => `${1}/${aspectRatio * 2}`;
+const toSectionAspectRatio = (aspectRatio: number) => `${1}/${aspectRatio}`;
 
 const toContentAspectRatio = (aspectRatio: number) => `${1}/${aspectRatio}`;
 
@@ -203,7 +206,7 @@ export const useHalftoneScene = (
     const viewportRatio = clamp(config.width.viewportRatio ?? 1, 0.3, 1);
     const padding = clamp(config.padding ?? 0, 0, 0.45);
     const layers = config.layers.map((layer, index) =>
-      normalizeLayer(layer, index)
+      normalizeLayer(layer, index, padding)
     );
     const baseLayerIndex = resolveBaseLayerIndex(config.baseLayerIndex, layers);
     const widthValue = "100%";
@@ -289,6 +292,7 @@ export const useHalftoneScene = (
         initialRendererParams:
           resolvedLayerParams[index]?.initial.renderer ??
           DEFAULT_RENDERER_PARAMS,
+        paddingRatio: clamp(layer.padding, 0, 0.45),
       })),
     [canvasRefs, containerRefs, normalized.layers, resolvedLayerParams]
   );
@@ -467,6 +471,5 @@ export const useHalftoneScene = (
     canvasDimensions,
     contentDimensions,
     layers: runtimeLayers,
-    paddingRatio: normalized.padding,
   };
 };

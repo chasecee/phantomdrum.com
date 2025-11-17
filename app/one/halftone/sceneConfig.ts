@@ -1,20 +1,19 @@
 import type { HalftoneSceneConfig } from "./types";
 
 export const oneHalftoneSceneConfig: HalftoneSceneConfig = {
-  aspectRatio: 1.5,
+  aspectRatio: 1.66,
   width: {
     min: 320,
     max: 1280,
     viewportRatio: 1,
   },
   scroll: {
-    start: "30% 60%",
-    end: "40% 40%",
+    start: "60% 60%",
+    end: "80% 40%",
     scrub: true,
     markers: true,
   },
   baseLayerIndex: 1,
-  padding: 0.08,
   layers: [
     {
       id: "grit-bg",
@@ -22,6 +21,7 @@ export const oneHalftoneSceneConfig: HalftoneSceneConfig = {
       imageFit: "cover",
       placement: "background",
       className: "opacity-10",
+      padding: 0.01,
       params: {
         initial: {
           halftoneSize: "5%",
@@ -36,11 +36,11 @@ export const oneHalftoneSceneConfig: HalftoneSceneConfig = {
         target: {
           halftoneSize: "8%",
           dotSpacing: "0.3%",
-          rgbOffset: "50%",
+          rgbOffset: "25%",
           rgbOffsetAngle: 5,
           effectIntensity: 0.18,
           patternRotation: 55,
-          zoom: 0.4,
+          zoom: 0.5,
           translateY: "0%",
         },
       },
@@ -50,30 +50,31 @@ export const oneHalftoneSceneConfig: HalftoneSceneConfig = {
       imageSrc: "/img/optimized/planet-cropped.webp",
       imageFit: "contain",
       className: "",
+      padding: 0.05,
       params: {
         initial: {
           halftoneSize: "6%",
           dotSpacing: "0.2%",
-          rgbOffset: "15%",
-          rgbOffsetAngle: 90,
+          rgbOffset: "0%",
+          rgbOffsetAngle: 0,
           effectIntensity: 0.2,
           patternRotation: 55,
           zoom: 1,
-          brightness: 1.1,
-          contrast: 1.05,
-          translateY: "10%",
+          brightness: 1.2,
+          contrast: 1,
+          translateY: "0%",
         },
         target: {
           halftoneSize: "4%",
           dotSpacing: "0.1%",
-          rgbOffset: "2%",
-          rgbOffsetAngle: 95,
+          rgbOffset: "25%",
+          rgbOffsetAngle: 0,
           effectIntensity: 0.35,
           patternRotation: 40,
-          zoom: 1,
-          brightness: 1.15,
-          contrast: 1.1,
-          translateY: "20%",
+          zoom: 0.65,
+          brightness: 1,
+          contrast: 1,
+          translateY: "-20%",
         },
       },
     },

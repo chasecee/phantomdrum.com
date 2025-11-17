@@ -1,7 +1,7 @@
 export default function HeroLogoText() {
   return (
     <div
-      className="relative w-full select-none"
+      className="relative w-full select-none h-[10svh]"
       style={{ overflow: "visible", containerType: "inline-size" }}
     >
       <div className={`w-full text-neutral-300 `}>

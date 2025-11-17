@@ -19,6 +19,7 @@ export type HalftoneLayerDefinition = {
   imageFit?: "cover" | "contain";
   placement?: "background" | "foreground";
   className?: string;
+  padding?: number;
   params: {
     initial: LayerParamSet;
     target: LayerParamSet;

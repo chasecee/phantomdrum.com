@@ -13,7 +13,7 @@ export default function OnePage() {
         <div className="relative max-w-[1500px] mx-auto bg-linear-to-b from-slate-950/60 to-amber-900/20">
           <div
             style={{
-              maskImage: "linear-gradient(to top, transparent, black 15%)",
+              maskImage: "linear-gradient(to top, rgba(0,0,0,0.15), black 15%)",
               maskSize: "100% 100%",
               maskPosition: "bottom",
               maskRepeat: "no-repeat",
@@ -25,9 +25,7 @@ export default function OnePage() {
                 <HeroLogoText />
               </HalftoneEffect>
             </div>
-            <div className="mt-12">
-              <HalftoneScene config={oneHalftoneSceneConfig} />
-            </div>
+            <HalftoneScene config={oneHalftoneSceneConfig} />
           </div>
           <CubeSection />
           <div className="h-[200vw] overflow-hidden relative w-full">

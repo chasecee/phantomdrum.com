@@ -12,7 +12,7 @@ type HalftoneSceneProps = {
 
 const DEFAULT_MASK_STYLE: CSSProperties = {
   maskImage:
-    "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
+    "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)",
   maskSize: "100% 100%",
   maskPosition: "top",
   maskRepeat: "no-repeat",
@@ -29,34 +29,41 @@ export function HalftoneScene({
     contentStyle,
     canvasDimensions,
     layers,
-    paddingRatio,
   } = useHalftoneScene(config);
 
   return (
-    <section ref={sectionRef} className="w-full relative" style={sectionStyle}>
-      <div style={maskStyle}>
-        <div
-          ref={contentRef}
-          className="mx-auto relative isolate"
-          style={contentStyle}
-        >
-          {layers.map((layer) => (
-            <HalftoneLayerCanvas
-              key={layer.key}
-              containerRef={layer.containerRef}
-              canvasRef={layer.canvasRef}
-              imageSrc={layer.imageSrc}
-              imageFit={layer.imageFit}
-              className={layer.className}
-              zIndex={layer.zIndex}
-              width={canvasDimensions.width}
-              height={canvasDimensions.height}
-              initialParams={layer.initialRendererParams}
-              paddingRatio={paddingRatio}
-            />
-          ))}
+    <div
+      ref={sectionRef}
+      className="h-[90svh] w-full flex relative flex-col justify-center-safe items-center border border-red-500"
+    >
+      <section
+        className="w-full relative top-0 border-red-400 border-2"
+        style={sectionStyle}
+      >
+        <div style={maskStyle}>
+          <div
+            ref={contentRef}
+            className="mx-auto relative isolate"
+            style={contentStyle}
+          >
+            {layers.map((layer) => (
+              <HalftoneLayerCanvas
+                key={layer.key}
+                containerRef={layer.containerRef}
+                canvasRef={layer.canvasRef}
+                imageSrc={layer.imageSrc}
+                imageFit={layer.imageFit}
+                className={layer.className}
+                zIndex={layer.zIndex}
+                width={canvasDimensions.width}
+                height={canvasDimensions.height}
+                initialParams={layer.initialRendererParams}
+                paddingRatio={layer.paddingRatio}
+              />
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }
