@@ -1,15 +1,15 @@
 import type { HalftoneSceneConfig } from "./types";
 
-export const oneHalftoneSceneConfig: HalftoneSceneConfig = {
-  aspectRatio: 1.66,
+export const experienceHalftoneSceneConfig: HalftoneSceneConfig = {
+  aspectRatio: 1.5,
   width: {
     min: 320,
     max: 1280,
     viewportRatio: 1,
   },
   scroll: {
-    start: "55% 60%",
-    end: "80% 10%",
+    start: "50% 60%",
+    end: "80% 40%",
     scrub: true,
     markers: process.env.NODE_ENV === "development" ? true : false,
   },

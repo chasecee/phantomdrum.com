@@ -22,7 +22,7 @@ export default function CubeSection() {
     >
       <div
         ref={multiCubeContainerRef}
-        className="aspect-square max-h-[90svh] my-[10vw] w-full relative overflow-hidden"
+        className="aspect-square max-h-[90svh] mb-[10vw] w-full relative overflow-hidden"
       >
         <AnimatedMultiCubeScene
           texts={CUBE_TEXTS}

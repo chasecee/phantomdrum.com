@@ -1,51 +1,68 @@
-import HeroSectionText from "./components/sections/HeroSectionText";
-import CubeSection from "./components/sections/CubeSection";
-import QuotesSection from "./components/content/QuotesSection";
 import ArtistBio from "./components/content/ArtistBio";
-import ListenSection from "./components/content/ListenSection";
-import { CanvasScrollSection } from "./canvas/CanvasScrollSection";
+import QuotesSection from "./components/content/QuotesSection";
 import { PerfHud } from "./components/dev/PerfHud";
+import { HalftoneScene } from "./components/halftone/HalftoneScene";
+import type { HalftoneSceneConfig } from "./components/halftone/types";
+import CubeSection from "./components/sections/CubeSection";
+import HeroLogoText from "./components/sections/HeroLogoText";
+import { experienceHalftoneSceneConfig } from "./components/halftone/sceneConfig";
+
+const HERO_SCALE_MULTIPLIER = 0.18;
+
+type ExperienceContentProps = {
+  halftoneConfig: HalftoneSceneConfig;
+  includeQuotes?: boolean;
+};
+
+export function ExperienceContent({
+  halftoneConfig,
+  includeQuotes = false,
+}: ExperienceContentProps) {
+  return (
+    <div className="w-full">
+      <div className="relative max-w-[1500px] mx-auto bg-linear-to-b from-slate-950/60 via-amber-900/20 to-transparent">
+        <div
+          style={
+            {
+              maskImage: "linear-gradient(to top, rgba(0,0,0,0), black 20%)",
+              maskSize: "100% 100%",
+              maskPosition: "bottom",
+              maskRepeat: "no-repeat",
+              containerType: "inline-size",
+              "--aspect-width": "1042",
+              "--aspect-height": "600",
+              "--scale-multiplier": `${HERO_SCALE_MULTIPLIER}`,
+              "--aspect-ratio":
+                "calc(var(--aspect-width)/var(--aspect-height))",
+            } as React.CSSProperties
+          }
+        >
+          <div className="px-2 sticky top-0 z-4 mix-blend-overlay pointer-events-none">
+            <HeroLogoText />
+          </div>
+          <HalftoneScene config={halftoneConfig} />
+        </div>
+        <CubeSection />
+        <div className="h-[200vw] overflow-hidden relative w-full">
+          <ArtistBio />
+        </div>
+      </div>
+      {includeQuotes ? (
+        <div className="max-w-[1500px] mx-auto pt-16">
+          <QuotesSection />
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export default function Home() {
   return (
     <>
-      <div className="w-full max-w-[1500px] mx-auto body-container">
-        <HeroSectionText />
-        <div className="mix-blend-difference">
-          <CubeSection />
-        </div>
-        <QuotesSection />
-        <ListenSection />
-        <ArtistBio />
-        <CanvasScrollSection />
-        {/* <HalftoneEffect dotRadius={2} dotSpacing={4}>
-          <section
-            ref={polyColumnSectionRef}
-            className="aspect-square w-full relative flex items-center justify-center mix-blend-difference -translate-y-full"
-          >
-            <AnimatedPolyColumnScene
-              texts={POLY_COLUMN_TEXTS}
-              trigger={polyColumnSectionRef as RefObject<HTMLElement>}
-              start="top bottom"
-              end="bottom top"
-              scrub={1}
-              from={{ rotation: { x: 0, y: 0, z: 0 }, scale: 1 }}
-              to={{
-                rotation: { x: 0, y: Math.PI * 2.9, z: 0 },
-                scale: 0.25,
-              }}
-              radius={4}
-              height={2}
-              textSize={0.25}
-              strokeWidth={5}
-              cameraPosition={[0, 0, 20]}
-              cameraFov={25}
-              className="w-full h-full"
-            />
-          </section>
-        </HalftoneEffect> */}
-        <div className="h-[400vw] w-full" />
-      </div>
+      <ExperienceContent
+        halftoneConfig={experienceHalftoneSceneConfig}
+        includeQuotes={true}
+      />
       {process.env.NODE_ENV === "development" && <PerfHud />}
     </>
   );

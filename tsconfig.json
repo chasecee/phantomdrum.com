@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@animations/*": ["./app/components/animations/*"]
     }
   },
   "include": [
