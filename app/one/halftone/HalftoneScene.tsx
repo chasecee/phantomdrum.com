@@ -12,7 +12,7 @@ type HalftoneSceneProps = {
 
 const DEFAULT_MASK_STYLE: CSSProperties = {
   maskImage:
-    "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)",
+    "linear-gradient(to bottom, transparent, black 5%, black 90%, transparent)",
   maskSize: "100% 100%",
   maskPosition: "top",
   maskRepeat: "no-repeat",

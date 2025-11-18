@@ -83,7 +83,8 @@ export function getResponsiveValue<T>(
   const responsiveValue = value as Partial<Record<BreakpointKey, T>>;
 
   if (currentBreakpoint === null) {
-    for (const bp of ORDER) {
+    for (let i = ORDER.length - 1; i >= 0; i--) {
+      const bp = ORDER[i];
       if (responsiveValue[bp] !== undefined) return responsiveValue[bp] as T;
     }
     return Object.values(responsiveValue)[0] as T;
