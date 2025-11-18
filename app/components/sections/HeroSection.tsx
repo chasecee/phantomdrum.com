@@ -13,7 +13,7 @@ export default function HeroSection() {
           className="relative w-full aspect-887/488"
           style={{ overflow: "visible" }}
         >
-          <HalftoneEffect blur={0} dotRadius={2} dotSpacing={4}>
+          <HalftoneEffect dotRadius={2} dotSpacing={4}>
             <div
               className={`w-full h-full text-neutral-300 ${styles.heroLogo}`}
             >

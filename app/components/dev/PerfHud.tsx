@@ -58,7 +58,7 @@ const INITIAL_STATS: PerfStats = {
 };
 
 const DL_CLASSES =
-  "grow min-w-1/4 md:w-1/2 border-r border-current/10 last:border-r-0 shrink-1";
+  "grow min-w-1/4 md:w-1/4 border-r border-current/10 last:border-r-0 shrink-1";
 const DT_CLASSES =
   "py-1 mb-1 px-3 text-[1vw] leading-[1.5] text-current/40 tracking-[0.1em] bg-current/10 border-b border-current/20";
 const DD_CLASSES =

@@ -1,19 +1,10 @@
 #!/usr/bin/env node
 
-import {
-  mkdir,
-  readFile,
-  readdir,
-  rm,
-  stat,
-  writeFile,
-} from "node:fs/promises";
+import { mkdir, readFile, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  buildHalftoneFilename,
-  HALFTONE_DIRECTORY,
-  HALFTONE_FILENAME_PREFIX,
+  buildHalftoneKey,
   normalizeHalftoneValue,
 } from "../app/lib/halftoneAssetKey.js";
 
@@ -21,69 +12,47 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, "..");
 const PUBLIC_DIR = path.join(ROOT_DIR, "public");
-const OUTPUT_DIR = path.join(PUBLIC_DIR, HALFTONE_DIRECTORY);
-
-async function pathExists(target) {
-  try {
-    await stat(target);
-    return true;
-  } catch (error) {
-    if (error && error.code === "ENOENT") {
-      return false;
-    }
-    throw error;
-  }
-}
+const HALFTONE_DIR = path.join(PUBLIC_DIR, "halftone");
+const MAP_MODULE_PATH = path.join(
+  ROOT_DIR,
+  "app",
+  "generated",
+  "halftoneMap.ts"
+);
 
 function addCombination(dotRadius, dotSpacing, combos) {
-  const normalizedRadius = normalizeHalftoneValue(dotRadius);
-  const normalizedSpacing = normalizeHalftoneValue(dotSpacing);
-  const key = `${normalizedRadius}__${normalizedSpacing}`;
+  const radius = normalizeHalftoneValue(dotRadius);
+  const spacing = normalizeHalftoneValue(dotSpacing);
+  const key = `${radius}__${spacing}`;
   if (combos.has(key)) {
     return;
   }
-  combos.set(key, {
-    dotRadius: normalizedRadius,
-    dotSpacing: normalizedSpacing,
-  });
+  combos.set(key, { dotRadius: radius, dotSpacing: spacing });
 }
 
-async function ensureOutputDir() {
-  await mkdir(OUTPUT_DIR, { recursive: true });
-}
-
-async function purgeObsoleteFiles(validFilenames) {
-  if (!(await pathExists(OUTPUT_DIR))) {
-    return;
-  }
-  const entries = await readdir(OUTPUT_DIR, { withFileTypes: true });
-  for (const entry of entries) {
-    if (
-      !entry.isFile() ||
-      !entry.name.endsWith(".svg") ||
-      !entry.name.startsWith(`${HALFTONE_FILENAME_PREFIX}-`)
-    ) {
-      continue;
-    }
-    if (validFilenames.has(entry.name)) {
-      continue;
-    }
-    const targetPath = path.join(OUTPUT_DIR, entry.name);
-    await rm(targetPath);
-    console.log(`Removed stale ${path.relative(ROOT_DIR, targetPath)}`);
-  }
-}
-
-function formatNumber(value, decimals) {
+function formatNumber(value, decimals = 4) {
   return Number.parseFloat(value.toFixed(decimals));
 }
 
-function createSvgContent(dotRadius, dotSpacing) {
-  const radiusValue = formatNumber(dotRadius, 4);
-  const spacingValue = formatNumber(dotSpacing, 4);
-  const patternSize = formatNumber(spacingValue * Math.SQRT2, 6);
-  const halfPattern = formatNumber(patternSize / 2, 6);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${patternSize}" height="${patternSize}" viewBox="0 0 ${patternSize} ${patternSize}"><defs><pattern id="dots" x="0" y="0" width="${patternSize}" height="${patternSize}" patternUnits="userSpaceOnUse"><circle cx="${halfPattern}" cy="0" r="${radiusValue}" fill="black"/><circle cx="0" cy="${halfPattern}" r="${radiusValue}" fill="black"/><circle cx="${patternSize}" cy="${halfPattern}" r="${radiusValue}" fill="black"/><circle cx="${halfPattern}" cy="${patternSize}" r="${radiusValue}" fill="black"/></pattern></defs><rect width="100%" height="100%" fill="url(#dots)"/></svg>\n`;
+function createTile(dotRadius, dotSpacing) {
+  const size = Math.max(1, Math.round(dotSpacing * Math.SQRT2));
+  const half = size / 2;
+  const radiusValue = formatNumber(dotRadius);
+  const circles = [
+    { cx: half, cy: 0 },
+    { cx: 0, cy: half },
+    { cx: size, cy: half },
+    { cx: half, cy: size },
+  ]
+    .map(
+      ({ cx, cy }) =>
+        `<circle cx="${formatNumber(cx)}" cy="${formatNumber(
+          cy
+        )}" r="${radiusValue}" fill="black"/>`
+    )
+    .join("");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none">${circles}</svg>`;
+  return { size, svg };
 }
 
 async function writeFileIfChanged(filePath, content) {
@@ -97,57 +66,66 @@ async function writeFileIfChanged(filePath, content) {
       throw error;
     }
   }
+  await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, content, "utf-8");
   return true;
 }
 
-async function writeMaskAsset(config) {
-  const filename = buildHalftoneFilename(config);
-  const assetPath = path.join(OUTPUT_DIR, filename);
-  const content = createSvgContent(config.dotRadius, config.dotSpacing);
-  const updated = await writeFileIfChanged(assetPath, content);
-  if (updated) {
-    console.log(`Generated ${path.relative(ROOT_DIR, assetPath)}`);
+function createMapModule(variants) {
+  const payload = {};
+  for (const variant of variants) {
+    const key = buildHalftoneKey(variant);
+    payload[key] = {
+      size: variant.size,
+    };
   }
-}
+  const serialized = JSON.stringify(payload, null, 2);
+  return `export const halftoneMap = ${serialized} as const;
 
-function sortCombinations(combos) {
-  return Array.from(combos.values()).sort((a, b) => {
-    if (a.dotRadius !== b.dotRadius) {
-      return a.dotRadius - b.dotRadius;
-    }
-    if (a.dotSpacing !== b.dotSpacing) {
-      return a.dotSpacing - b.dotSpacing;
-    }
-    return 0;
-  });
+export type HalftoneKey = keyof typeof halftoneMap;
+export type HalftoneTileMeta = typeof halftoneMap[HalftoneKey];
+`;
 }
 
 async function main() {
   const combos = new Map();
   const values = [];
   for (let i = 1; i <= 8; i++) {
-    values.push(i);
-    values.push(i + 0.5);
+    values.push(i, i + 0.5);
   }
   for (const radius of values) {
     for (const spacing of values) {
-      addCombination(radius, spacing, combos);
+      if (spacing >= radius) {
+        addCombination(radius, spacing, combos);
+      }
     }
   }
-  const variants = sortCombinations(combos);
-  console.log(
-    `Generating ${variants.length} mask variant${
-      variants.length === 1 ? "" : "s"
-    }`
-  );
-  await ensureOutputDir();
-  const filenames = new Set(
-    variants.map((config) => buildHalftoneFilename(config))
-  );
-  await purgeObsoleteFiles(filenames);
-  for (const config of variants) {
-    await writeMaskAsset(config);
+  const variants = Array.from(combos.values()).sort((a, b) => {
+    if (a.dotRadius !== b.dotRadius) {
+      return a.dotRadius - b.dotRadius;
+    }
+    return a.dotSpacing - b.dotSpacing;
+  });
+
+  await rm(HALFTONE_DIR, { recursive: true, force: true });
+  await mkdir(HALFTONE_DIR, { recursive: true });
+
+  console.log(`Generating ${variants.length} halftone SVG tiles`);
+  for (const variant of variants) {
+    const { svg, size } = createTile(variant.dotRadius, variant.dotSpacing);
+    variant.size = size;
+    const key = buildHalftoneKey(variant);
+    const filePath = path.join(HALFTONE_DIR, `halftone-${key}.svg`);
+    await writeFile(filePath, svg, "utf-8");
+  }
+
+  console.log("Generating halftone map module");
+  const mapModule = createMapModule(variants);
+  const updated = await writeFileIfChanged(MAP_MODULE_PATH, mapModule);
+  if (updated) {
+    console.log(`Generated ${path.relative(ROOT_DIR, MAP_MODULE_PATH)}`);
+  } else {
+    console.log("Halftone map unchanged");
   }
 }
 
@@ -157,3 +135,5 @@ try {
   console.error(error);
   process.exit(1);
 }
+
+

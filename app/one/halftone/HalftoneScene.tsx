@@ -34,7 +34,7 @@ export function HalftoneScene({
   return (
     <div
       ref={sectionRef}
-      className="h-[81svh] w-full flex relative flex-col justify-center-safe items-center"
+      className="h-[150vw] mb-[-20vw] w-full flex relative flex-col justify-start-safe items-center overflow-hidden"
     >
       <section className="w-full relative top-0 " style={sectionStyle}>
         <div style={maskStyle}>

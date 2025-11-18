@@ -123,7 +123,7 @@ export function CanvasScrollSection() {
         <CanvasEffects ref={canvasRef} {...CANVAS_STATIC_PROPS} />
       </div>
       <div className="w-full sticky top-8">
-        <HalftoneEffect blur={0} dotRadius={2} dotSpacing={5}>
+        <HalftoneEffect dotRadius={2} dotSpacing={5}>
           <section
             ref={polyColumnSectionRef}
             className=" w-full aspect-square "

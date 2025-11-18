@@ -17,18 +17,18 @@ export default function CubeSection() {
 
   return (
     <HalftoneEffect
-      dotRadius={{ sm: 1.5, md: 2, lg: 2 }}
-      dotSpacing={{ sm: 3.5, md: 5, lg: 5 }}
+      dotRadius={{ sm: 1, md: 1.5, lg: 2 }}
+      dotSpacing={{ sm: 3, md: 4.5, lg: 6 }}
     >
       <div
         ref={multiCubeContainerRef}
-        className="aspect-square max-h-[80svh] my-[10vw] w-full relative overflow-hidden"
+        className="aspect-square max-h-[90svh] my-[10vw] w-full relative overflow-hidden"
       >
         <AnimatedMultiCubeScene
           texts={CUBE_TEXTS}
           trigger={multiCubeContainerRef as RefObject<HTMLElement>}
-          start="40% 80%"
-          end="60% 30%"
+          start="30% 80%"
+          end="70% 30%"
           from={{ rotation: { x: 0.01, y: 0, z: 0 } }}
           to={{
             rotation: { x: -0.01, y: -Math.PI * 0.5, z: 0 },

@@ -18,7 +18,7 @@ export default function Home() {
         <ListenSection />
         <ArtistBio />
         <CanvasScrollSection />
-        {/* <HalftoneEffect blur={0} dotRadius={2} dotSpacing={4}>
+        {/* <HalftoneEffect dotRadius={2} dotSpacing={4}>
           <section
             ref={polyColumnSectionRef}
             className="aspect-square w-full relative flex items-center justify-center mix-blend-difference -translate-y-full"

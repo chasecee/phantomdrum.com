@@ -1,5 +1,4 @@
 import ArtistBio from "../components/content/ArtistBio";
-import HalftoneEffect from "../components/content/HalftoneEffect";
 import CubeSection from "../components/sections/CubeSection";
 import HeroLogoText from "../components/sections/HeroLogoText";
 import { HalftoneScene } from "./halftone/HalftoneScene";
@@ -21,9 +20,7 @@ export default function OnePage() {
             className=""
           >
             <div className="px-2 sticky top-2 z-10 mix-blend-overlay pointer-events-none">
-              <HalftoneEffect dotRadius={2.5} dotSpacing={6}>
-                <HeroLogoText />
-              </HalftoneEffect>
+              <HeroLogoText />
             </div>
             <HalftoneScene config={oneHalftoneSceneConfig} />
           </div>

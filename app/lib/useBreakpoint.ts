@@ -23,7 +23,8 @@ const getBreakpoint = (): BreakpointKey | null => {
   return null;
 };
 
-let currentBreakpoint: BreakpointKey | null = null;
+let currentBreakpoint: BreakpointKey | null =
+  typeof window !== "undefined" ? getBreakpoint() : null;
 const listeners = new Set<() => void>();
 let rafId: number | null = null;
 let resizeHandler: (() => void) | null = null;
@@ -47,7 +48,9 @@ const handleResize = () => {
 const subscribe = (listener: () => void) => {
   listeners.add(listener);
   if (listeners.size === 1) {
-    currentBreakpoint = getBreakpoint();
+    if (currentBreakpoint === null && typeof window !== "undefined") {
+      currentBreakpoint = getBreakpoint();
+    }
     resizeHandler = handleResize;
     window.addEventListener("resize", resizeHandler, { passive: true });
   }
@@ -66,10 +69,11 @@ const subscribe = (listener: () => void) => {
   };
 };
 
-const getSnapshot = () => currentBreakpoint ?? getBreakpoint();
+const getSnapshot = () => currentBreakpoint;
+const getServerSnapshot = () => null;
 
 export function useBreakpoint() {
-  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
 export function getResponsiveValue<T>(
