@@ -70,9 +70,6 @@ export default function HalftoneEffect({
 
   const maskStyles = useMemo<React.CSSProperties & Record<string, string>>(
     () => ({
-      "--dot-radius": `${normalizedDotRadius}px`,
-      "--dot-spacing": `${normalizedDotSpacing}px`,
-      "--pattern-size": `${patternSize}px`,
       WebkitMaskImage: `url("${maskAssetPath}")`,
       maskImage: `url("${maskAssetPath}")`,
       WebkitMaskSize: `${patternSize}px ${patternSize}px`,
@@ -86,13 +83,7 @@ export default function HalftoneEffect({
         WebkitFilter: `blur(${resolvedBlur}px)`,
       }),
     }),
-    [
-      normalizedDotRadius,
-      normalizedDotSpacing,
-      patternSize,
-      maskAssetPath,
-      resolvedBlur,
-    ]
+    [patternSize, maskAssetPath, resolvedBlur]
   );
 
   if (isValidElement(children)) {

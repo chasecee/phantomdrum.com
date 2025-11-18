@@ -4,9 +4,7 @@
   "private": true,
   "scripts": {
     "generate:halftone": "node ./scripts/generate-halftone-masks.mjs",
-    "predev": "npm run generate:halftone",
     "dev": "next dev",
-    "prebuild": "npm run generate:halftone",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

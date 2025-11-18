@@ -13,15 +13,15 @@ export default function OnePage() {
         <div className="relative max-w-[1500px] mx-auto bg-linear-to-b from-slate-950/60 to-amber-900/20">
           <div
             style={{
-              maskImage: "linear-gradient(to top, rgba(0,0,0,0.15), black 15%)",
+              maskImage: "linear-gradient(to top, rgba(0,0,0,0), black 20%)",
               maskSize: "100% 100%",
               maskPosition: "bottom",
               maskRepeat: "no-repeat",
             }}
-            className="relative"
+            className=""
           >
-            <div className="px-6 sticky top-0 z-10 mix-blend-plus-lighter pointer-events-none">
-              <HalftoneEffect dotRadius={2} dotSpacing={4}>
+            <div className="px-2 sticky top-2 z-10 mix-blend-overlay pointer-events-none">
+              <HalftoneEffect dotRadius={2.5} dotSpacing={6}>
                 <HeroLogoText />
               </HalftoneEffect>
             </div>

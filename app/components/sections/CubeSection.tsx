@@ -17,8 +17,8 @@ export default function CubeSection() {
 
   return (
     <HalftoneEffect
-      dotRadius={{ sm: 1, md: 2, lg: 3 }}
-      dotSpacing={{ sm: 2, md: 5, lg: 6 }}
+      dotRadius={{ sm: 2, md: 2, lg: 2 }}
+      dotSpacing={{ sm: 5, md: 5, lg: 5 }}
     >
       <div
         ref={multiCubeContainerRef}
