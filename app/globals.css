@@ -55,7 +55,7 @@ body {
   }
   .fade-in-slow {
     opacity: 0;
-    animation: fadeInSlow 5s ease-out forwards;
+    animation: fadeInSlow 2s ease-out forwards;
   }
 }
 .fade-in-slow {
