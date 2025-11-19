@@ -7,14 +7,17 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
+import type { HalftoneShape } from "../../lib/halftoneAssetKey.js";
 import {
+  HALFTONE_SHAPES,
   buildHalftoneKey,
   normalizeHalftoneValue,
+  computeHalftoneTileSize,
 } from "../../lib/halftoneAssetKey.js";
-import { halftoneMap } from "../../generated/halftoneMap";
-
 type Breakpoint = "base" | "sm" | "md" | "lg" | "xl" | "2xl";
 type ResponsiveValue<T> = T | Partial<Record<Breakpoint, T>>;
+const DEFAULT_HALFTONE_SHAPE: HalftoneShape =
+  (HALFTONE_SHAPES[0] as HalftoneShape) ?? "circle";
 
 const BREAKPOINT_SEQUENCE: Breakpoint[] = [
   "base",
@@ -41,8 +44,6 @@ const MASK_BASE_STYLE: CSSProperties = {
   maskPosition: "0 0",
 };
 
-type HalftoneMapKey = keyof typeof halftoneMap;
-
 export interface HalftoneEffectProps {
   children: ReactNode;
   dotRadius?: ResponsiveValue<number>;
@@ -50,6 +51,7 @@ export interface HalftoneEffectProps {
   className?: string;
   name?: string;
   applyToChild?: boolean;
+  shape?: HalftoneShape;
 }
 
 export default function HalftoneEffect({
@@ -59,11 +61,16 @@ export default function HalftoneEffect({
   className = "",
   name,
   applyToChild = false,
+  shape = DEFAULT_HALFTONE_SHAPE,
 }: HalftoneEffectProps) {
   const instanceId = name || "halftone";
   const radiusMap = normalizeResponsiveValue(dotRadius);
   const spacingMap = normalizeResponsiveValue(dotSpacing);
-  const { attributes, cssRules } = buildMaskDefinitions(radiusMap, spacingMap);
+  const { attributes, cssRules } = buildMaskDefinitions(
+    radiusMap,
+    spacingMap,
+    shape
+  );
   const sanitizedInstanceId =
     instanceId
       .trim()
@@ -177,7 +184,8 @@ function normalizeResponsiveValue(
 
 function buildMaskDefinitions(
   radiusMap: Record<Breakpoint, number>,
-  spacingMap: Record<Breakpoint, number>
+  spacingMap: Record<Breakpoint, number>,
+  shape: HalftoneShape
 ) {
   const attributes: Record<string, string> = {};
   const cssRules: Array<{ ruleKey: string; cssText: string }> = [];
@@ -192,14 +200,19 @@ function buildMaskDefinitions(
         `Halftone spacing (${spacing}) must be >= radius (${radius}) for breakpoint "${breakpoint}"`
       );
     }
-    const key = buildHalftoneKey({ dotRadius: radius, dotSpacing: spacing });
+    const key = buildHalftoneKey({
+      dotRadius: radius,
+      dotSpacing: spacing,
+      shape,
+    });
     const { attr, media } = BREAKPOINT_META[breakpoint];
+    const tileSize = computeHalftoneTileSize(spacing, shape);
 
     if (breakpoint === "base" || key !== lastKey) {
       attributes[attr] = key;
       const ruleKey = `${attr}:${key}`;
       if (!seenKeys.has(ruleKey)) {
-        const cssText = buildCssRule(attr, key, media);
+        const cssText = buildCssRule(attr, key, media, tileSize);
         cssRules.push({ ruleKey, cssText });
         seenKeys.add(ruleKey);
       }
@@ -213,15 +226,12 @@ function buildMaskDefinitions(
 function buildCssRule(
   attr: string,
   key: string,
-  media: string | undefined
-): string {
-  const tile = halftoneMap[key as HalftoneMapKey];
-  if (!tile) {
-    throw new Error(`Missing halftone tile metadata for key "${key}"`);
-  }
+  media: string | undefined,
+  size: number
+) {
   const filePath = `/halftone/halftone-${key}.svg`;
   const selector = ".halftone-mask";
-  const rule = `${selector}[${attr}="${key}"]{-webkit-mask-image:url("${filePath}");mask-image:url("${filePath}");-webkit-mask-size:${tile.size}px ${tile.size}px;mask-size:${tile.size}px ${tile.size}px;}`;
+  const rule = `${selector}[${attr}="${key}"]{-webkit-mask-image:url("${filePath}");mask-image:url("${filePath}");-webkit-mask-size:${size}px ${size}px;mask-size:${size}px ${size}px;}`;
   return media ? `@media ${media}{${rule}}` : rule;
 }
 

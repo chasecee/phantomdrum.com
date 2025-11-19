@@ -2,17 +2,23 @@ import Image from "next/image";
 import type { CSSProperties } from "react";
 import heroLogo from "@/public/img/optimized/herologo.webp";
 import ScrollTransform from "@animations/ScrollTransform";
+import HalftoneEffect from "../content/HalftoneEffect";
 export default function HeroLogoText() {
   return (
     // <HalftoneEffect
-    //   dotRadius={{ base: 2, md: 2 }}
-    //   dotSpacing={{ base: 5, md: 8 }}
+    //   dotRadius={{ base: 2, md: 3 }}
+    //   dotSpacing={{ base: 5, md: 10 }}
     //   className="HERO_LOGO_TEXT"
+    //   shape="octagon"
     // >
     <div
       style={
         {
           containerType: "inline-size",
+          maskImage: "url('/warped-halftone/vector/halftone-hero.svg')",
+          maskSize: "100% 100%",
+          maskPosition: "50% 50%",
+          maskRepeat: "no-repeat",
         } as CSSProperties
       }
     >

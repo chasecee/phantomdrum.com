@@ -2,9 +2,10 @@ import ArtistBio from "./components/content/ArtistBio";
 import QuotesSection from "./components/content/QuotesSection";
 import { HalftoneScene } from "./components/halftone/HalftoneScene";
 import CubeSection from "./components/sections/CubeSection";
-import HeroLogoText from "./components/sections/HeroLogoText";
 import { experienceHalftoneSceneConfig } from "./components/halftone/sceneConfig";
 import HalftoneEffect from "./components/content/HalftoneEffect";
+import HeroLogoTextMask from "./components/sections/HeroLogoTextMask";
+import type { CSSProperties } from "react";
 const HERO_SCALE_MULTIPLIER = 0.18;
 
 export default function Page() {
@@ -27,24 +28,22 @@ export default function Page() {
             } as React.CSSProperties
           }
         >
-          <div className="HERO_TITLE px-2 sticky top-0 z-4   pointer-events-none">
-            <HeroLogoText />
-          </div>
+          <HeroLogoTextMask />
           <HalftoneEffect
             dotRadius={1}
             dotSpacing={5}
-            className="HERO_BACKGROUND"
+            className="HERO_BACKGROUND pointer-events-none"
             applyToChild
           >
             <div
-              className={`absolute left-[15vw] right-[-5] top-0 h-[100vw] opacity-30 ${
+              className={`absolute overflow-hidden left-[15vw] right-[5] top-0 h-[100vw] opacity-30 ${
                 process.env.NODE_ENV === "development"
                   ? "border-2 border-red-500"
                   : ""
               }`}
             >
               <div
-                className="absolute inset-0 saturate-150  brightness-200 blur-lg"
+                className="absolute inset-0 saturate-150  brightness-200 blur-lg "
                 style={{
                   maskImage:
                     "linear-gradient(to bottom, transparent, black 60%, black 90%,transparent)",
@@ -104,13 +103,13 @@ export default function Page() {
           <HalftoneScene config={experienceHalftoneSceneConfig} />
         </div>
         <CubeSection />
-        <div className="h-[200vw] overflow-hidden relative w-full">
+        {/* <div className="h-[200vw] overflow-hidden relative w-full">
           <ArtistBio />
-        </div>
+        </div> */}
       </div>
-      <div className="max-w-[1500px] mx-auto pt-16">
+      {/* <div className="max-w-[1500px] mx-auto pt-16">
         <QuotesSection />
-      </div>
+      </div> */}
     </div>
   );
 }
