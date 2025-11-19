@@ -1,5 +1,12 @@
-import type { CSSProperties } from "react";
-import { ReactNode } from "react";
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  type CSSProperties,
+  type JSXElementConstructor,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import {
   buildHalftoneKey,
   normalizeHalftoneValue,
@@ -36,13 +43,13 @@ const MASK_BASE_STYLE: CSSProperties = {
 
 type HalftoneMapKey = keyof typeof halftoneMap;
 
-const CSS_REGISTRY = new Set<string>();
-
 export interface HalftoneEffectProps {
   children: ReactNode;
   dotRadius?: ResponsiveValue<number>;
   dotSpacing?: ResponsiveValue<number>;
   className?: string;
+  name?: string;
+  applyToChild?: boolean;
 }
 
 export default function HalftoneEffect({
@@ -50,39 +57,86 @@ export default function HalftoneEffect({
   dotRadius = 2,
   dotSpacing = 5,
   className = "",
+  name,
+  applyToChild = false,
 }: HalftoneEffectProps) {
+  const instanceId = name || "halftone";
   const radiusMap = normalizeResponsiveValue(dotRadius);
   const spacingMap = normalizeResponsiveValue(dotSpacing);
   const { attributes, cssRules } = buildMaskDefinitions(radiusMap, spacingMap);
-  const halftoneClassName = buildClassName("halftone-mask", className);
+  const sanitizedInstanceId =
+    instanceId
+      .trim()
+      .replace(/[^a-zA-Z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "halftone";
+  const instanceClass = `halftone-instance-${sanitizedInstanceId}`;
+  const halftoneClassName = buildClassName(
+    "halftone-mask",
+    instanceClass,
+    className
+  );
 
+  const targetSelector = `.${instanceClass}.halftone-mask`;
   const allCssText = cssRules
-    .map((rule) => {
-      if (!CSS_REGISTRY.has(rule.ruleKey)) {
-        CSS_REGISTRY.add(rule.ruleKey);
-      }
-      return rule.cssText;
-    })
+    .map((rule) =>
+      rule.cssText.replace(".halftone-mask[", `${targetSelector}[`)
+    )
     .join("");
 
   const styleElement =
     allCssText.length > 0 ? (
       <style
-        key={cssRules.map((r) => r.ruleKey).join(",")}
+        key={`${instanceId}:${cssRules.map((r) => r.ruleKey).join(",")}`}
         dangerouslySetInnerHTML={{
           __html: allCssText,
         }}
       />
     ) : null;
 
+  const wrapperStyle: CSSProperties = {
+    ...MASK_BASE_STYLE,
+  };
+
+  const canApplyToChild =
+    applyToChild && Children.count(children) === 1 && isValidElement(children);
+
+  if (canApplyToChild) {
+    const child = Children.only(children) as ReactElement<
+      Record<string, unknown>,
+      string | JSXElementConstructor<unknown>
+    >;
+    const existingStyle = child.props.style as CSSProperties | undefined;
+    const mergedStyle: CSSProperties =
+      typeof existingStyle === "object" && existingStyle
+        ? { ...existingStyle }
+        : {};
+    // if (!mergedStyle.position) {
+    //   mergedStyle.position = "relative";
+    // }
+    Object.assign(mergedStyle, MASK_BASE_STYLE);
+    const childClassName = child.props.className as string | undefined;
+
+    return (
+      <>
+        {styleElement}
+        {cloneElement(child, {
+          className: buildClassName(
+            "halftone-mask",
+            instanceClass,
+            childClassName,
+            className
+          ),
+          style: mergedStyle,
+          ...attributes,
+        })}
+      </>
+    );
+  }
+
   return (
     <>
       {styleElement}
-      <div
-        className={halftoneClassName}
-        style={MASK_BASE_STYLE}
-        {...attributes}
-      >
+      <div className={halftoneClassName} style={wrapperStyle} {...attributes}>
         {children}
       </div>
     </>
@@ -140,9 +194,9 @@ function buildMaskDefinitions(
     }
     const key = buildHalftoneKey({ dotRadius: radius, dotSpacing: spacing });
     const { attr, media } = BREAKPOINT_META[breakpoint];
-    attributes[attr] = key;
 
     if (breakpoint === "base" || key !== lastKey) {
+      attributes[attr] = key;
       const ruleKey = `${attr}:${key}`;
       if (!seenKeys.has(ruleKey)) {
         const cssText = buildCssRule(attr, key, media);
@@ -156,13 +210,18 @@ function buildMaskDefinitions(
   return { attributes, cssRules };
 }
 
-function buildCssRule(attr: string, key: string, media?: string): string {
+function buildCssRule(
+  attr: string,
+  key: string,
+  media: string | undefined
+): string {
   const tile = halftoneMap[key as HalftoneMapKey];
   if (!tile) {
     throw new Error(`Missing halftone tile metadata for key "${key}"`);
   }
   const filePath = `/halftone/halftone-${key}.svg`;
-  const rule = `.halftone-mask[${attr}="${key}"]{-webkit-mask-image:url("${filePath}");mask-image:url("${filePath}");-webkit-mask-size:${tile.size}px ${tile.size}px;mask-size:${tile.size}px ${tile.size}px;}`;
+  const selector = ".halftone-mask";
+  const rule = `${selector}[${attr}="${key}"]{-webkit-mask-image:url("${filePath}");mask-image:url("${filePath}");-webkit-mask-size:${tile.size}px ${tile.size}px;mask-size:${tile.size}px ${tile.size}px;}`;
   return media ? `@media ${media}{${rule}}` : rule;
 }
 

@@ -5,10 +5,7 @@ import ScrubAnimation from "@animations/ScrubAnimation";
 import HalftoneEffect from "../content/HalftoneEffect";
 export default function HeroLogoText() {
   return (
-    <HalftoneEffect
-      dotRadius={{ sm: 1, md: 1.5, lg: 4 }}
-      dotSpacing={{ sm: 3, md: 4.5, lg: 8 }}
-    >
+    <HalftoneEffect dotRadius={1} dotSpacing={5} className="HERO_LOGO_TEXT">
       <div
         style={
           {
@@ -20,14 +17,14 @@ export default function HeroLogoText() {
           from={{ scaleY: 1, force3D: true as const }}
           to={{ scaleY: 0.18, ease: "none", force3D: true as const }}
           scrollTrigger={{
-            start: "2% top",
+            start: "0% top",
             end: "82% 0%",
             scrub: true,
             invalidateOnRefresh: true,
             markers: process.env.NODE_ENV === "development" ? true : false,
           }}
           containerProps={{
-            className: "aspect-1042/600 p-4 origin-[50%_0%]",
+            className: "aspect-1042/600 origin-[50%_0%]",
             style: {
               willChange: "transform",
               backfaceVisibility: "hidden",
@@ -37,16 +34,18 @@ export default function HeroLogoText() {
         >
           <h1 className="sr-only">PHANTOM DRUM</h1>
 
-          <Image
-            src={heroLogo}
-            alt="Phantom Drum"
-            priority
-            width={1042}
-            height={600}
-            sizes="100vw"
-            decoding="sync"
-            className="relative w-full max-h-[calc(80svh-4rem)] skew-y-[0.5deg]"
-          />
+          <div className="p-4">
+            <Image
+              src={heroLogo}
+              alt="Phantom Drum"
+              priority
+              width={1042}
+              height={600}
+              sizes="100vw"
+              decoding="sync"
+              className="relative w-full max-h-[calc(80svh-4rem)] skew-y-[0.5deg]"
+            />
+          </div>
           {/* <h2 className="tracking-[0cqi] text-[7.5cqi] leading-[.8] mt-2 font-normal text-amber-400">
           INITIALIZE
         </h2> */}

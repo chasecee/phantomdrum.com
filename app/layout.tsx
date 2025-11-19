@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Mono, Brygada_1918 } from "next/font/google";
 import "./globals.css";
+import DevBreakpoint from "./components/DevBreakpoint";
 
 const spaceMono = Space_Mono({
   variable: "--font-space-mono",
@@ -34,6 +35,8 @@ export default function RootLayout({
       >
         {children}
       </body>
+
+      {process.env.NODE_ENV === "development" && <DevBreakpoint />}
     </html>
   );
 }

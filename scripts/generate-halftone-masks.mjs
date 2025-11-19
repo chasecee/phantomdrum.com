@@ -90,8 +90,8 @@ export type HalftoneTileMeta = typeof halftoneMap[HalftoneKey];
 async function main() {
   const combos = new Map();
   const values = [];
-  for (let i = 1; i <= 8; i++) {
-    values.push(i, i + 0.5);
+  for (let value = 1; value <= 10; value += 0.5) {
+    values.push(value);
   }
   for (const radius of values) {
     for (const spacing of values) {

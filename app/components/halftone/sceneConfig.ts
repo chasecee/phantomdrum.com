@@ -16,36 +16,6 @@ export const experienceHalftoneSceneConfig: HalftoneSceneConfig = {
   baseLayerIndex: 1,
   layers: [
     {
-      id: "grit-bg",
-      imageSrc: "/img/optimized/linesbg.webp",
-      imageFit: "cover",
-      placement: "background",
-      className: "opacity-10 translate-x-[7.5%]",
-      padding: 0.01,
-      params: {
-        initial: {
-          halftoneSize: "5%",
-          dotSpacing: "0.1%",
-          rgbOffset: "5%",
-          rgbOffsetAngle: 45,
-          effectIntensity: 0.1,
-          patternRotation: 35,
-          zoom: 1,
-          translateY: "-20%",
-        },
-        target: {
-          halftoneSize: "8%",
-          dotSpacing: "0.3%",
-          rgbOffset: "25%",
-          rgbOffsetAngle: 5,
-          effectIntensity: 0.18,
-          patternRotation: 55,
-          zoom: 0.5,
-          translateY: "0%",
-        },
-      },
-    },
-    {
       id: "planet",
       imageSrc: "/img/optimized/planet-cropped.webp",
       imageFit: "contain",

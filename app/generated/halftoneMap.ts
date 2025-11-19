@@ -47,6 +47,15 @@ export const halftoneMap = {
   "r1-s8p5": {
     "size": 12
   },
+  "r1-s9": {
+    "size": 13
+  },
+  "r1-s9p5": {
+    "size": 13
+  },
+  "r1-s10": {
+    "size": 14
+  },
   "r1p5-s1p5": {
     "size": 2
   },
@@ -92,6 +101,15 @@ export const halftoneMap = {
   "r1p5-s8p5": {
     "size": 12
   },
+  "r1p5-s9": {
+    "size": 13
+  },
+  "r1p5-s9p5": {
+    "size": 13
+  },
+  "r1p5-s10": {
+    "size": 14
+  },
   "r2-s2": {
     "size": 3
   },
@@ -134,6 +152,15 @@ export const halftoneMap = {
   "r2-s8p5": {
     "size": 12
   },
+  "r2-s9": {
+    "size": 13
+  },
+  "r2-s9p5": {
+    "size": 13
+  },
+  "r2-s10": {
+    "size": 14
+  },
   "r2p5-s2p5": {
     "size": 4
   },
@@ -173,6 +200,15 @@ export const halftoneMap = {
   "r2p5-s8p5": {
     "size": 12
   },
+  "r2p5-s9": {
+    "size": 13
+  },
+  "r2p5-s9p5": {
+    "size": 13
+  },
+  "r2p5-s10": {
+    "size": 14
+  },
   "r3-s3": {
     "size": 4
   },
@@ -209,6 +245,15 @@ export const halftoneMap = {
   "r3-s8p5": {
     "size": 12
   },
+  "r3-s9": {
+    "size": 13
+  },
+  "r3-s9p5": {
+    "size": 13
+  },
+  "r3-s10": {
+    "size": 14
+  },
   "r3p5-s3p5": {
     "size": 5
   },
@@ -242,6 +287,15 @@ export const halftoneMap = {
   "r3p5-s8p5": {
     "size": 12
   },
+  "r3p5-s9": {
+    "size": 13
+  },
+  "r3p5-s9p5": {
+    "size": 13
+  },
+  "r3p5-s10": {
+    "size": 14
+  },
   "r4-s4": {
     "size": 6
   },
@@ -272,6 +326,15 @@ export const halftoneMap = {
   "r4-s8p5": {
     "size": 12
   },
+  "r4-s9": {
+    "size": 13
+  },
+  "r4-s9p5": {
+    "size": 13
+  },
+  "r4-s10": {
+    "size": 14
+  },
   "r4p5-s4p5": {
     "size": 6
   },
@@ -299,6 +362,15 @@ export const halftoneMap = {
   "r4p5-s8p5": {
     "size": 12
   },
+  "r4p5-s9": {
+    "size": 13
+  },
+  "r4p5-s9p5": {
+    "size": 13
+  },
+  "r4p5-s10": {
+    "size": 14
+  },
   "r5-s5": {
     "size": 7
   },
@@ -323,6 +395,15 @@ export const halftoneMap = {
   "r5-s8p5": {
     "size": 12
   },
+  "r5-s9": {
+    "size": 13
+  },
+  "r5-s9p5": {
+    "size": 13
+  },
+  "r5-s10": {
+    "size": 14
+  },
   "r5p5-s5p5": {
     "size": 8
   },
@@ -344,6 +425,15 @@ export const halftoneMap = {
   "r5p5-s8p5": {
     "size": 12
   },
+  "r5p5-s9": {
+    "size": 13
+  },
+  "r5p5-s9p5": {
+    "size": 13
+  },
+  "r5p5-s10": {
+    "size": 14
+  },
   "r6-s6": {
     "size": 8
   },
@@ -362,6 +452,15 @@ export const halftoneMap = {
   "r6-s8p5": {
     "size": 12
   },
+  "r6-s9": {
+    "size": 13
+  },
+  "r6-s9p5": {
+    "size": 13
+  },
+  "r6-s10": {
+    "size": 14
+  },
   "r6p5-s6p5": {
     "size": 9
   },
@@ -377,6 +476,15 @@ export const halftoneMap = {
   "r6p5-s8p5": {
     "size": 12
   },
+  "r6p5-s9": {
+    "size": 13
+  },
+  "r6p5-s9p5": {
+    "size": 13
+  },
+  "r6p5-s10": {
+    "size": 14
+  },
   "r7-s7": {
     "size": 10
   },
@@ -389,6 +497,15 @@ export const halftoneMap = {
   "r7-s8p5": {
     "size": 12
   },
+  "r7-s9": {
+    "size": 13
+  },
+  "r7-s9p5": {
+    "size": 13
+  },
+  "r7-s10": {
+    "size": 14
+  },
   "r7p5-s7p5": {
     "size": 11
   },
@@ -398,14 +515,59 @@ export const halftoneMap = {
   "r7p5-s8p5": {
     "size": 12
   },
+  "r7p5-s9": {
+    "size": 13
+  },
+  "r7p5-s9p5": {
+    "size": 13
+  },
+  "r7p5-s10": {
+    "size": 14
+  },
   "r8-s8": {
     "size": 11
   },
   "r8-s8p5": {
     "size": 12
   },
+  "r8-s9": {
+    "size": 13
+  },
+  "r8-s9p5": {
+    "size": 13
+  },
+  "r8-s10": {
+    "size": 14
+  },
   "r8p5-s8p5": {
     "size": 12
+  },
+  "r8p5-s9": {
+    "size": 13
+  },
+  "r8p5-s9p5": {
+    "size": 13
+  },
+  "r8p5-s10": {
+    "size": 14
+  },
+  "r9-s9": {
+    "size": 13
+  },
+  "r9-s9p5": {
+    "size": 13
+  },
+  "r9-s10": {
+    "size": 14
+  },
+  "r9p5-s9p5": {
+    "size": 13
+  },
+  "r9p5-s10": {
+    "size": 14
+  },
+  "r10-s10": {
+    "size": 14
   }
 } as const;
 
