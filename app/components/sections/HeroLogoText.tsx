@@ -5,7 +5,11 @@ import ScrubAnimation from "@animations/ScrubAnimation";
 import HalftoneEffect from "../content/HalftoneEffect";
 export default function HeroLogoText() {
   return (
-    <HalftoneEffect dotRadius={1} dotSpacing={5} className="HERO_LOGO_TEXT">
+    <HalftoneEffect
+      dotRadius={{ sm: 1, md: 2 }}
+      dotSpacing={{ sm: 5, md: 8 }}
+      className="HERO_LOGO_TEXT"
+    >
       <div
         style={
           {

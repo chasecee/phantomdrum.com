@@ -27,7 +27,7 @@ export default function Page() {
             } as React.CSSProperties
           }
         >
-          <div className="HERO_TITLE px-2 sticky top-0 z-4 pointer-events-none">
+          <div className="HERO_TITLE px-2 sticky top-0 z-4 mix-blend-overlay  pointer-events-none">
             <HeroLogoText />
           </div>
           <HalftoneEffect
