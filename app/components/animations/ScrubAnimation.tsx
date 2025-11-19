@@ -24,6 +24,7 @@ export type ScrubAnimationProps = {
   to?: TweenVars;
   tween?: TweenBuilder;
   scrollTrigger?: ScrollTriggerConfig;
+  markerColor?: string;
 };
 
 export default function ScrubAnimation({
@@ -33,6 +34,7 @@ export default function ScrubAnimation({
   to,
   tween,
   scrollTrigger,
+  markerColor,
 }: ScrubAnimationProps) {
   const elementRef = useRef<HTMLDivElement | null>(null);
 
@@ -81,11 +83,22 @@ export default function ScrubAnimation({
       const { trigger, scrub, ...restConfig } = scrollConfig;
       const resolvedTrigger = trigger ?? target;
       const resolvedScrub = typeof scrub === "undefined" ? true : scrub;
+      const resolvedMarkers =
+        markerColor == null
+          ? restConfig.markers
+          : {
+              ...(typeof restConfig.markers === "object"
+                ? restConfig.markers
+                : {}),
+              startColor: markerColor,
+              endColor: markerColor,
+            };
 
       animation = gsapInstance.fromTo(target, tweenConfig.from ?? {}, {
         ...tweenConfig.to,
         scrollTrigger: {
           ...restConfig,
+          markers: resolvedMarkers,
           trigger: resolvedTrigger,
           scrub: resolvedScrub,
         },

@@ -2,7 +2,6 @@ import Image from "next/image";
 import type { CSSProperties } from "react";
 import heroLogo from "@/public/img/optimized/herologo.webp";
 import ScrubAnimation from "@animations/ScrubAnimation";
-import HalftoneEffect from "../content/HalftoneEffect";
 export default function HeroLogoText() {
   return (
     // <HalftoneEffect
@@ -27,6 +26,7 @@ export default function HeroLogoText() {
           invalidateOnRefresh: true,
           markers: process.env.NODE_ENV === "development" ? true : false,
         }}
+        markerColor="orange"
         containerProps={{
           className: "aspect-1042/600 origin-[50%_0%]",
           style: {
