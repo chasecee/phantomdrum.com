@@ -1,7 +1,7 @@
 import type { HalftoneSceneConfig } from "./types";
 
 export const experienceHalftoneSceneConfig: HalftoneSceneConfig = {
-  aspectRatio: 1.1,
+  aspectRatio: 1.3,
   width: {
     min: 320,
     max: 1280,

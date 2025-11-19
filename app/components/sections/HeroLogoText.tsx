@@ -6,8 +6,8 @@ import HalftoneEffect from "../content/HalftoneEffect";
 export default function HeroLogoText() {
   return (
     <HalftoneEffect
-      dotRadius={{ sm: 1, md: 2 }}
-      dotSpacing={{ sm: 5, md: 8 }}
+      dotRadius={{ base: 1, md: 2 }}
+      dotSpacing={{ base: 5, md: 8 }}
       className="HERO_LOGO_TEXT"
     >
       <div
