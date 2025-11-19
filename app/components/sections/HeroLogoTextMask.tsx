@@ -21,14 +21,14 @@ export default function HeroLogoText() {
           {
             containerType: "inline-size",
             maskImage: "url('/warped-halftone/vector/halftone-hero.svg')",
-            maskSize: "100vw 100cqi",
+            maskSize: "cover",
             maskPosition: "50% 50%",
             maskRepeat: "repeat",
           } as CSSProperties
         }
       >
         <div className="sticky top-0">
-          <h1 className="text-[13.5cqi] leading-[0.8] font-bold text-white">
+          <h1 className="text-[13.5cqi] scale-y-[3] origin-top leading-[0.8] font-bold text-white">
             PHANTOM DRUM
           </h1>
 

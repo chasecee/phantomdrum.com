@@ -8,10 +8,10 @@ import { normalizeHalftoneValue } from "../app/lib/halftoneAssetKey.js";
 const DEFAULTS = {
   width: 1000,
   height: 600,
-  dotRadius: 1,
+  dotRadius: 0.5,
   dotSpacing: 3,
-  warp: 1,
-  crop: 0.22,
+  warp: 1.5,
+  crop: 0.28,
   maxCropRatio: 0.45,
   warpAxes: ["x", "y", "xy"],
   axis: "xy",
@@ -132,7 +132,7 @@ function generateDots(
 }
 
 function formatNumber(value) {
-  return Number.parseFloat(value.toFixed(0)).toString();
+  return Number.parseFloat(value.toFixed(1)).toString();
 }
 
 function remapDots(dots, width, height, cropRatio, axis) {
