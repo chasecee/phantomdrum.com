@@ -9,7 +9,7 @@ const HERO_SCALE_MULTIPLIER = 0.18;
 
 export default function Page() {
   return (
-    <div className="w-full overflow-hidden">
+    <div className="w-full">
       <div className="relative max-w-[1500px] mx-auto bg-linear-to-b from-slate-950/60 via-amber-900/20 to-transparent">
         <div
           style={
@@ -44,7 +44,7 @@ export default function Page() {
               }`}
             >
               <div
-                className="absolute inset-0 saturate-150  brightness-200 contrast-150"
+                className="absolute inset-0 saturate-150  brightness-200 blur-lg"
                 style={{
                   maskImage:
                     "linear-gradient(to bottom, transparent, black 60%, black 90%,transparent)",
@@ -54,14 +54,14 @@ export default function Page() {
                 }}
               >
                 <div
-                  className="absolute z-3 top-0 left-[50%] mix-blend-screen -translate-x-[45%] h-full w-[80%]"
+                  className="absolute z-3 top-0 left-[50%] -translate-x-[45%] h-full w-[80%]"
                   style={{
                     backgroundImage: "url('/img/optimized/linesbg.webp')",
                     backgroundSize: "100% 10%",
                     backgroundPosition: "50% 50%",
                     backgroundRepeat: "repeat-y",
                     backgroundColor: "green",
-                    backgroundBlendMode: "multiply",
+                    backgroundBlendMode: "screen",
                     maskImage: "url('/img/optimized/linesbg.webp')",
                     maskSize: "100% 20%",
                     maskPosition: "50% 50%",
@@ -69,14 +69,14 @@ export default function Page() {
                   }}
                 />
                 <div
-                  className="absolute z-4 top-0 left-[50%] mix-blend-screen -translate-x-[50%] h-full w-[80%]"
+                  className="absolute z-4 top-0 left-[50%] mix-blend-overlay -translate-x-[50%] h-full w-[80%]"
                   style={{
                     backgroundImage: "url('/img/optimized/linesbg.webp')",
                     backgroundSize: "100% 10%",
                     backgroundPosition: "50% 50%",
                     backgroundRepeat: "repeat-y",
                     backgroundColor: "blue",
-                    backgroundBlendMode: "multiply",
+                    backgroundBlendMode: "screen",
                     maskImage: "url('/img/optimized/linesbg.webp')",
                     maskSize: "100% 20%",
                     maskPosition: "50% 50%",
@@ -84,14 +84,14 @@ export default function Page() {
                   }}
                 />
                 <div
-                  className="absolute z-5 top-0 left-[50%] mix-blend-screen -translate-x-[55%]  h-full   w-[80%]"
+                  className="absolute z-5 top-0 left-[50%] mix-blend-overlay -translate-x-[55%]  h-full   w-[80%]"
                   style={{
                     backgroundImage: "url('/img/optimized/linesbg.webp')",
                     backgroundSize: "100% 10px",
                     backgroundPosition: "50% 50%",
                     backgroundRepeat: "repeat-y",
                     backgroundColor: "red",
-                    backgroundBlendMode: "multiply",
+                    backgroundBlendMode: "screen",
                     maskImage: "url('/img/optimized/linesbg.webp')",
                     maskSize: "100% 100%",
                     maskPosition: "50% 50%",
