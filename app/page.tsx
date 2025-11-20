@@ -3,6 +3,8 @@ import HalftoneEffect from "./components/content/HalftoneEffect";
 import HeroHalftoneSection from "./components/sections/HeroHalftoneSection";
 import HeroLogoTextMask from "./components/sections/HeroLogoTextMask";
 import type { CSSProperties } from "react";
+import ArtistBio from "./components/content/ArtistBio";
+import QuotesSection from "./components/content/QuotesSection";
 const HERO_SCALE_MULTIPLIER = 0.18;
 
 export default function Page() {
@@ -98,8 +100,10 @@ export default function Page() {
             </div>
           </HalftoneEffect>
           <HeroHalftoneSection />
-          <CubeSection />
         </div>
+        <CubeSection />
+        <QuotesSection />
+        <ArtistBio />
       </div>
     </div>
   );
