@@ -6,23 +6,24 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { normalizeHalftoneValue } from "../app/lib/halftoneAssetKey.js";
 
-const DEFAULT_OUTPUT_QUALITY = 0.5;
+const DEFAULT_OUTPUT_QUALITY = 0.3;
 const OUTPUT_FORMAT = "webp";
-const DEFAULT_CROP_RATIO = 0.08;
+const DEFAULT_CROP_RATIO = 0.01;
 const MAX_CROP_RATIO = 0.45;
 const DEFAULTS = {
-  width: 1042,
-  height: 600,
-  dotRadius: 1,
-  dotSpacing: 4,
-  warp: 1,
-  quality: DEFAULT_OUTPUT_QUALITY,
+  width: 1000,
+  height: 800,
+  dotRadius: 1.5,
+  dotSpacing: 5,
+  warp: 0.5,
   crop: DEFAULT_CROP_RATIO,
+  maxCropRatio: 0.45,
+  quality: DEFAULT_OUTPUT_QUALITY,
   name: "hero",
 };
 const MIN_WARP_STRENGTH = -0.999;
-const WARP_FACTOR_EPSILON = 1e-6;
-const WEBP_EFFORT = 6;
+const WARP_FACTOR_EPSILON = 1e-4;
+const WEBP_EFFORT = 4;
 
 function clampQuality(value) {
   if (!Number.isFinite(value)) {

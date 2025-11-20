@@ -8,7 +8,7 @@ export default function HeroLogoText() {
   return (
     <div
       ref={anchorRef}
-      className={`relative z-1 h-[100vw] mb-[-25vw] ${
+      className={`relative z-1 h-[80vw] mb-[-25vw] ${
         process.env.NODE_ENV === "development"
           ? "border-2  border-white-500 border-dashed"
           : ""
@@ -16,15 +16,15 @@ export default function HeroLogoText() {
       style={
         {
           containerType: "inline-size",
-          maskImage: "url('/warped-halftone/vector/halftone-hero.svg')",
-          maskSize: "cover",
+          maskImage: "url('/warped-halftone/halftone-hero.webp')",
+          maskSize: "100% 100%",
           maskPosition: "50% 50%",
-          maskRepeat: "repeat",
+          maskRepeat: "no-repeat",
         } as CSSProperties
       }
     >
       <div
-        className="relative p-4 h-[200%]"
+        className="relative h-[200%]"
         style={
           {
             maskImage: "linear-gradient(to bottom, black 40%, transparent 50%)",
