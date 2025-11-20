@@ -1,47 +1,61 @@
 import type { CSSProperties } from "react";
+import ScrollTransform from "../animations/ScrollTransform";
+import { useRef } from "react";
+import Image from "next/image";
+import heroLogo from "@/public/img/optimized/herologo.webp";
 export default function HeroLogoText() {
+  const anchorRef = useRef<HTMLDivElement>(null);
   return (
-    // <HalftoneEffect
-    //   dotRadius={{ base: 2, md: 3 }}
-    //   dotSpacing={{ base: 5, md: 10 }}
-    //   className="HERO_LOGO_TEXT"
-    //   shape="octagon"
-    // >
     <div
-      className="relative h-[50vw] mb-[-10vw]"
-      style={{
-        maskImage: "linear-gradient(to bottom, black 80%, transparent 100%)",
-        maskSize: "100% 100%",
-        maskPosition: "center bottom",
-      }}
+      ref={anchorRef}
+      className={`relative z-1 h-[100vw] mb-[-20vw] ${
+        process.env.NODE_ENV === "development"
+          ? "border-2  border-white-500 border-dashed"
+          : ""
+      }`}
+      style={
+        {
+          containerType: "inline-size",
+          maskImage: "url('/warped-halftone/vector/halftone-hero.svg')",
+          maskSize: "cover",
+          maskPosition: "50% 50%",
+          maskRepeat: "repeat",
+        } as CSSProperties
+      }
     >
       <div
-        className="HERO_TITLE  h-[120%] relative top-0 z-10 w-full"
+        className="relative inset-0 h-[150%]"
         style={
           {
-            containerType: "inline-size",
-            maskImage: "url('/warped-halftone/vector/halftone-hero.svg')",
-            maskSize: "cover",
+            maskImage: "linear-gradient(to bottom, black 60%, transparent 66%)",
+            maskSize: "100% 100%",
             maskPosition: "50% 50%",
             maskRepeat: "repeat",
           } as CSSProperties
         }
       >
         <div className="sticky top-0">
-          <h1 className="text-[13.5cqi] scale-y-[3] origin-top leading-[0.8] font-bold text-white">
-            PHANTOM DRUM
-          </h1>
-
-          {/* <Image
-        src={heroLogo}
-        alt="Phantom Drum"
-        priority
-        width={1042}
-        height={108}
-        sizes="100vw"
-        decoding="sync"
-        className="relative h-auto aspect-[1042/108] backface-hidden w-full max-h-[calc(80svh-4rem)] skew-y-[0.5deg]"
-      /> */}
+          <ScrollTransform
+            start={{ anchor: 0, viewport: 0 }}
+            end={{ anchor: 0.5, viewport: 0 }}
+            from={{ scaleY: 1 }}
+            to={{ scaleY: 0.18 }}
+            transformOrigin="50% 0%"
+            willChange="transform"
+            className="aspect-1042/600 origin-[50%_0%] relative p-4"
+            anchorRef={anchorRef}
+          >
+            <h1 className="sr-only text-[13.5cqi] leading-[0.8] font-bold text-white">
+              PHANTOM DRUM
+            </h1>
+            <Image
+              src={heroLogo}
+              alt="Phantom Drum"
+              width={1042}
+              height={600}
+              className="w-full h-full max-w-[98%] mx-auto object-contain object-center"
+            />
+          </ScrollTransform>
         </div>
       </div>
     </div>

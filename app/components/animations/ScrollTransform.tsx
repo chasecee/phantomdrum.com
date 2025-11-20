@@ -30,6 +30,7 @@ interface ScrollTransformProps extends HTMLAttributes<HTMLDivElement> {
   willChange?: CSSProperties["willChange"];
   viewportMode?: "dynamic" | "initial" | "none";
   children: ReactNode;
+  markers?: boolean;
 }
 
 const DEFAULT_START: Required<ScrollOffset> = { anchor: 0, viewport: 0 };
@@ -67,6 +68,7 @@ export default function ScrollTransform({
   viewportMode = "dynamic",
   className,
   style,
+  markers,
   children,
   ...rest
 }: ScrollTransformProps) {
@@ -88,6 +90,52 @@ export default function ScrollTransform({
   useEffect(() => {
     const element = elementRef.current;
     if (!element) return;
+    const createMarkerElement = (
+      label: string,
+      color: string
+    ): HTMLDivElement => {
+      const marker = document.createElement("div");
+      Object.assign(marker.style, {
+        position: "absolute",
+        inset: "0 auto auto 0",
+        height: 0,
+        borderTop: `2px dashed ${color}`,
+        pointerEvents: "none",
+      });
+      const badge = document.createElement("span");
+      badge.textContent = label;
+      Object.assign(badge.style, {
+        position: "absolute",
+        right: "1rem",
+        top: "-0.75rem",
+        padding: "0.15rem 0.35rem",
+        fontSize: "0.65rem",
+        fontWeight: "600",
+        textTransform: "uppercase",
+        letterSpacing: "0.1em",
+        background: "rgba(0,0,0,0.65)",
+        color,
+      });
+      marker.appendChild(badge);
+      return marker;
+    };
+    const createMarkerOverlay = () => {
+      const container = document.createElement("div");
+      Object.assign(container.style, {
+        position: "fixed",
+        inset: "0",
+        pointerEvents: "none",
+        zIndex: "9999",
+      });
+      const start = createMarkerElement("start", "#4ade80");
+      const end = createMarkerElement("end", "#f87171");
+      container.appendChild(start);
+      container.appendChild(end);
+      document.body.appendChild(container);
+      return { container, start, end };
+    };
+    const markerElements =
+      markers && typeof document !== "undefined" ? createMarkerOverlay() : null;
 
     const computedWillChange =
       willChange ??
@@ -189,6 +237,17 @@ export default function ScrollTransform({
 
       element.style.transform =
         transforms.length > 0 ? transforms.join(" ") : "none";
+      if (markerElements) {
+        const updateMarkerPosition = (
+          marker: HTMLDivElement,
+          boundary: number
+        ) => {
+          const position = Math.round(boundary - scroll);
+          marker.style.top = `${position}px`;
+        };
+        updateMarkerPosition(markerElements.start, startBoundary);
+        updateMarkerPosition(markerElements.end, endBoundary);
+      }
     };
 
     let ticking = false;
@@ -228,6 +287,7 @@ export default function ScrollTransform({
       window.removeEventListener("scroll", requestApply);
       window.removeEventListener("resize", refreshAndApply);
       resizeObserver?.disconnect();
+      markerElements?.container.remove();
     };
   }, [
     anchorRef,
@@ -249,6 +309,7 @@ export default function ScrollTransform({
     translateYRange.enabled,
     translateYRange.start,
     willChange,
+    markers,
   ]);
 
   return (

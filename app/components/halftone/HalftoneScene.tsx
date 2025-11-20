@@ -36,7 +36,7 @@ export function HalftoneScene({
       ref={sectionRef}
       className={`${
         process.env.NODE_ENV === "development" ? "border-2 border-red-500" : ""
-      } h-[130vw]  w-full flex relative z-3 flex-col justify-center-safe items-center fade-in-slow`}
+      } h-[130vw]  w-full flex relative z-3 flex-col justify-center-safe items-center`}
     >
       <section
         className="w-full overflow-hidden"

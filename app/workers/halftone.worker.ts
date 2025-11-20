@@ -1,6 +1,6 @@
-export {};
+/// <reference lib="webworker" />
 
-declare const self: DedicatedWorkerGlobalScope;
+export {};
 
 type HalftoneParams = {
   halftoneSize: number;

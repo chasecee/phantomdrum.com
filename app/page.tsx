@@ -1,14 +1,17 @@
-import ArtistBio from "./components/content/ArtistBio";
-import QuotesSection from "./components/content/QuotesSection";
-import { HalftoneScene } from "./components/halftone/HalftoneScene";
+"use client";
+
 import CubeSection from "./components/sections/CubeSection";
 import { experienceHalftoneSceneConfig } from "./components/halftone/sceneConfig";
 import HalftoneEffect from "./components/content/HalftoneEffect";
 import HeroLogoTextMask from "./components/sections/HeroLogoTextMask";
 import type { CSSProperties } from "react";
+import ScrollTransform from "@animations/ScrollTransform";
+import { HalftoneScene } from "./components/halftone/HalftoneScene";
+import { useRef } from "react";
 const HERO_SCALE_MULTIPLIER = 0.18;
 
 export default function Page() {
+  const anchorRef = useRef<HTMLDivElement>(null);
   return (
     <div className="w-full">
       <div className="relative max-w-[1500px] mx-auto bg-linear-to-b from-slate-950/60 via-amber-900/20 to-transparent">
@@ -100,16 +103,42 @@ export default function Page() {
               </div>
             </div>
           </HalftoneEffect>
-          <HalftoneScene config={experienceHalftoneSceneConfig} />
+          <div className="relative h-[130vw] z-2 fade-in-slow" ref={anchorRef}>
+            <HalftoneScene config={experienceHalftoneSceneConfig} />
+            <ScrollTransform
+              anchorRef={anchorRef}
+              start={{ anchor: 0, viewport: 0 }}
+              end={{ anchor: 0.82, viewport: 0.4 }}
+              from={{ scale: 1 }}
+              to={{ scale: 2 }}
+              transformOrigin="50% 50%"
+              willChange="transform"
+              markers={process.env.NODE_ENV === "development"}
+              className="w-full h-full absolute inset-0"
+            >
+              <div
+                className="absolute inset-0 "
+                style={
+                  {
+                    backgroundImage:
+                      "radial-gradient(circle at 50% 50%, black 50%, transparent 60%)",
+                  } as CSSProperties
+                }
+              />
+              <div
+                className="absolute inset-0 "
+                style={
+                  {
+                    backgroundImage:
+                      "radial-gradient(circle at 80.8% 26.2%, black 10%,  transparent 15%)",
+                  } as CSSProperties
+                }
+              />
+            </ScrollTransform>
+          </div>
+          <CubeSection />
         </div>
-        <CubeSection />
-        {/* <div className="h-[200vw] overflow-hidden relative w-full">
-          <ArtistBio />
-        </div> */}
       </div>
-      {/* <div className="max-w-[1500px] mx-auto pt-16">
-        <QuotesSection />
-      </div> */}
     </div>
   );
 }

@@ -9,7 +9,7 @@ export const experienceHalftoneSceneConfig: HalftoneSceneConfig = {
   },
   scroll: {
     start: "50% 60%",
-    end: "80% 40%",
+    end: "82% 40%",
     scrub: true,
     markers: process.env.NODE_ENV === "development" ? true : false,
   },
