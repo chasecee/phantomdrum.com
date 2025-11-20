@@ -1,9 +1,11 @@
+"use client";
+
 import type { CSSProperties } from "react";
 import ScrollTransform from "../animations/ScrollTransform";
 import { useRef } from "react";
 import Image from "next/image";
 import heroLogo from "@/public/img/optimized/herologo.webp";
-export default function HeroLogoText() {
+export default function HeroLogoTextMask() {
   const anchorRef = useRef<HTMLDivElement>(null);
   return (
     <div
@@ -24,10 +26,10 @@ export default function HeroLogoText() {
       }
     >
       <div
-        className="relative h-[200%]"
+        className="relative h-[calc(140%)]"
         style={
           {
-            maskImage: "linear-gradient(to bottom, black 40%, transparent 50%)",
+            maskImage: "linear-gradient(to top, transparent 40%, black 50%)",
             maskSize: "100% 100%",
             maskPosition: "50% 50%",
             maskRepeat: "repeat",
@@ -37,7 +39,7 @@ export default function HeroLogoText() {
         <div className="sticky top-2">
           <ScrollTransform
             start={{ anchor: 0, viewport: 0 }}
-            end={{ anchor: 0.7, viewport: 0 }}
+            end={{ anchor: 0.55, viewport: 0 }}
             from={{ scaleY: 1 }}
             to={{ scaleY: 0.18 }}
             transformOrigin="50% 0%"
