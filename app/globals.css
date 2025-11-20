@@ -107,3 +107,6 @@ body {
     z-index: 0;
   }
 }
+:root {
+  --container-width: 1080px;
+}
