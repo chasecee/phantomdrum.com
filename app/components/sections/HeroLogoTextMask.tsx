@@ -240,7 +240,7 @@ export default function HeroLogoTextMask({
   return (
     <div
       ref={anchorRef}
-      className={`relative z-10 w-full h-[clamp(33svh,80vw,55svh)] opacity-50 min-h-[33svh] max-h-[55svh] mb-[max(-20vw,-20svh)] ${
+      className={`relative z-10 w-full h-[clamp(33svh,80vw,55svh)] opacity-50 min-h-[33svh] max-h-[55svh] mb-[max(-25vw,-25svh)] ${
         process.env.NODE_ENV === "development" ? "border-2 border-white/10" : ""
       }`}
       style={
