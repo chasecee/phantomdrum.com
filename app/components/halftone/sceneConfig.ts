@@ -37,7 +37,7 @@ export const experienceHalftoneSceneConfig: HalftoneSceneConfig = {
         target: {
           halftoneSize: "4%",
           dotSpacing: "0.1%",
-          rgbOffset: "10%",
+          rgbOffset: "3%",
           rgbOffsetAngle: 0,
           effectIntensity: 0.35,
           patternRotation: 40,

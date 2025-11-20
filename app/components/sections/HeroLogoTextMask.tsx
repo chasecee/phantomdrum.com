@@ -2,17 +2,43 @@
 
 import type { CSSProperties } from "react";
 import ScrollTransform from "../animations/ScrollTransform";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import heroLogo from "@/public/img/optimized/herologo.webp";
+
 export default function HeroLogoTextMask() {
   const anchorRef = useRef<HTMLDivElement>(null);
+  const [initialScaleY, setInitialScaleY] = useState(1);
+  const lastWidthRef = useRef(0);
+
+  useEffect(() => {
+    const calculateScale = () => {
+      const vh = window.innerHeight;
+      const vw = window.innerWidth;
+      const containerHeight = Math.min(vw * 0.8, vh * 0.5);
+      const targetScale = Math.min(vh / containerHeight, 1);
+      setInitialScaleY(targetScale);
+      lastWidthRef.current = vw;
+    };
+
+    const handleResize = () => {
+      const widthDiff = Math.abs(window.innerWidth - lastWidthRef.current);
+      if (widthDiff > 100) {
+        calculateScale();
+      }
+    };
+
+    calculateScale();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <div
       ref={anchorRef}
-      className={`relative z-1 h-[80vw] mb-[-25vw] ${
+      className={`relative z-1 h-[80vw] max-h-[50svh] mb-[max(-25vw,-25svh)] min-h-[33svh] ${
         process.env.NODE_ENV === "development"
-          ? "border-2  border-white-500 border-dashed"
+          ? "border-2  border-white-500/0 border-dashed"
           : ""
       }`}
       style={
@@ -26,25 +52,25 @@ export default function HeroLogoTextMask() {
       }
     >
       <div
-        className="relative h-[calc(140%)]"
+        className="relative h-[calc(200cqh)] max-h-svh"
         style={
           {
-            maskImage: "linear-gradient(to top, transparent 40%, black 50%)",
-            maskSize: "100% 100%",
+            maskImage: "linear-gradient(to bottom, black 50%, transparent 55%)",
+            maskSize: "cover",
             maskPosition: "50% 50%",
             maskRepeat: "repeat",
           } as CSSProperties
         }
       >
-        <div className="sticky top-2">
+        <div className="sticky top-0 max-h-[100cqh]">
           <ScrollTransform
             start={{ anchor: 0, viewport: 0 }}
-            end={{ anchor: 0.55, viewport: 0 }}
+            end={{ anchor: 0.8, viewport: 0 }}
             from={{ scaleY: 1 }}
-            to={{ scaleY: 0.18 }}
+            to={{ scaleY: initialScaleY * 0.18 }}
             transformOrigin="50% 0%"
             willChange="transform"
-            className="aspect-1042/600 origin-[50%_0%] relative p-1"
+            className="relative w-full"
             anchorRef={anchorRef}
           >
             <h1 className="sr-only text-[13.5cqi] leading-[0.8] font-bold text-white">
@@ -55,7 +81,8 @@ export default function HeroLogoTextMask() {
               alt="Phantom Drum"
               width={1042}
               height={600}
-              className="w-full h-full max-w-[98%] mx-auto object-contain object-center"
+              fetchPriority="high"
+              className="w-full max-h-[50svh] max-w-none object-contain object-center"
             />
           </ScrollTransform>
         </div>

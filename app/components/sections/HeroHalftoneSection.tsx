@@ -10,7 +10,7 @@ export default function HeroHalftoneSection() {
   const anchorRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="relative h-[130vw] z-2 fade-in-slow" ref={anchorRef}>
+    <div className="relative h-[130vw] max-w-[1080px] mx-auto z-2 fade-in-slow" ref={anchorRef}>
       <HalftoneScene config={experienceHalftoneSceneConfig} />
       <ScrollTransform
         anchorRef={anchorRef}
