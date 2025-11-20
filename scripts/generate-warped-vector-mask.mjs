@@ -8,13 +8,13 @@ import { normalizeHalftoneValue } from "../app/lib/halftoneAssetKey.js";
 const DEFAULTS = {
   width: 1080,
   height: 1080,
-  dotRadius: 1,
-  dotSpacing: 4,
-  warp: 1.25,
-  crop: 0.28,
+  dotRadius: 2,
+  dotSpacing: 5,
+  warp: 0.95,
+  crop: 0.25,
   maxCropRatio: 0.45,
   warpAxes: ["x", "y", "xy"],
-  axis: "xy",
+  axis: "y",
   name: "hero",
 };
 const MIN_WARP_STRENGTH = -0.999;
@@ -132,7 +132,7 @@ function generateDots(
 }
 
 function formatNumber(value) {
-  return Number.parseFloat(value.toFixed(1)).toString();
+  return Number.parseFloat(value.toFixed(0)).toString();
 }
 
 function remapDots(dots, width, height, cropRatio, axis) {
@@ -224,12 +224,12 @@ async function main() {
 
   const optimized = optimize(svg, {
     path: filePath,
-    floatPrecision: 1,
+    floatPrecision: 0,
     multipass: true,
     plugins: [
       {
         name: "cleanupNumericValues",
-        params: { floatPrecision: 1 },
+        params: { floatPrecision: 0 },
       },
       { name: "convertShapeToPath", active: false },
     ],
