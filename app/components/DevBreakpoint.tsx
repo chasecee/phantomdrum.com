@@ -1,3 +1,5 @@
+"use client";
+
 export default function DevBreakpoint() {
   if (process.env.NODE_ENV !== "development") return null;
 

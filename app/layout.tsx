@@ -34,9 +34,8 @@ export default function RootLayout({
         className={`${spaceMono.variable} ${brygada1918.variable}  bg-black`}
       >
         {children}
+        {process.env.NODE_ENV === "development" && <DevBreakpoint />}
       </body>
-
-      {process.env.NODE_ENV === "development" && <DevBreakpoint />}
     </html>
   );
 }

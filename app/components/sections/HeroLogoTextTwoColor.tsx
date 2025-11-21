@@ -49,7 +49,7 @@ export default function HeroLogoText() {
 
   return (
     <div
-      className="mt-[40svh] aspect-2/1 w-full relative brightness-[200%] contrast-[200%]"
+      className="mt-[40svh] aspect-2/1 w-full relative brightness-150 contrast-150"
       style={
         {
           containerType: "size",
@@ -61,8 +61,9 @@ export default function HeroLogoText() {
       <div
         style={{
           maskImage: "url('/warped-halftone/halftone-hero.webp')",
-          maskSize: "var(--container-width) 100%",
-          maskPosition: "50% 50%",
+          maskSize:
+            "calc(min(100%, var(--container-width))) calc(min(100%, var(--container-width)) * 0.5)",
+          maskPosition: "50% 0%",
           maskRepeat: "repeat",
         }}
       >
