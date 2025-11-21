@@ -61,8 +61,8 @@ export default function HeroLogoText() {
       <div
         style={{
           maskImage: "url('/warped-halftone/halftone-hero.webp')",
-          maskSize: "1000px 500px",
-          maskPosition: "50% 0%",
+          maskSize: "var(--container-width) 100%",
+          maskPosition: "50% 50%",
           maskRepeat: "repeat",
         }}
       >
