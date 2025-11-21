@@ -8,14 +8,14 @@ import { normalizeHalftoneValue } from "../app/lib/halftoneAssetKey.js";
 
 const DEFAULT_OUTPUT_QUALITY = 0.3;
 const OUTPUT_FORMAT = "webp";
-const DEFAULT_CROP_RATIO = 0.1;
+const DEFAULT_CROP_RATIO = 0.25;
 const MAX_CROP_RATIO = 0.45;
 const DEFAULTS = {
   width: 1042,
   height: 600,
   dotRadius: 1,
-  dotSpacing: 4,
-  warp: 0.65,
+  dotSpacing: 3.5,
+  warp: -0.3,
   crop: DEFAULT_CROP_RATIO,
   maxCropRatio: 0.45,
   quality: DEFAULT_OUTPUT_QUALITY,

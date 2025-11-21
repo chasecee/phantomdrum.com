@@ -109,4 +109,14 @@ body {
 }
 :root {
   --container-width: 1080px;
+  --layer-color-0: rgb(239 68 68);
+  --layer-color-1: rgb(34 197 94);
+  --layer-color-2: rgb(59 130 246);
+  --layer-color-3: rgb(168 85 247);
+  --layer-color-4: rgb(236 72 153);
+  --layer-color-5: rgb(251 146 60);
+  --layer-color-6: rgb(34 211 238);
+  --layer-color-7: rgb(132 204 22);
+  --layer-color-8: rgb(249 115 22);
+  --layer-color-9: rgb(139 92 246);
 }

@@ -4,7 +4,7 @@ import HeroHalftoneSection from "./components/sections/HeroHalftoneSection";
 import type { CSSProperties } from "react";
 import ArtistBio from "./components/content/ArtistBio";
 import QuotesSection from "./components/content/QuotesSection";
-import HeroLogoText from "./components/sections/HeroLogoText";
+import HeroLogoTextTwoColor from "./components/sections/HeroLogoTextTwoColor";
 const HERO_SCALE_MULTIPLIER = 0.18;
 
 export default function Page() {
@@ -27,7 +27,7 @@ export default function Page() {
             } as CSSProperties
           }
         >
-          <HeroLogoText />
+          <HeroLogoTextTwoColor />
           <HalftoneEffect
             dotRadius={1}
             dotSpacing={5}
