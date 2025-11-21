@@ -62,7 +62,7 @@ export default function HeroLogoText() {
           {LAYERS.map((layer) => (
             <div
               key={layer.id}
-              className="sticky top-[30svh] h-(--layer-height) whitespace-nowrap mix-blend-plus-darker"
+              className="sticky top-[40svh] h-(--layer-height) whitespace-nowrap mix-blend-plus-darker"
               style={{
                 color: `var(${layer.colorVar})`,
                 transform: `translate(${layer.offsetX}, ${layer.offsetY}) scaleY(1.25)`,
