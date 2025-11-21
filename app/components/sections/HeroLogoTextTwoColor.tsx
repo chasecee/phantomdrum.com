@@ -33,6 +33,7 @@ const LAYERS = Array.from({ length: NUM_LAYERS }, (_, i) => ({
   colorVar: `--layer-color-${i}`,
   offsetX: `${(i - 0.5) * OFFSET_X_MULTIPLIER}cqi`,
   offsetY: `${(i - 0.5) * OFFSET_Y_MULTIPLIER}cqh`,
+  scaleOffset: `${1 + (i + 0.5) * 0.05}`,
   layerHeight: `${(i + 1) * 18}cqh`,
   animationName: i === 0 ? "flickerIn" : "fadeInUp",
   animationDelay: i === 0 ? "0s" : `${i * ANIMATION_STAGGER_DELAY}s`,
@@ -90,10 +91,10 @@ export default function HeroLogoText() {
                   color: `var(${layer.colorVar})`,
                   "--offset-x": layer.offsetX,
                   "--offset-y": layer.offsetY,
-                  transform: `translate(${layer.offsetX}, ${layer.offsetY}) scaleY(1.1)`,
+                  transform: `translate(${layer.offsetX}, ${layer.offsetY}) scaleY(${layer.scaleOffset})`,
                   zIndex: NUM_LAYERS - layer.id,
-                  opacity: 0,
-                  animation: `${layer.animationName} ${layer.animationDuration} ${layer.animationTimingFunction} ${layer.animationDelay} forwards`,
+                  opacity: 1,
+                  // animation: `${layer.animationName} ${layer.animationDuration} ${layer.animationTimingFunction} ${layer.animationDelay} forwards`,
                 } as CSSProperties
               }
             >
