@@ -1,14 +1,14 @@
 import type { HalftoneSceneConfig } from "./types";
 
 export const experienceHalftoneSceneConfig: HalftoneSceneConfig = {
-  aspectRatio: 1.3,
+  aspectRatio: 1,
   width: {
     min: 320,
     max: 1280,
     viewportRatio: 1,
   },
   scroll: {
-    start: "40% 60%",
+    start: "30% 60%",
     end: "60% 10%",
     scrub: true,
     markers: process.env.NODE_ENV === "development" ? true : false,
@@ -20,13 +20,13 @@ export const experienceHalftoneSceneConfig: HalftoneSceneConfig = {
       imageSrc: "/img/optimized/planet-cropped.webp",
       imageFit: "contain",
       className: "",
-      padding: 0.05,
+      padding: 0.1,
       params: {
         initial: {
           halftoneSize: "6%",
           dotSpacing: "0.2%",
           rgbOffset: "0%",
-          rgbOffsetAngle: 0,
+          rgbOffsetAngle: 90,
           effectIntensity: 0.2,
           patternRotation: 55,
           zoom: 1.2,
@@ -37,8 +37,8 @@ export const experienceHalftoneSceneConfig: HalftoneSceneConfig = {
         target: {
           halftoneSize: "4%",
           dotSpacing: "0.1%",
-          rgbOffset: "3%",
-          rgbOffsetAngle: 0,
+          rgbOffset: "5%",
+          rgbOffsetAngle: 90,
           effectIntensity: 0.35,
           patternRotation: 40,
           zoom: 0.8,

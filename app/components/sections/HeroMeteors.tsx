@@ -1,13 +1,13 @@
 import type { CSSProperties } from "react";
 import { generateLayerColors } from "@/app/lib/colorUtils";
 import HalftoneEffect from "../content/HalftoneEffect";
-const NUM_LAYERS = 10;
+const NUM_LAYERS = 20;
 
-const BASE_COLORS = ["#e67e22", "#c82a2a", "#c84a2d"];
+const BASE_COLORS = ["#ffff00", "#ff0000", "#0000ff"];
 
-const FIRST_LAYER_COLOR: string | null = "#fff";
+const FIRST_LAYER_COLOR: string | null = null;
 
-const OPACITY_RANGE: [number, number] = [1, 0.01];
+const OPACITY_RANGE: [number, number] = [0.1, 0.01];
 
 const calculateOpacity = (index: number, total: number): number => {
   const [maxOpacity, minOpacity] = OPACITY_RANGE;
@@ -23,19 +23,19 @@ const LAYER_COLORS = generateLayerColors(
 );
 
 const OFFSET_X_MULTIPLIER = 0.01;
-const OFFSET_Y_MULTIPLIER = 1.5;
+const OFFSET_Y_MULTIPLIER = 0.5;
 
-const ANIMATION_STAGGER_DELAY = 0.25;
-const ANIMATION_DURATION = 1;
+const ANIMATION_STAGGER_DELAY = 0.15;
+const ANIMATION_DURATION = 2.5;
 
 const LAYERS = Array.from({ length: NUM_LAYERS }, (_, i) => ({
   id: i,
   colorVar: `--layer-color-${i}`,
   offsetX: `${(i - 0.5) * OFFSET_X_MULTIPLIER}cqi`,
   offsetY: `${(i - 0.5) * OFFSET_Y_MULTIPLIER}cqh`,
-  scaleOffset: `${1 + (i + 0.5) * 0.05}`,
-  layerHeight: `${(i + 1) * 18}cqh`,
-  animationName: i === 0 ? "flickerIn" : "fadeInUp",
+  scaleOffset: `${1 + (i + 0.5) * 5}`,
+  layerHeight: `${(i + 1) * 5}cqh`,
+  animationName: i === 0 ? "fadeInUp" : "fadeInUp",
   animationDelay: i === 0 ? "0s" : `${i * ANIMATION_STAGGER_DELAY}s`,
   animationDuration: i === 0 ? ".25s" : `${ANIMATION_DURATION}s`,
   animationFillMode: "both",
@@ -50,7 +50,7 @@ export default function HeroLogoText() {
 
   return (
     <div
-      className="mt-[40svh] aspect-2/1 z-10 w-full relative brightness-150 contrast-150"
+      className="absolute h-1/2 inset-0 z-1 -translate-y-[30%] w-full  "
       style={
         {
           containerType: "size",
@@ -68,13 +68,13 @@ export default function HeroLogoText() {
         }}
       > */}
       <HalftoneEffect
-        dotRadius={1.5}
-        dotSpacing={4.5}
+        dotRadius={1}
+        dotSpacing={8}
         shape="octagon"
         className="HERO_BACKGROUND pointer-events-none"
       >
         <div
-          className="relative pb-10 h-[170cqh] text-[10cqw] tracking-[-0.025em] scale-[.9] -skew-y-[.1deg] origin-[50%_0%] text-center  leading-[0.8] font-bold"
+          className="relative h-[100cqh] text-[80cqw] tracking-[-0.025em]  scale-y-[.75] origin-[50%_50%] text-center  leading-[0.01] font-bold"
           style={{
             maskImage:
               "linear-gradient(to bottom, black 95%, transparent 105%)",
@@ -86,20 +86,27 @@ export default function HeroLogoText() {
           {LAYERS.map((layer) => (
             <div
               key={layer.id}
-              className="sticky top-[40svh] h-(--layer-height) w-[90%] mx-auto whitespace-nowrap "
+              className="sticky top-[1svh] h-(--layer-height) mix-blend-screen multiply max-h-[200px]  mx-auto text-center whitespace-nowrap "
               style={
                 {
                   color: `var(${layer.colorVar})`,
                   "--offset-x": layer.offsetX,
                   "--offset-y": layer.offsetY,
-                  transform: `translate(${layer.offsetX}, ${layer.offsetY}) scaleY(${layer.scaleOffset})`,
+                  transform: `translate(${layer.offsetX}, ${layer.offsetY}) `,
                   zIndex: NUM_LAYERS - layer.id,
-                  opacity: 1,
-                  // animation: `${layer.animationName} ${layer.animationDuration} ${layer.animationTimingFunction} ${layer.animationDelay} forwards`,
+                  opacity: 0,
+                  animation: `${layer.animationName} ${layer.animationDuration} ${layer.animationTimingFunction} ${layer.animationDelay} forwards`,
                 } as CSSProperties
               }
             >
-              PHANTOM DRUM
+              <svg
+                className="mx-auto"
+                width="1em"
+                height="1em"
+                viewBox="0 0 1 1"
+              >
+                <circle cx="0.5" cy="0.5" r="0.5" fill="currentColor" />
+              </svg>
             </div>
           ))}
         </div>

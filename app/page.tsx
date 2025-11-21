@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import ArtistBio from "./components/content/ArtistBio";
 import QuotesSection from "./components/content/QuotesSection";
 import HeroLogoTextTwoColor from "./components/sections/HeroLogoTextTwoColor";
+import HeroMeteors from "./components/sections/HeroMeteors";
 const HERO_SCALE_MULTIPLIER = 0.18;
 
 export default function Page() {
@@ -27,6 +28,7 @@ export default function Page() {
             } as CSSProperties
           }
         >
+          <HeroMeteors />
           <HeroLogoTextTwoColor />
 
           <HeroHalftoneSection />
