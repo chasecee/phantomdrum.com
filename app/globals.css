@@ -109,14 +109,20 @@ body {
 }
 :root {
   --container-width: 1080px;
-  --layer-color-0: rgb(239 68 68);
-  --layer-color-1: rgb(34 197 94);
-  --layer-color-2: rgb(59 130 246);
-  --layer-color-3: rgb(168 85 247);
-  --layer-color-4: rgb(236 72 153);
-  --layer-color-5: rgb(251 146 60);
-  --layer-color-6: rgb(34 211 238);
-  --layer-color-7: rgb(132 204 22);
-  --layer-color-8: rgb(249 115 22);
-  --layer-color-9: rgb(139 92 246);
+  --layer-color-0: #a85a90;
+  --layer-color-1: #b14d75;
+  --layer-color-2: #b9405a;
+  --layer-color-3: #c2343e;
+  --layer-color-4: #c82c2a;
+  --layer-color-5: #c8352b;
+  --layer-color-6: #c83d2c;
+  --layer-color-7: #c8462d;
+  --layer-color-8: #cc512c;
+  --layer-color-9: #d45f29;
+  --layer-color-10: #dc6d26;
+  --layer-color-11: #e47b23;
+  --layer-color-12: #e88c1e;
+  --layer-color-13: #eb9f19;
+  --layer-color-14: #eeb114;
+  --layer-color-15: #f1c40f;
 }

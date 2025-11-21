@@ -8,8 +8,8 @@ export const experienceHalftoneSceneConfig: HalftoneSceneConfig = {
     viewportRatio: 1,
   },
   scroll: {
-    start: "50% 60%",
-    end: "82% 40%",
+    start: "50% 80%",
+    end: "82% 20%",
     scrub: true,
     markers: process.env.NODE_ENV === "development" ? true : false,
   },

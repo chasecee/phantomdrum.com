@@ -7,15 +7,16 @@ import { normalizeHalftoneValue } from "../app/lib/halftoneAssetKey.js";
 
 const DEFAULTS = {
   width: 1080,
-  height: 1080,
-  dotRadius: 0.5,
-  dotSpacing: 5,
-  warp: 0.95,
-  crop: 0.2,
+  height: 810,
+  dotRadius: 2,
+  dotSpacing: 6,
+  warp: 0.5,
+  crop: 0.1,
   maxCropRatio: 0.45,
   warpAxes: ["x", "y", "xy"],
   axis: "xy",
   name: "hero",
+  shape: "octagon",
 };
 const MIN_WARP_STRENGTH = -0.999;
 const WARP_FACTOR_EPSILON = 1e-6;

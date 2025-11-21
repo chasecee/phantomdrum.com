@@ -6,16 +6,16 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { normalizeHalftoneValue } from "../app/lib/halftoneAssetKey.js";
 
-const DEFAULT_OUTPUT_QUALITY = 0.3;
+const DEFAULT_OUTPUT_QUALITY = 0.35;
 const OUTPUT_FORMAT = "webp";
-const DEFAULT_CROP_RATIO = 0.25;
+const DEFAULT_CROP_RATIO = 0.1;
 const MAX_CROP_RATIO = 0.45;
 const DEFAULTS = {
-  width: 1042,
-  height: 600,
-  dotRadius: 1,
-  dotSpacing: 3.5,
-  warp: -0.3,
+  width: 1200,
+  height: 1200,
+  dotRadius: 2,
+  dotSpacing: 5,
+  warp: 0.5,
   crop: DEFAULT_CROP_RATIO,
   maxCropRatio: 0.45,
   quality: DEFAULT_OUTPUT_QUALITY,
