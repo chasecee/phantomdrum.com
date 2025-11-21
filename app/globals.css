@@ -72,6 +72,48 @@ body {
     transform: translateY(0);
   }
 }
+
+@keyframes flickerIn {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.1;
+  }
+  20% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.71;
+  }
+  60% {
+    opacity: 0;
+  }
+  90% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate(var(--offset-x), calc(var(--offset-y) + 30px))
+      scaleY(1.25);
+  }
+  to {
+    opacity: 1;
+    transform: translate(var(--offset-x), var(--offset-y)) scaleY(1.25);
+  }
+}
 .button {
   color: greenyellow;
   text-align: center;
