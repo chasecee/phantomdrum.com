@@ -1,13 +1,13 @@
 import type { CSSProperties } from "react";
 import { generateLayerColors } from "@/app/lib/colorUtils";
 import HalftoneEffect from "../content/HalftoneEffect";
-const NUM_LAYERS = 20;
+const NUM_LAYERS = 10;
 
-const BASE_COLORS = ["#ffff00", "#ff0000", "#0000ff"];
+const BASE_COLORS = ["#0000ff", "#ff0000"];
 
 const FIRST_LAYER_COLOR: string | null = null;
 
-const OPACITY_RANGE: [number, number] = [0.1, 0.01];
+const OPACITY_RANGE: [number, number] = [0.8, 0.5];
 
 const calculateOpacity = (index: number, total: number): number => {
   const [maxOpacity, minOpacity] = OPACITY_RANGE;
@@ -22,8 +22,8 @@ const LAYER_COLORS = generateLayerColors(
   FIRST_LAYER_COLOR
 );
 
-const OFFSET_X_MULTIPLIER = 0.01;
-const OFFSET_Y_MULTIPLIER = 0.5;
+const OFFSET_X_MULTIPLIER = 0.05;
+const OFFSET_Y_MULTIPLIER = 0.01;
 
 const ANIMATION_STAGGER_DELAY = 0.15;
 const ANIMATION_DURATION = 2.5;
@@ -33,9 +33,9 @@ const LAYERS = Array.from({ length: NUM_LAYERS }, (_, i) => ({
   colorVar: `--layer-color-${i}`,
   offsetX: `${(i - 0.5) * OFFSET_X_MULTIPLIER}cqi`,
   offsetY: `${(i - 0.5) * OFFSET_Y_MULTIPLIER}cqh`,
-  scaleOffset: `${1 + (i + 0.5) * 5}`,
-  layerHeight: `${(i + 1) * 5}cqh`,
-  animationName: i === 0 ? "fadeInUp" : "fadeInUp",
+  scaleOffset: `${1 + (i + 0.1) * 0.03}`,
+  layerHeight: `${(i + 1) * 7}cqh`,
+  animationName: i === 0 ? "" : "",
   animationDelay: i === 0 ? "0s" : `${i * ANIMATION_STAGGER_DELAY}s`,
   animationDuration: i === 0 ? ".25s" : `${ANIMATION_DURATION}s`,
   animationFillMode: "both",
@@ -50,7 +50,7 @@ export default function HeroLogoText() {
 
   return (
     <div
-      className="absolute h-1/2 inset-0 z-1 -translate-y-[30%] w-full  "
+      className="absolute h-[200svw] inset-0 z-1 translate-y-[5%] w-full overflow-hidden"
       style={
         {
           containerType: "size",
@@ -61,23 +61,23 @@ export default function HeroLogoText() {
     >
       {/* <div
         style={{
-          maskImage: "url('/warped-halftone/halftone-hero.webp')",
-          maskSize: "contain",
+          maskImage: "url('/warped-halftone/vector/halftone-hero.svg')",
+          maskSize: "cover",
           maskPosition: "50% 0%",
           maskRepeat: "repeat",
         }}
       > */}
       <HalftoneEffect
         dotRadius={1}
-        dotSpacing={8}
-        shape="octagon"
+        dotSpacing={10}
+        shape="circle"
         className="HERO_BACKGROUND pointer-events-none"
       >
         <div
-          className="relative h-[100cqh] text-[80cqw] tracking-[-0.025em]  scale-y-[.75] origin-[50%_50%] text-center  leading-[0.01] font-bold"
+          className="relative h-[150cqh] text-[50cqw] tracking-[-0.025em]  scale-y-[.75] origin-[50%_00%] text-center  leading-[0.01] font-bold"
           style={{
             maskImage:
-              "linear-gradient(to bottom, black 95%, transparent 105%)",
+              "linear-gradient(to bottom, black 90%, transparent 100%)",
             maskSize: "100% 100%",
             maskPosition: "50% 0%",
             maskRepeat: "repeat",
@@ -86,16 +86,19 @@ export default function HeroLogoText() {
           {LAYERS.map((layer) => (
             <div
               key={layer.id}
-              className="sticky top-[1svh] h-(--layer-height) mix-blend-screen multiply max-h-[200px]  mx-auto text-center whitespace-nowrap "
+              className="relative top-1 h-(--layer-height) max-h-[100cqh] mx-auto"
               style={
                 {
                   color: `var(${layer.colorVar})`,
                   "--offset-x": layer.offsetX,
                   "--offset-y": layer.offsetY,
-                  transform: `translate(${layer.offsetX}, ${layer.offsetY}) `,
+                  transform: `translate(${layer.offsetX}, ${
+                    layer.offsetY
+                  }) scaleX(${0.5 * parseFloat(layer.scaleOffset)}) scaleY(${
+                    layer.scaleOffset
+                  }*1.5)`,
                   zIndex: NUM_LAYERS - layer.id,
-                  opacity: 0,
-                  animation: `${layer.animationName} ${layer.animationDuration} ${layer.animationTimingFunction} ${layer.animationDelay} forwards`,
+                  //animation: `${layer.animationName} ${layer.animationDuration} ${layer.animationTimingFunction} ${layer.animationDelay} forwards`,
                 } as CSSProperties
               }
             >

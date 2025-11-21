@@ -12,7 +12,7 @@ export default function HeroHalftoneSection() {
 
   return (
     <div
-      className="relative h-[130vw] max-w-[1080px] mx-auto z-2 fade-in-slow"
+      className="relative h-[100vw] max-w-[1080px] mx-auto z-2 fade-in-slow"
       ref={anchorRef}
     >
       <HalftoneEffect
