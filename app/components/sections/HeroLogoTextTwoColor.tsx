@@ -25,7 +25,7 @@ const LAYER_COLORS = generateLayerColors(
 const OFFSET_X_MULTIPLIER = 0.05;
 const OFFSET_Y_MULTIPLIER = 0.86;
 
-const ANIMATION_STAGGER_DELAY = 0.5;
+const ANIMATION_STAGGER_DELAY = 0.25;
 const ANIMATION_DURATION = 1;
 
 const LAYERS = Array.from({ length: NUM_LAYERS }, (_, i) => ({
@@ -36,7 +36,7 @@ const LAYERS = Array.from({ length: NUM_LAYERS }, (_, i) => ({
   layerHeight: `${(i + 1) * 17}cqh`,
   animationName: i === 0 ? "flickerIn" : "fadeInUp",
   animationDelay: i === 0 ? "0s" : `${i * ANIMATION_STAGGER_DELAY}s`,
-  animationDuration: i === 0 ? ".5s" : `${ANIMATION_DURATION}s`,
+  animationDuration: i === 0 ? ".25s" : `${ANIMATION_DURATION}s`,
   animationFillMode: "both",
   animationTimingFunction: i === 0 ? "steps(10, end)" : "ease-out",
 }));
@@ -49,7 +49,7 @@ export default function HeroLogoText() {
 
   return (
     <div
-      className="mt-[40svh] aspect-2/1 w-full relative brightness-[200%] contrast-120% border-2 border-blue-500"
+      className="mt-[40svh] aspect-2/1 w-full relative brightness-[200%] contrast-[200%]"
       style={
         {
           containerType: "size",
@@ -70,7 +70,7 @@ export default function HeroLogoText() {
           {LAYERS.map((layer) => (
             <div
               key={layer.id}
-              className="sticky top-[40svh] h-(--layer-height) whitespace-nowrap mix-blend-plus-darker"
+              className="sticky top-[40svh] h-(--layer-height) w-[90%] mx-auto whitespace-nowrap mix-blend-plus-darker"
               style={
                 {
                   color: `var(${layer.colorVar})`,
