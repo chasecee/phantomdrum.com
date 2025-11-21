@@ -14,7 +14,7 @@ const DEFAULTS = {
   width: 1080,
   height: 540,
   dotRadius: 1,
-  dotSpacing: 3.5,
+  dotSpacing: 3,
   warp: 0.05,
   crop: DEFAULT_CROP_RATIO,
   maxCropRatio: 0.45,

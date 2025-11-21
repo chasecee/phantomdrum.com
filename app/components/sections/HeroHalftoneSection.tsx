@@ -22,14 +22,14 @@ export default function HeroHalftoneSection() {
         applyToChild
       >
         <div
-          className={`absolute overflow-hidden left-[15vw] right-[5] top-[-50%] h-full opacity-30 ${
+          className={`absolute overflow-hidden left-[15vw] right-[5] top-[-65%] h-full opacity-20 ${
             process.env.NODE_ENV === "development"
               ? "border-0 border-pink-500"
               : ""
           }`}
         >
           <div
-            className="absolute inset-0 saturate-150  brightness-200 blur-lg "
+            className="absolute inset-0  blur-lg "
             style={{
               maskImage:
                 "linear-gradient(to bottom, transparent, black 60%, black 90%,transparent)",
@@ -87,10 +87,10 @@ export default function HeroHalftoneSection() {
         </div>
       </HalftoneEffect>
       <HalftoneScene config={experienceHalftoneSceneConfig} />
-      <ScrollTransform
+      {/* <ScrollTransform
         anchorRef={anchorRef}
         start={{ anchor: 0, viewport: 0 }}
-        end={{ anchor: 0.82, viewport: 0.4 }}
+        end={{ anchor: 0.8, viewport: 0.5 }}
         from={{ scale: 1 }}
         to={{ scale: 2 }}
         transformOrigin="50% 50%"
@@ -103,7 +103,7 @@ export default function HeroHalftoneSection() {
           style={
             {
               backgroundImage:
-                "radial-gradient(circle at 50% 50%, black 50%, transparent 60%)",
+                "radial-gradient(circle, black 44%, transparent 46%)",
             } as CSSProperties
           }
         />
@@ -112,11 +112,11 @@ export default function HeroHalftoneSection() {
           style={
             {
               backgroundImage:
-                "radial-gradient(circle at 80.8% 26.2%, black 10%,  transparent 15%)",
+                "radial-gradient(circle at 75.8% 30.2%, black 9%,  transparent 10%)",
             } as CSSProperties
           }
         />
-      </ScrollTransform>
+      </ScrollTransform> */}
     </div>
   );
 }
