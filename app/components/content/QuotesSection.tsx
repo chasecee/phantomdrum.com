@@ -1,16 +1,10 @@
 import Quote from "../../art/Quote";
 import NatGeoLogo from "../../art/NatGeoLogo";
-import SiliconValleyLogo from "../../art/SiliconValleyLogo";
 import RoyalAcademyLogo from "../../art/RoyalAcademyLogo";
 import LuminaryAwardsLogo from "../../art/LuminaryAwardsLogo";
 
 const quotes = [
   { text: "It could be music!", logo: NatGeoLogo, opacity: "opacity-100" },
-  {
-    text: "A robot could never replace our Son",
-    logo: SiliconValleyLogo,
-    opacity: "opacity-100",
-  },
   {
     text: "Bold, daring, devoid of life",
     logo: RoyalAcademyLogo,
