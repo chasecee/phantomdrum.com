@@ -1,13 +1,13 @@
 import type { CSSProperties } from "react";
 import { generateLayerColors } from "@/app/lib/colorUtils";
 import HalftoneEffect from "../content/HalftoneEffect";
-const NUM_LAYERS = 10;
+const NUM_LAYERS = 6;
 
-const BASE_COLORS = ["#0000ff", "#ff0000"];
+const BASE_COLORS = ["#ffa832", "#0000ff"];
 
 const FIRST_LAYER_COLOR: string | null = null;
 
-const OPACITY_RANGE: [number, number] = [0.8, 0.5];
+const OPACITY_RANGE: [number, number] = [0.6, 0.01];
 
 const calculateOpacity = (index: number, total: number): number => {
   const [maxOpacity, minOpacity] = OPACITY_RANGE;
@@ -33,8 +33,8 @@ const LAYERS = Array.from({ length: NUM_LAYERS }, (_, i) => ({
   colorVar: `--layer-color-${i}`,
   offsetX: `${(i - 0.5) * OFFSET_X_MULTIPLIER}cqi`,
   offsetY: `${(i - 0.5) * OFFSET_Y_MULTIPLIER}cqh`,
-  scaleOffset: `${1 + (i + 0.1) * 0.03}`,
-  layerHeight: `${(i + 1) * 7}cqh`,
+  scaleOffset: `${1 + (i + 0.1) * -0.05}`,
+  layerHeight: `${(i + 1) * 15}cqh`,
   animationName: i === 0 ? "" : "",
   animationDelay: i === 0 ? "0s" : `${i * ANIMATION_STAGGER_DELAY}s`,
   animationDuration: i === 0 ? ".25s" : `${ANIMATION_DURATION}s`,
@@ -50,7 +50,7 @@ export default function HeroLogoText() {
 
   return (
     <div
-      className="absolute h-[200svw] inset-0 z-1 translate-y-[5%] w-full overflow-hidden"
+      className="absolute h-[200svw] inset-0 z-1 translate-y-[-25%] w-full overflow-hidden"
       style={
         {
           containerType: "size",
@@ -74,7 +74,7 @@ export default function HeroLogoText() {
         className="HERO_BACKGROUND pointer-events-none"
       >
         <div
-          className="relative h-[150cqh] text-[50cqw] tracking-[-0.025em]  scale-y-[.75] origin-[50%_00%] text-center  leading-[0.01] font-bold"
+          className="relative blur-3xl -skew-y-52deg h-[150cqh] text-[88cqw] tracking-[-0.025em]  scale-y-[.75] origin-[50%_00%] text-center  leading-[0.01] font-bold"
           style={{
             maskImage:
               "linear-gradient(to bottom, black 90%, transparent 100%)",

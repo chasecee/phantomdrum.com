@@ -16,7 +16,12 @@ export default function CubeSection() {
   const multiCubeContainerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <HalftoneEffect dotRadius={2} dotSpacing={4}>
+    <HalftoneEffect
+      dotRadius={{ base: 1.5, md: 2 }}
+      dotSpacing={{ base: 3.5, md: 5 }}
+      shape="octagon"
+      className="CUBE_SECTION"
+    >
       <div
         ref={multiCubeContainerRef}
         className="aspect-square max-h-[90svh] mb-[10vw] w-full relative overflow-hidden"

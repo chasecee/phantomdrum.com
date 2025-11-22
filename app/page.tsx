@@ -7,6 +7,7 @@ import QuotesSection from "./components/content/QuotesSection";
 import HeroLogoTextTwoColor from "./components/sections/HeroLogoTextTwoColor";
 import HeroMeteors from "./components/sections/HeroMeteors";
 import HeroLogoTextTwoColorReversed from "./components/sections/HeroLogoTextTwoColorReversed";
+import ListenSection from "./components/content/ListenSection";
 const HERO_SCALE_MULTIPLIER = 0.18;
 
 export default function Page() {
@@ -36,6 +37,21 @@ export default function Page() {
           <HeroLogoTextTwoColor />
         </div>
         <CubeSection />
+        <HalftoneEffect
+          dotRadius={{ base: 1.5, md: 3 }}
+          dotSpacing={{ base: 3, md: 5 }}
+          shape="octagon"
+          className="OUT_NOW_TEXT pointer-events-none mt-[20vw] mb-[11vw]"
+        >
+          <div className="text-[10cqw] space-y-[.5em] tracking-[0.1em] scale-[.9] skew-y-[.5deg] origin-[50%_0%] text-center  leading-[0.8] font-bold">
+            <span className="text-[.75em] block">
+              Out Nov 24<sup className="text-[.6em]">TH</sup>
+            </span>
+            <span className="text-[.75em] block">Presave Now</span>
+          </div>
+        </HalftoneEffect>
+        <ListenSection />
+
         <QuotesSection />
         <ArtistBio />
       </div>

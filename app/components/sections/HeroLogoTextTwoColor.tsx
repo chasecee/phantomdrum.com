@@ -1,13 +1,13 @@
 import type { CSSProperties } from "react";
 import { generateLayerColors } from "@/app/lib/colorUtils";
 import HalftoneEffect from "../content/HalftoneEffect";
-const NUM_LAYERS = 10;
+const NUM_LAYERS = 7;
 
-const BASE_COLORS = ["#e67e22", "#c82a2a", "#c84a2d"];
+const BASE_COLORS = ["#ffa832", "#ff9932", "#ff8832"];
 
-const FIRST_LAYER_COLOR: string | null = "#fff";
+const FIRST_LAYER_COLOR: string | null = "#ffa832";
 
-const OPACITY_RANGE: [number, number] = [0.5, 0.01];
+const OPACITY_RANGE: [number, number] = [1, 1];
 
 const calculateOpacity = (index: number, total: number): number => {
   const [maxOpacity, minOpacity] = OPACITY_RANGE;
@@ -22,8 +22,8 @@ const LAYER_COLORS = generateLayerColors(
   FIRST_LAYER_COLOR
 );
 
-const OFFSET_X_MULTIPLIER = 0.01;
-const OFFSET_Y_MULTIPLIER = 1;
+const OFFSET_X_MULTIPLIER = 0.02;
+const OFFSET_Y_MULTIPLIER = 0.01;
 
 const ANIMATION_STAGGER_DELAY = 0.25;
 const ANIMATION_DURATION = 1;
@@ -33,8 +33,8 @@ const LAYERS = Array.from({ length: NUM_LAYERS }, (_, i) => ({
   colorVar: `--layer-color-${i}`,
   offsetX: `${(i - 0.5) * OFFSET_X_MULTIPLIER}cqi`,
   offsetY: `${(i - 0.5) * OFFSET_Y_MULTIPLIER}cqh`,
-  scaleOffset: `${1 + (i + 0.5) * -0.05}`,
-  layerHeight: `${(i + 1) * 10}cqh`,
+  scaleOffset: `${1 + (i + 0.5) * 0.02}`,
+  layerHeight: `${(i + 1) * 12}cqh`,
   animationName: i === 0 ? "flickerIn" : "fadeInUp",
   animationDelay: i === 0 ? "0s" : `${i * ANIMATION_STAGGER_DELAY}s`,
   animationDuration: i === 0 ? ".25s" : `${ANIMATION_DURATION}s`,
@@ -50,7 +50,7 @@ export default function HeroLogoText() {
 
   return (
     <div
-      className="mb-[5svh] aspect-25/10 z-10 w-full relative contrast-150"
+      className="aspect-2/1 mb-[10vw] z-10  brightness-125 w-full relative contrast-150"
       style={
         {
           containerType: "size",
@@ -59,34 +59,17 @@ export default function HeroLogoText() {
         } as CSSProperties
       }
     >
-      {/* <div
-        style={{
-          maskImage: "url('/warped-halftone/halftone-hero.webp')",
-          maskSize: "contain",
-          maskPosition: "50% 0%",
-          maskRepeat: "repeat",
-        }}
-      > */}
       <HalftoneEffect
-        dotRadius={{ base: 1, md: 2 }}
-        dotSpacing={{ base: 3, md: 5 }}
+        dotRadius={{ base: 1.5, md: 2 }}
+        dotSpacing={{ base: 3.5, md: 5 }}
         shape="octagon"
         className="HERO_BACKGROUND pointer-events-none"
       >
-        <div
-          className="relative pb-[25cqh] h-[120cqh] text-[10cqw] tracking-[0.1em] scale-[.9] -skew-y-[.1deg] origin-[50%_0%] text-center  leading-[0.8] font-bold"
-          style={{
-            maskImage:
-              "linear-gradient(to bottom, black 90%, transparent 100%)",
-            maskSize: "100% 100%",
-            maskPosition: "50% 0%",
-            maskRepeat: "repeat",
-          }}
-        >
+        <div className="relative pb-[5cqh] h-[100cqh] text-[10cqw] tracking-[0.15em] scale-y-[.8] skew-y-[.25deg]  origin-[50%_10%] text-center  leading-[0.8] font-bold">
           {LAYERS.map((layer) => (
             <div
               key={layer.id}
-              className="sticky top-[66svh] h-(--layer-height) w-[90%] mx-auto whitespace-nowrap "
+              className="sticky top-[70svh] h-(--layer-height) w-[90%] mx-auto whitespace-nowrap "
               style={
                 {
                   color: `var(${layer.colorVar})`,

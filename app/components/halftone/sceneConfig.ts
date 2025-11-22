@@ -1,7 +1,7 @@
 import type { HalftoneSceneConfig } from "./types";
 
 export const experienceHalftoneSceneConfig: HalftoneSceneConfig = {
-  aspectRatio: 1,
+  aspectRatio: 1.2,
   width: {
     min: 320,
     max: 1280,
@@ -29,10 +29,10 @@ export const experienceHalftoneSceneConfig: HalftoneSceneConfig = {
           rgbOffsetAngle: 0,
           effectIntensity: 0.2,
           patternRotation: 55,
-          zoom: 1.2,
+          zoom: 1.65,
           brightness: 1,
           contrast: 1,
-          translateY: "0%",
+          translateY: "-12%",
         },
         target: {
           halftoneSize: "4%",
@@ -41,10 +41,10 @@ export const experienceHalftoneSceneConfig: HalftoneSceneConfig = {
           rgbOffsetAngle: 0,
           effectIntensity: 0.35,
           patternRotation: 40,
-          zoom: 0.8,
+          zoom: 1,
           brightness: 1,
           contrast: 1,
-          translateY: "0%",
+          translateY: "15%",
         },
       },
     },

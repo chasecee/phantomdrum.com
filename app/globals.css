@@ -143,7 +143,7 @@ body {
   }
   .button-background {
     position: absolute;
-    inset: 0.1vw;
+    inset: 0;
     border: 1vw solid currentColor;
     @apply transition-all duration-300;
     z-index: 0;

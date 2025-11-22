@@ -1,8 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
 import { useRef } from "react";
-import ScrollTransform from "@animations/ScrollTransform";
 import { HalftoneScene } from "../halftone/HalftoneScene";
 import { experienceHalftoneSceneConfig } from "../halftone/sceneConfig";
 import HalftoneEffect from "../content/HalftoneEffect";
@@ -87,36 +85,6 @@ export default function HeroHalftoneSection() {
         </div>
       </HalftoneEffect>
       <HalftoneScene config={experienceHalftoneSceneConfig} />
-      {/* <ScrollTransform
-        anchorRef={anchorRef}
-        start={{ anchor: 0, viewport: 0 }}
-        end={{ anchor: 0.8, viewport: 0.5 }}
-        from={{ scale: 1 }}
-        to={{ scale: 2 }}
-        transformOrigin="50% 50%"
-        willChange="transform"
-        markers={process.env.NODE_ENV === "development"}
-        className="w-full h-full absolute inset-0"
-      >
-        <div
-          className="absolute inset-0 "
-          style={
-            {
-              backgroundImage:
-                "radial-gradient(circle, black 44%, transparent 46%)",
-            } as CSSProperties
-          }
-        />
-        <div
-          className="absolute inset-0 "
-          style={
-            {
-              backgroundImage:
-                "radial-gradient(circle at 75.8% 30.2%, black 9%,  transparent 10%)",
-            } as CSSProperties
-          }
-        />
-      </ScrollTransform> */}
     </div>
   );
 }

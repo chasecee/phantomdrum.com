@@ -10,17 +10,15 @@ type HalftoneSceneProps = {
   maskStyle?: CSSProperties;
 };
 
-const DEFAULT_MASK_STYLE: CSSProperties = {
-  maskImage:
-    "linear-gradient(to bottom, transparent, black 5%, black 90%, transparent)",
-  maskSize: "100% 100%",
-  maskPosition: "top",
-  maskRepeat: "no-repeat",
-};
-
 export function HalftoneScene({
   config,
-  maskStyle = DEFAULT_MASK_STYLE,
+  maskStyle = {
+    maskImage:
+      "linear-gradient(to bottom, transparent, black 5%, black 90%, transparent)",
+    maskSize: "100% 100%",
+    maskPosition: "top",
+    maskRepeat: "no-repeat",
+  },
 }: HalftoneSceneProps) {
   const {
     sectionRef,
@@ -36,7 +34,7 @@ export function HalftoneScene({
       ref={sectionRef}
       className={`${
         process.env.NODE_ENV === "development" ? "border-2 border-red-500" : ""
-      } h-[100vw] w-full flex relative z-3 flex-col justify-start-safe items-center`}
+      } h-[120vw] w-full flex relative z-3 flex-col justify-start-safe items-center`}
     >
       <section
         className="w-full overflow-hidden"
