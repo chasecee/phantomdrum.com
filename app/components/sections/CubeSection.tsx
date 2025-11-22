@@ -37,7 +37,7 @@ export default function CubeSection() {
           }}
           scrub={true}
           className="absolute inset-0"
-          heightRatio={0.22}
+          heightRatio={0.2}
           widthRatio={0.95}
           size={3}
           spacing={0.1}

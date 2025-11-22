@@ -57,6 +57,17 @@ body {
     opacity: 0;
     animation: fadeInSlow 2s ease-out forwards;
   }
+  .release-pulse {
+    animation: releasePulse 1.8s ease-in-out infinite;
+  }
+  .countdown-pulse {
+    animation: countdownPulse 0.9s ease-out;
+    animation-fill-mode: forwards;
+  }
+  .arrow-float {
+    animation: arrowFloat 5s ease-in-out infinite;
+    will-change: transform;
+  }
 }
 .fade-in-slow {
   animation-fill-mode: forwards;
@@ -70,6 +81,54 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes arrowFloat {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-18%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes releasePulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0.25);
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 0 35px rgba(255, 214, 150, 0.45);
+    background-color: rgba(255, 255, 255, 0.18);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0.25);
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+}
+
+@keyframes countdownPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(255, 214, 150, 0.35);
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -115,16 +174,13 @@ body {
   }
 }
 .button {
-  color: greenyellow;
-  text-align: center;
-  position: relative;
   background: transparent;
   isolation: isolate;
   mix-blend-mode: difference;
   overflow: hidden;
-  padding: 4vw 2vw;
+  padding: 7vw 5vw;
   line-height: 1;
-  @apply transition-colors duration-300;
+  @apply transition-colors duration-300 relative flex items-center justify-center text-center;
   &:hover {
     color: green;
     .button-text {
@@ -137,14 +193,15 @@ body {
   .button-text {
     position: relative;
     z-index: 0;
-    @apply block scale-100 font-mono backface-hidden transition-transform duration-300;
+    @apply block w-full uppercase scale-100 font-mono backface-hidden transition-transform duration-300;
     font-weight: 900;
-    font-size: 5vw;
+    font-size: 8vw;
   }
   .button-background {
     position: absolute;
     inset: 0;
-    border: 1vw solid currentColor;
+    border: 2vw solid currentColor;
+    border-radius: 10vw;
     @apply transition-all duration-300;
     z-index: 0;
   }

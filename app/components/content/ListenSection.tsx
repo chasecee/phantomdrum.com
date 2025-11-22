@@ -15,7 +15,7 @@ export default function ListenSection() {
           applyToChild
         >
           <Link
-            href="https://open.spotify.com"
+            href="https://open.spotify.com/album/5GDYFMTp1nIQKuXt4UJ9TN"
             target="_blank"
             rel="noopener noreferrer"
             className="button"
@@ -33,7 +33,7 @@ export default function ListenSection() {
           applyToChild
         >
           <Link
-            href="https://music.apple.com"
+            href="https://music.apple.com/us/album/initialize/1853366939"
             target="_blank"
             rel="noopener noreferrer"
             className="button"
