@@ -6,6 +6,7 @@ import ArtistBio from "./components/content/ArtistBio";
 import QuotesSection from "./components/content/QuotesSection";
 import HeroLogoTextTwoColor from "./components/sections/HeroLogoTextTwoColor";
 import HeroMeteors from "./components/sections/HeroMeteors";
+import HeroLogoTextTwoColorReversed from "./components/sections/HeroLogoTextTwoColorReversed";
 const HERO_SCALE_MULTIPLIER = 0.18;
 
 export default function Page() {
@@ -15,7 +16,7 @@ export default function Page() {
         <div
           style={
             {
-              maskImage: "linear-gradient(to top, rgba(0,0,0,0), black 20%)",
+              maskImage: "linear-gradient(to top, rgba(0,0,0,0), black 5%)",
               maskSize: "100% 100%",
               maskPosition: "bottom",
               maskRepeat: "no-repeat",
@@ -32,6 +33,7 @@ export default function Page() {
           <HeroLogoTextTwoColor />
 
           <HeroHalftoneSection />
+          <HeroLogoTextTwoColorReversed />
         </div>
         <CubeSection />
         <QuotesSection />
