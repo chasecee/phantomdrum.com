@@ -82,7 +82,7 @@ export default function HeroLogoText() {
         <div
           className="relative pb-[25cqh] h-[150cqh] text-[10cqw] tracking-[-0.025em] scale-[.9] -skew-y-[.1deg] origin-[50%_0%] text-center  leading-[0.8] font-bold"
           style={{
-            maskImage: "linear-gradient(to top, black 90%, transparent 100%)",
+            maskImage: "linear-gradient(to top, black 98%, transparent 100%)",
             maskSize: "100% 100%",
             maskPosition: "50% 0%",
             maskRepeat: "repeat",
