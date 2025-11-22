@@ -7,7 +7,7 @@ const BASE_COLORS = ["#e67e22", "#c82a2a", "#c84a2d"];
 
 const FIRST_LAYER_COLOR: string | null = "#fff";
 
-const OPACITY_RANGE: [number, number] = [1, 0.01];
+const OPACITY_RANGE: [number, number] = [0.5, 0.01];
 
 const calculateOpacity = (index: number, total: number): number => {
   const [maxOpacity, minOpacity] = OPACITY_RANGE;
@@ -33,8 +33,8 @@ const LAYERS = Array.from({ length: NUM_LAYERS }, (_, i) => ({
   colorVar: `--layer-color-${i}`,
   offsetX: `${(i - 0.5) * OFFSET_X_MULTIPLIER}cqi`,
   offsetY: `${(i - 0.5) * OFFSET_Y_MULTIPLIER}cqh`,
-  scaleOffset: `${1 + (i + 0.5) * 0.05}`,
-  layerHeight: `${(i + 1) * 14}cqh`,
+  scaleOffset: `${1 + (i + 0.5) * -0.05}`,
+  layerHeight: `${(i + 1) * 10}cqh`,
   animationName: i === 0 ? "flickerIn" : "fadeInUp",
   animationDelay: i === 0 ? "0s" : `${i * ANIMATION_STAGGER_DELAY}s`,
   animationDuration: i === 0 ? ".25s" : `${ANIMATION_DURATION}s`,
@@ -50,7 +50,7 @@ export default function HeroLogoText() {
 
   return (
     <div
-      className="mt-[40svh] aspect-2/1 z-10 w-full relative contrast-150"
+      className="mb-[5svh] aspect-25/10 z-10 w-full relative contrast-150"
       style={
         {
           containerType: "size",
@@ -74,7 +74,7 @@ export default function HeroLogoText() {
         className="HERO_BACKGROUND pointer-events-none"
       >
         <div
-          className="relative pb-[25cqh] h-[150cqh] text-[10cqw] tracking-[-0.025em] scale-[.9] -skew-y-[.1deg] origin-[50%_0%] text-center  leading-[0.8] font-bold"
+          className="relative pb-[25cqh] h-[120cqh] text-[10cqw] tracking-[0.1em] scale-[.9] -skew-y-[.1deg] origin-[50%_0%] text-center  leading-[0.8] font-bold"
           style={{
             maskImage:
               "linear-gradient(to bottom, black 90%, transparent 100%)",
@@ -86,7 +86,7 @@ export default function HeroLogoText() {
           {LAYERS.map((layer) => (
             <div
               key={layer.id}
-              className="sticky top-[40svh] h-(--layer-height) w-[90%] mx-auto whitespace-nowrap "
+              className="sticky top-[66svh] h-(--layer-height) w-[90%] mx-auto whitespace-nowrap "
               style={
                 {
                   color: `var(${layer.colorVar})`,
@@ -99,7 +99,7 @@ export default function HeroLogoText() {
                 } as CSSProperties
               }
             >
-              PHANTOM DRUM
+              INITIALIZE
             </div>
           ))}
         </div>

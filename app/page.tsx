@@ -16,7 +16,7 @@ export default function Page() {
         <div
           style={
             {
-              maskImage: "linear-gradient(to top, rgba(0,0,0,0), black 5%)",
+              //maskImage: "linear-gradient(to top, rgba(0,0,0,0), black 5%)",
               maskSize: "100% 100%",
               maskPosition: "bottom",
               maskRepeat: "no-repeat",
@@ -30,10 +30,10 @@ export default function Page() {
           }
         >
           <HeroMeteors />
-          <HeroLogoTextTwoColor />
+          <HeroLogoTextTwoColorReversed />
 
           <HeroHalftoneSection />
-          <HeroLogoTextTwoColorReversed />
+          <HeroLogoTextTwoColor />
         </div>
         <CubeSection />
         <QuotesSection />
