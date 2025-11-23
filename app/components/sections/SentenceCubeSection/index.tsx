@@ -71,7 +71,7 @@ export default function SentenceCubeSection() {
   }, []);
 
   useEffect(() => {
-    if (hasSpunRef.current || !lists.length) return;
+    if (hasSpunRef.current || !lists.length || shareParam) return;
     if (!seedRef.current) {
       seedRef.current = `${
         defaultPack?.id ?? JSON.stringify(lists)
@@ -88,14 +88,21 @@ export default function SentenceCubeSection() {
     return () => {
       clearTimeout(timeout);
     };
-  }, [lists, defaultPack?.id]);
+  }, [lists, defaultPack?.id, shareParam]);
 
   useEffect(() => {
     if (!shareParam || shareHandledRef.current === shareParam) {
       return;
     }
+    hasSpunRef.current = true;
     let isActive = true;
-    (async () => {
+    let retryCount = 0;
+    const maxRetries = 20;
+    const retryDelay = 100;
+
+    let retryInterval: NodeJS.Timeout | null = null;
+
+    const attemptLoadShare = async () => {
       try {
         const response = await fetch(`/api/share/${shareParam}`);
         if (!response.ok) {
@@ -112,23 +119,62 @@ export default function SentenceCubeSection() {
             : []);
         setSentence(metadata.sentence ?? "");
         setSentenceWords(words);
-        if (sceneRef.current) {
-          const indices = mapWordsToIndices(words, lists);
-          sceneRef.current.spinToIndices(indices);
-          currentIndicesRef.current = indices.slice();
+
+        const indices = mapWordsToIndices(words, lists);
+
+        const applyShare = () => {
+          if (!isActive) return false;
+          if (sceneRef.current) {
+            sceneRef.current.spinToIndices(indices);
+            currentIndicesRef.current = indices.slice();
+            shareHandledRef.current = shareParam;
+            if (submitState !== "success") {
+              resetSubmission();
+            }
+            sectionRef.current?.scrollIntoView({ behavior: "smooth" });
+            return true;
+          }
+          return false;
+        };
+
+        if (applyShare()) {
+          return;
         }
-        shareHandledRef.current = shareParam;
-        if (submitState !== "success") {
-          resetSubmission();
-        }
-        sectionRef.current?.scrollIntoView({ behavior: "smooth" });
+
+        retryInterval = setInterval(() => {
+          if (!isActive) {
+            if (retryInterval) {
+              clearInterval(retryInterval);
+              retryInterval = null;
+            }
+            return;
+          }
+          retryCount++;
+          if (applyShare() || retryCount >= maxRetries) {
+            if (retryInterval) {
+              clearInterval(retryInterval);
+              retryInterval = null;
+            }
+            if (retryCount >= maxRetries) {
+              shareHandledRef.current = shareParam;
+              console.error(
+                "Failed to load share: scene not ready after retries"
+              );
+            }
+          }
+        }, retryDelay);
       } catch (error) {
         shareHandledRef.current = shareParam;
         console.error("Failed to hydrate share:", error);
       }
-    })();
+    };
+
+    void attemptLoadShare();
     return () => {
       isActive = false;
+      if (retryInterval) {
+        clearInterval(retryInterval);
+      }
     };
   }, [shareParam, lists, router, resetSubmission, submitState]);
 
