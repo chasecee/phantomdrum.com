@@ -1,4 +1,4 @@
-import rawConfig from "./cube-labels.json";
+import { sentencePacks } from "./sentencePacks.generated";
 
 export interface CubeLabel {
   text: string;
@@ -8,19 +8,30 @@ export interface CubeLabel {
 const slugify = (text: string) =>
   text
     .toLowerCase()
+    .replace(/<br\s*\/?>/gi, "-")
     .replace(/&/g, "and")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-export const cubeLabelFontPath = rawConfig.fontPath;
-export const cubeLabelFontSize = rawConfig.fontSize;
+export const cubeLabelFontPath = "assets/fonts/space-mono-v17-latin-700.ttf";
+export const cubeLabelFontSize = 120;
 
-export const cubeLabels: CubeLabel[] = rawConfig.cubeLabels.map(
-  (text: string) => ({
-    text,
-    slug: slugify(text),
-  })
+const flattenedSentenceLabels = sentencePacks.flatMap((pack) =>
+  Array.isArray(pack.lists) ? pack.lists.flat() : []
 );
+
+const labelPool = Array.from(
+  new Set(
+    flattenedSentenceLabels.map((entry) =>
+      typeof entry === "string" ? entry.trim() : ""
+    )
+  )
+).filter(Boolean);
+
+export const cubeLabels: CubeLabel[] = labelPool.map((text) => ({
+  text,
+  slug: slugify(text),
+}));
 
 export const cubeLabelSlugify = (text: string) => slugify(text);
 

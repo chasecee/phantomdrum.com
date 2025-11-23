@@ -1,6 +1,5 @@
 import Link from "next/link";
 import HalftoneEffect from "./HalftoneEffect";
-import ScaledText from "./ScaledText";
 
 const PRESAVE_URL = "https://distrokid.com/hyperfollow/phantomdrum/initialize";
 const PRESAVE_COLOR = "#fbbf24";

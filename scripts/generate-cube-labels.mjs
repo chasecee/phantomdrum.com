@@ -9,47 +9,102 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, "..");
-const CONFIG_PATH = path.join(ROOT_DIR, "config", "cube-labels.json");
+const CONFIG_TS_PATH = path.join(ROOT_DIR, "config", "cube-labels.ts");
+const SENTENCE_PACKS_TS_PATH = path.join(
+  ROOT_DIR,
+  "config",
+  "sentencePacks.generated.ts"
+);
 const LABEL_MODULE_DIR = path.join(
   ROOT_DIR,
   "app",
   "generated",
   "labelGeometries"
 );
-const BUTTON_MODULE_DIR = path.join(
-  ROOT_DIR,
-  "app",
-  "generated",
-  "buttonLabelGeometries"
-);
 
 function loadConfig() {
-  if (!fs.existsSync(CONFIG_PATH)) {
-    throw new Error(`Config not found at ${CONFIG_PATH}`);
+  if (!fs.existsSync(CONFIG_TS_PATH)) {
+    throw new Error(`Config not found at ${CONFIG_TS_PATH}`);
   }
 
-  const raw = fs.readFileSync(CONFIG_PATH, "utf-8");
-  const data = JSON.parse(raw);
-
-  if (!Array.isArray(data.cubeLabels) || data.cubeLabels.length === 0) {
-    throw new Error('Config must include a non-empty "cubeLabels" array');
+  const tsContent = fs.readFileSync(CONFIG_TS_PATH, "utf-8");
+  
+  const fontPathMatch = tsContent.match(/export const fontPath = ["']([^"']+)["']/);
+  const fontSizeMatch = tsContent.match(/export const fontSize = (\d+)/);
+  const sentencePacksMatch = tsContent.match(/export const sentencePacks = (\[[\s\S]*?\]) as const/);
+  const cubeLabelsMatch = tsContent.match(/export const cubeLabels = (\[[\s\S]*?\]) as const/);
+  
+  const fontPath = fontPathMatch ? fontPathMatch[1] : "assets/fonts/space-mono-v17-latin-700.ttf";
+  const fontSize = fontSizeMatch ? parseInt(fontSizeMatch[1], 10) : 120;
+  
+  let sentencePacks = [];
+  if (sentencePacksMatch) {
+    try {
+      sentencePacks = eval(sentencePacksMatch[1]);
+    } catch (e) {
+      throw new Error(`Failed to parse sentencePacks from ${CONFIG_TS_PATH}: ${e.message}`);
+    }
   }
 
-  if (!data.fontPath) {
-    throw new Error('Config must include "fontPath"');
+  let legacyCubeLabels = [];
+  if (cubeLabelsMatch) {
+    try {
+      legacyCubeLabels = eval(cubeLabelsMatch[1]);
+    } catch (e) {
+      throw new Error(`Failed to parse cubeLabels from ${CONFIG_TS_PATH}: ${e.message}`);
+    }
+  }
+
+  const sentenceLists = sentencePacks.flatMap((pack) =>
+    Array.isArray(pack.lists) ? pack.lists : []
+  );
+  const flattenedSentences = sentenceLists.flat();
+
+  const cubeLabels = Array.from(
+    new Set(
+      [...flattenedSentences, ...legacyCubeLabels].map((entry) =>
+        typeof entry === "string" ? entry.trim() : ""
+      )
+    )
+  ).filter(Boolean);
+
+  if (cubeLabels.length === 0) {
+    throw new Error(
+      'Config must include at least one label via "sentencePacks"'
+    );
   }
 
   return {
-    fontPath: path.join(ROOT_DIR, data.fontPath),
-    fontSize: typeof data.fontSize === "number" ? data.fontSize : 120,
-    cubeLabels: data.cubeLabels,
-    buttonLabels: Array.isArray(data.buttonLabels) ? data.buttonLabels : [],
+    fontPath: path.join(ROOT_DIR, fontPath),
+    fontSize,
+    cubeLabels,
+    sentencePacks,
   };
+}
+
+function writeSentencePackModule(sentencePacks) {
+  const header = `/**
+ * Auto-generated from config/cube-labels.ts
+ * Do not edit directly—edit cube-labels.ts and rerun generate-cube-labels.
+ */
+`;
+  const content = `${header}export const sentencePacks = ${JSON.stringify(
+    sentencePacks,
+    null,
+    2
+  )} as const;
+
+export type SentencePack = typeof sentencePacks[number];
+
+export default sentencePacks;
+`;
+  fs.writeFileSync(SENTENCE_PACKS_TS_PATH, content, "utf-8");
 }
 
 function slugify(text) {
   return text
     .toLowerCase()
+    .replace(/<br\s*\/?>/gi, "-")
     .replace(/&/g, "and")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
@@ -80,6 +135,79 @@ function prepareGlyphPath(font, text, fontSize) {
   translatePath(glyphPath, -bbox.x1, -bbox.y1);
 
   return glyphPath;
+}
+
+function buildMultiLineGeometry(font, text, fontSize) {
+  const lines = text.split(/<br\s*\/?>/i).map((line) => line.trim()).filter(Boolean);
+  if (lines.length === 0) return null;
+  if (lines.length === 1) {
+    return buildGeometryAsset(prepareGlyphPath(font, lines[0], fontSize));
+  }
+
+  const lineHeight = fontSize * 0.66;
+  const lineGeometries = [];
+  let maxWidth = 0;
+  let totalHeight = (lines.length - 1) * lineHeight;
+
+  lines.forEach((line, index) => {
+    const glyphPath = prepareGlyphPath(font, line, fontSize);
+    const asset = buildGeometryAsset(glyphPath);
+    if (!asset) return;
+    
+    totalHeight += asset.height;
+    lineGeometries.push({
+      ...asset,
+      yOffset: index * lineHeight,
+    });
+    maxWidth = Math.max(maxWidth, asset.width);
+  });
+
+  if (lineGeometries.length === 0) return null;
+
+  const combinedPositions = [];
+  const combinedUvs = [];
+  const combinedIndices = [];
+  let indexOffset = 0;
+  let currentY = totalHeight / 2;
+
+  lineGeometries.forEach((lineGeo) => {
+    const positions = lineGeo.positions;
+    const uvs = lineGeo.uvs;
+    const indices = lineGeo.indices;
+    
+    const lineCenterY = currentY - lineGeo.height / 2;
+
+    for (let i = 0; i < positions.length; i += 3) {
+      combinedPositions.push(positions[i]);
+      combinedPositions.push(positions[i + 1] + lineCenterY);
+      combinedPositions.push(positions[i + 2]);
+    }
+
+    if (uvs) {
+      for (let i = 0; i < uvs.length; i += 2) {
+        combinedUvs.push(uvs[i]);
+        combinedUvs.push(uvs[i + 1]);
+      }
+    }
+
+    if (indices) {
+      for (let i = 0; i < indices.length; i++) {
+        combinedIndices.push(indices[i] + indexOffset);
+      }
+      indexOffset += positions.length / 3;
+    }
+
+    currentY -= lineGeo.height + lineHeight;
+  });
+
+  return {
+    positions: combinedPositions,
+    uvs: combinedUvs.length > 0 ? combinedUvs : undefined,
+    indices: combinedIndices.length > 0 ? combinedIndices : undefined,
+    indexType: combinedIndices.length > 0 ? (combinedIndices.length > 0 && Math.max(...combinedIndices) > 65535 ? "Uint32Array" : "Uint16Array") : null,
+    width: maxWidth,
+    height: totalHeight,
+  };
 }
 
 const FLOAT_PRECISION = 2;
@@ -214,8 +342,7 @@ function generateGroup(font, labels, moduleDir, fontSize, exportName) {
   const entries = [];
   labels.forEach((label) => {
     const slug = slugify(label);
-    const glyphPath = prepareGlyphPath(font, label, fontSize);
-    const asset = buildGeometryAsset(glyphPath);
+    const asset = buildMultiLineGeometry(font, label, fontSize);
     if (!asset) return;
     writeModuleFile(moduleDir, slug, asset);
     entries.push({ slug, identifier: slugToIdentifier(slug) });
@@ -245,18 +372,7 @@ function main() {
     "labelGeometries"
   );
 
-  if (config.buttonLabels.length > 0) {
-    generateGroup(
-      font,
-      config.buttonLabels,
-      BUTTON_MODULE_DIR,
-      config.fontSize,
-      "buttonLabelGeometries"
-    );
-  } else {
-    ensureCleanDir(BUTTON_MODULE_DIR);
-    writeIndexFile(BUTTON_MODULE_DIR, [], "buttonLabelGeometries");
-  }
+  writeSentencePackModule(config.sentencePacks);
 }
 
 try {

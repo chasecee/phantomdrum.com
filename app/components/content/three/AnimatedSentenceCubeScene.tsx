@@ -1,16 +1,23 @@
 "use client";
 
-import { useRef, useEffect, RefObject, useMemo, useCallback } from "react";
-import { getScrollTrigger } from "@/app/lib/gsap";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Rotation } from "./types";
 
 const DEFAULT_COLORS = ["#A85A90", "#C82A2A", "#C84A2D", "#E67E22", "#F1C40F"];
 const DEFAULT_TEXT_COLOR = "#C4A070";
+const TOUCH_DRAG_THRESHOLD_PX = 18;
+const MIN_LIST_LENGTH = 3;
+const MAX_LISTS = 4;
+const TWO_PI = Math.PI * 2;
 
 type FillMode = "fill" | "outline";
 
+type WorkerColumnConfig = {
+  faces: string[];
+};
+
 type WorkerConfig = {
-  texts: string[];
+  columns: WorkerColumnConfig[];
   size: number;
   heightRatio: number;
   widthRatio: number;
@@ -26,22 +33,8 @@ type WorkerConfig = {
   matchTextColor: boolean;
 };
 
-export interface AnimatedMultiCubeProps {
-  texts: string[];
-  trigger: RefObject<HTMLElement>;
-  start: string;
-  end: string;
-  scrub?: number | boolean;
-  from?: {
-    rotation?: Rotation;
-    scale?: number;
-  };
-  to?: {
-    rotation?: Rotation;
-    scale?: number;
-  };
-  showMarkers?: boolean;
-  invalidateOnRefresh?: boolean;
+export interface AnimatedSentenceCubeProps {
+  lists: string[][];
   className?: string;
   size?: number;
   heightRatio?: number;
@@ -56,40 +49,50 @@ export interface AnimatedMultiCubeProps {
   fillMode?: FillMode;
   strokeWidth?: number | null;
   matchTextColor?: boolean;
-  stagger?: boolean;
-  staggerDelay?: number;
+  onSentenceChange?: (words: string[], sentence: string) => void;
 }
 
-const clamp01 = (value: number) => Math.min(Math.max(value, 0), 1);
-const TOUCH_DRAG_THRESHOLD_PX = 18;
+const normalizeListEntries = (entries: string[]) => {
+  const cleaned = entries
+    .map((entry) => entry?.trim())
+    .filter((entry): entry is string => Boolean(entry));
+  if (!cleaned.length) {
+    return [];
+  }
+  while (cleaned.length < MIN_LIST_LENGTH) {
+    cleaned.push(...cleaned.slice(0, MIN_LIST_LENGTH - cleaned.length));
+  }
+  return cleaned;
+};
 
-export function AnimatedMultiCubeScene({
-  texts,
-  trigger,
-  start,
-  end,
-  scrub = 1,
-  from,
-  to,
-  showMarkers = false,
-  invalidateOnRefresh = true,
+const normalizeLists = (lists: string[][]) =>
+  lists
+    .slice(0, MAX_LISTS)
+    .map((list) => normalizeListEntries(list))
+    .filter((list) => list.length >= MIN_LIST_LENGTH);
+
+export function AnimatedSentenceCubeScene({
+  lists,
   className,
   size = 3,
-  heightRatio = 0.18,
+  heightRatio = 0.22,
   widthRatio = 1.1,
-  spacing = 0.1,
+  spacing = 0.3,
   colors = DEFAULT_COLORS,
   textColor = DEFAULT_TEXT_COLOR,
-  textSize = 0.6,
-  cameraPosition = [0, 0, 14],
+  textSize = 0.8,
+  cameraPosition = [0, 0, 18],
   cameraFov = 18,
   maxWidth = null,
   fillMode = "fill",
   strokeWidth = null,
   matchTextColor = false,
-  stagger = false,
-  staggerDelay = 0.12,
-}: AnimatedMultiCubeProps) {
+  onSentenceChange,
+}: AnimatedSentenceCubeProps) {
+  const normalizedLists = useMemo(() => normalizeLists(lists), [lists]);
+  const [sentenceWords, setSentenceWords] = useState<string[]>(() =>
+    normalizedLists.map((list) => list[0] ?? "")
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
@@ -98,8 +101,8 @@ export function AnimatedMultiCubeScene({
   const workerConfigRef = useRef<WorkerConfig | null>(null);
   const targetRotationsRef = useRef<Rotation[]>([]);
   const dragRotationsRef = useRef<number[]>([]);
-  const targetScaleRef = useRef<number>(from?.scale ?? 1);
-  const dragStartXRef = useRef(0);
+  const targetScaleRef = useRef<number>(1);
+  const dragStartYRef = useRef(0);
   const dragStartRotationsRef = useRef<number[]>([]);
   const draggedCubeIndexRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
@@ -117,37 +120,41 @@ export function AnimatedMultiCubeScene({
     dpr: 1,
   });
   const lastVisibilityRef = useRef(false);
+  const faceStepRef = useRef<number[]>([]);
+  const activeListsRef = useRef<string[][]>(normalizedLists);
+  const selectedIndicesRef = useRef<number[]>(normalizedLists.map(() => 0));
+  const onSentenceChangeRef = useRef(onSentenceChange);
 
-  const fromRotationX = useMemo(
-    () => from?.rotation?.x ?? 0,
-    [from?.rotation?.x]
-  );
-  const fromRotationY = useMemo(
-    () => from?.rotation?.y ?? 0,
-    [from?.rotation?.y]
-  );
-  const fromRotationZ = useMemo(
-    () => from?.rotation?.z ?? 0,
-    [from?.rotation?.z]
-  );
-  const toRotationX = useMemo(
-    () => to?.rotation?.x ?? fromRotationX,
-    [to?.rotation?.x, fromRotationX]
-  );
-  const toRotationY = useMemo(
-    () => to?.rotation?.y ?? fromRotationY + Math.PI * 2,
-    [to?.rotation?.y, fromRotationY]
-  );
-  const toRotationZ = useMemo(
-    () => to?.rotation?.z ?? fromRotationZ,
-    [to?.rotation?.z, fromRotationZ]
-  );
-  const fromScale = useMemo(() => from?.scale ?? 1, [from?.scale]);
-  const toScale = useMemo(() => to?.scale ?? fromScale, [to?.scale, fromScale]);
+  useEffect(() => {
+    onSentenceChangeRef.current = onSentenceChange;
+  }, [onSentenceChange]);
+
+  const publishSentence = useCallback((words: string[]) => {
+    const sentence = words.join(" ").replace(/\s+/g, " ").trim();
+    onSentenceChangeRef.current?.(words, sentence);
+  }, []);
+
+  const updateSentenceFromIndices = useCallback(() => {
+    const words = activeListsRef.current.map((list, index) => {
+      const selected = selectedIndicesRef.current[index] ?? 0;
+      return list[selected] ?? list[0] ?? "";
+    });
+    setSentenceWords(words);
+    publishSentence(words);
+  }, [publishSentence]);
+
+  useEffect(() => {
+    activeListsRef.current = normalizedLists;
+    faceStepRef.current = normalizedLists.map((list) =>
+      list.length > 0 ? TWO_PI / list.length : 0
+    );
+    selectedIndicesRef.current = normalizedLists.map(() => 0);
+    updateSentenceFromIndices();
+  }, [normalizedLists, updateSentenceFromIndices]);
 
   const workerConfig = useMemo<WorkerConfig>(
     () => ({
-      texts,
+      columns: normalizedLists.map((faces) => ({ faces })),
       size,
       heightRatio,
       widthRatio,
@@ -163,7 +170,7 @@ export function AnimatedMultiCubeScene({
       matchTextColor,
     }),
     [
-      texts,
+      normalizedLists,
       size,
       heightRatio,
       widthRatio,
@@ -180,28 +187,20 @@ export function AnimatedMultiCubeScene({
     ]
   );
 
-  const getCubeIndexFromY = useCallback(
-    (clientY: number, container: HTMLElement): number | null => {
+  const getCubeIndexFromX = useCallback(
+    (clientX: number, container: HTMLElement): number | null => {
+      const cubeCount = normalizedLists.length;
+      if (!cubeCount) return null;
       const rect = container.getBoundingClientRect();
-      const relativeY = clientY - rect.top;
-      const normalizedY = relativeY / rect.height;
-      const cubeHeight = size * heightRatio;
-      const spacingUnits = spacing * cubeHeight;
-      const totalHeight =
-        texts.length * cubeHeight +
-        Math.max(texts.length - 1, 0) * spacingUnits;
-      const startY = totalHeight / 2 - cubeHeight / 2;
-      const worldY = (1 - normalizedY) * totalHeight - totalHeight / 2;
-      for (let i = 0; i < texts.length; i++) {
-        const cubeY = startY - i * (cubeHeight + spacingUnits);
-        const halfHeight = cubeHeight / 2;
-        if (worldY >= cubeY - halfHeight && worldY <= cubeY + halfHeight) {
-          return i;
-        }
-      }
-      return null;
+      if (rect.width <= 0) return null;
+      const relativeX = clientX - rect.left;
+      const normalizedX = relativeX / rect.width;
+      if (normalizedX < 0 || normalizedX > 1) return null;
+      const index = Math.floor(normalizedX * cubeCount);
+      if (index < 0 || index >= cubeCount) return null;
+      return index;
     },
-    [texts.length, size, heightRatio, spacing]
+    [normalizedLists.length]
   );
 
   const sendTargetsRef = useRef<(() => void) | null>(null);
@@ -225,7 +224,7 @@ export function AnimatedMultiCubeScene({
         scale: targetScaleRef.current,
       });
     };
-  });
+  }, []);
 
   const throttledSendTargetsRef = useRef<number | null>(null);
   const throttledSendTargets = useCallback(() => {
@@ -307,16 +306,17 @@ export function AnimatedMultiCubeScene({
   }, [updateWorkerVisibility, syncVisibilityToWorker]);
 
   useEffect(() => {
-    const count = texts.length;
+    const count = normalizedLists.length;
     targetRotationsRef.current = Array.from({ length: count }, () => ({
-      x: fromRotationX,
-      y: fromRotationY,
-      z: fromRotationZ,
+      x: 0,
+      y: 0,
+      z: 0,
     }));
     dragRotationsRef.current = Array(count).fill(0);
-    targetScaleRef.current = fromScale;
+    targetScaleRef.current = 1;
+    updateSentenceFromIndices();
     sendTargetsRef.current?.();
-  }, [texts.length, fromRotationX, fromRotationY, fromRotationZ, fromScale]);
+  }, [normalizedLists.length, updateSentenceFromIndices]);
 
   useEffect(() => {
     if (!workerInitializedRef.current || !workerRef.current) return;
@@ -332,7 +332,6 @@ export function AnimatedMultiCubeScene({
     const canvas = canvasRef.current;
     if (!canvas) return;
     if (transferredCanvasRef.current === canvas) return;
-    if (!workerConfig) return;
 
     let initResizeObserver: ResizeObserver | null = null;
     let cleanupFn: (() => void) | null = null;
@@ -354,8 +353,8 @@ export function AnimatedMultiCubeScene({
       if (transferredCanvasRef.current === canvas) return;
       transferredCanvasRef.current = canvas;
       const worker = new Worker(
-        new URL("../../../workers/multiCube.worker.ts", import.meta.url),
-        { type: "module", name: "multi-cube-scene" }
+        new URL("../../../workers/sentenceCube.worker.ts", import.meta.url),
+        { type: "module", name: "sentence-cube-scene" }
       );
       workerRef.current = worker;
       let offscreen: OffscreenCanvas;
@@ -368,11 +367,12 @@ export function AnimatedMultiCubeScene({
         return;
       }
       dprRef.current = Math.min(window.devicePixelRatio ?? 1, 1.25);
+      const config = workerConfigRef.current ?? workerConfig;
       worker.postMessage(
         {
           type: "init",
           canvas: offscreen,
-          config: workerConfig,
+          config,
           dimensions: { width, height, dpr: dprRef.current },
         },
         [offscreen]
@@ -460,118 +460,58 @@ export function AnimatedMultiCubeScene({
         throttledSendTargetsRef.current = null;
       }
     };
-  }, [workerConfig, syncVisibilityToWorker]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncVisibilityToWorker, throttledSendTargets]);
 
-  useEffect(() => {
-    if (
-      typeof window === "undefined" ||
-      !containerRef.current ||
-      !trigger?.current
-    ) {
+  const snapToFace = useCallback((index: number) => {
+    const faceStep = faceStepRef.current[index];
+    const rotation = targetRotationsRef.current[index];
+    if (!rotation || !faceStep) return;
+    const drag = dragRotationsRef.current[index] ?? 0;
+    const rawRotation = rotation.x + drag;
+    const snappedSteps = Math.round(rawRotation / faceStep);
+    rotation.x = snappedSteps * faceStep;
+    dragRotationsRef.current[index] = 0;
+    const faceCount = activeListsRef.current[index]?.length ?? 0;
+    if (faceCount > 0) {
+      const normalizedIndex =
+        ((-snappedSteps % faceCount) + faceCount) % faceCount;
+      selectedIndicesRef.current[index] = normalizedIndex;
+    }
+  }, []);
+
+  const finalizeDrag = useCallback(() => {
+    if (draggedCubeIndexRef.current === null) {
       return;
     }
-    let scrollTrigger: ReturnType<
-      typeof import("gsap/ScrollTrigger").ScrollTrigger.create
-    > | null = null;
-    let active = true;
-    const init = async () => {
-      if (!active) return;
-      const ScrollTrigger = await getScrollTrigger();
-      if (!active || !trigger?.current || !containerRef.current) return;
-      const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-      const staggerOffset = stagger ? Math.max(staggerDelay, 0) : 0;
-      const totalCount = texts.length;
-      scrollTrigger = ScrollTrigger.create({
-        trigger: trigger.current,
-        start,
-        end,
-        scrub: typeof scrub === "number" ? scrub : scrub ? 1 : false,
-        invalidateOnRefresh,
-        markers: showMarkers,
-        onUpdate: (self) => {
-          const progress = self.progress;
-          targetScaleRef.current = lerp(fromScale, toScale, progress);
-          for (let index = 0; index < totalCount; index += 1) {
-            let offsetProgress: number;
-            if (stagger) {
-              const startProgress = index * staggerOffset;
-              const endProgress = 1.0;
-              const progressRange = endProgress - startProgress;
-              if (progressRange > 0) {
-                offsetProgress = clamp01(
-                  (progress - startProgress) / progressRange
-                );
-              } else {
-                offsetProgress = progress >= startProgress ? 1.0 : 0.0;
-              }
-            } else {
-              offsetProgress = progress;
-            }
-            const rotation = targetRotationsRef.current[index];
-            if (!rotation) {
-              targetRotationsRef.current[index] = {
-                x: lerp(fromRotationX, toRotationX, offsetProgress),
-                y: lerp(fromRotationY, toRotationY, offsetProgress),
-                z: lerp(fromRotationZ, toRotationZ, offsetProgress),
-              };
-            } else {
-              rotation.x = lerp(fromRotationX, toRotationX, offsetProgress);
-              rotation.y = lerp(fromRotationY, toRotationY, offsetProgress);
-              rotation.z = lerp(fromRotationZ, toRotationZ, offsetProgress);
-            }
-          }
-          throttledSendTargets();
-        },
-      });
-    };
-    init();
-    return () => {
-      active = false;
-      scrollTrigger?.kill();
-    };
-  }, [
-    trigger,
-    start,
-    end,
-    scrub,
-    showMarkers,
-    invalidateOnRefresh,
-    fromRotationX,
-    fromRotationY,
-    fromRotationZ,
-    toRotationX,
-    toRotationY,
-    toRotationZ,
-    fromScale,
-    toScale,
-    texts.length,
-    stagger,
-    staggerDelay,
-    throttledSendTargets,
-  ]);
+    snapToFace(draggedCubeIndexRef.current);
+    sendTargetsRef.current?.();
+    updateSentenceFromIndices();
+    draggedCubeIndexRef.current = null;
+  }, [snapToFace, updateSentenceFromIndices]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const beginDrag = (cubeIndex: number, startX: number) => {
+    const beginDrag = (cubeIndex: number, startY: number) => {
       if (isDraggingRef.current) return;
       isDraggingRef.current = true;
       draggedCubeIndexRef.current = cubeIndex;
-      dragStartXRef.current = startX;
-      if (dragRotationsRef.current.length !== texts.length) {
-        dragRotationsRef.current = Array(texts.length).fill(0);
+      dragStartYRef.current = startY;
+      if (dragRotationsRef.current.length !== normalizedLists.length) {
+        dragRotationsRef.current = Array(normalizedLists.length).fill(0);
       }
       dragStartRotationsRef.current = dragRotationsRef.current.slice();
       container.style.cursor = "grabbing";
     };
 
-    const updateDrag = (clientX: number) => {
+    const updateDrag = (clientY: number) => {
       if (!isDraggingRef.current || draggedCubeIndexRef.current === null) {
         return;
       }
-      const width = container.offsetWidth || 1;
-      const delta = ((clientX - dragStartXRef.current) / width) * Math.PI * 2;
+      const height = container.offsetHeight || 1;
+      const delta = ((clientY - dragStartYRef.current) / height) * TWO_PI;
       const cubeIndex = draggedCubeIndexRef.current;
       const startRotation = dragStartRotationsRef.current[cubeIndex] ?? 0;
       dragRotationsRef.current[cubeIndex] = startRotation + delta;
@@ -583,8 +523,8 @@ export function AnimatedMultiCubeScene({
         return;
       }
       isDraggingRef.current = false;
-      draggedCubeIndexRef.current = null;
       container.style.cursor = "grab";
+      finalizeDrag();
     };
 
     const resetTouchTracking = () => {
@@ -604,13 +544,13 @@ export function AnimatedMultiCubeScene({
     };
 
     const handleMouseDown = (event: MouseEvent) => {
-      const cubeIndex = getCubeIndexFromY(event.clientY, container);
+      const cubeIndex = getCubeIndexFromX(event.clientX, container);
       if (cubeIndex === null) return;
-      beginDrag(cubeIndex, event.clientX);
+      beginDrag(cubeIndex, event.clientY);
     };
 
     const handleMouseMove = (event: MouseEvent) => {
-      updateDrag(event.clientX);
+      updateDrag(event.clientY);
     };
 
     const handleMouseUp = () => {
@@ -622,7 +562,7 @@ export function AnimatedMultiCubeScene({
         return;
       }
       const touch = event.touches[0];
-      const cubeIndex = getCubeIndexFromY(touch.clientY, container);
+      const cubeIndex = getCubeIndexFromX(touch.clientX, container);
       if (cubeIndex === null) {
         resetTouchTracking();
         return;
@@ -645,12 +585,12 @@ export function AnimatedMultiCubeScene({
         const deltaX = touch.clientX - pending.startX;
         const deltaY = touch.clientY - pending.startY;
         if (
-          Math.abs(deltaX) >= TOUCH_DRAG_THRESHOLD_PX &&
-          Math.abs(deltaX) > Math.abs(deltaY)
+          Math.abs(deltaY) >= TOUCH_DRAG_THRESHOLD_PX &&
+          Math.abs(deltaY) > Math.abs(deltaX)
         ) {
-          beginDrag(pending.cubeIndex, touch.clientX);
+          beginDrag(pending.cubeIndex, touch.clientY);
           pendingTouchDragRef.current = null;
-        } else if (Math.abs(deltaY) > Math.abs(deltaX)) {
+        } else if (Math.abs(deltaX) > Math.abs(deltaY)) {
           resetTouchTracking();
           return;
         } else {
@@ -659,16 +599,14 @@ export function AnimatedMultiCubeScene({
       }
 
       event.preventDefault();
-      updateDrag(touch.clientX);
+      updateDrag(touch.clientY);
     };
 
     const handleTouchEnd = (event: TouchEvent) => {
       const ended = findTouch(event.changedTouches, activeTouchIdRef.current);
       if (!ended) return;
       resetTouchTracking();
-      if (isDraggingRef.current) {
-        endDrag();
-      }
+      endDrag();
     };
 
     const handleTouchCancel = (event: TouchEvent) => {
@@ -678,9 +616,7 @@ export function AnimatedMultiCubeScene({
       );
       if (!cancelled) return;
       resetTouchTracking();
-      if (isDraggingRef.current) {
-        endDrag();
-      }
+      endDrag();
     };
 
     container.style.cursor = "grab";
@@ -707,21 +643,22 @@ export function AnimatedMultiCubeScene({
       isDraggingRef.current = false;
       draggedCubeIndexRef.current = null;
     };
-  }, [getCubeIndexFromY, texts.length, throttledSendTargets]);
+  }, [
+    finalizeDrag,
+    getCubeIndexFromX,
+    normalizedLists.length,
+    throttledSendTargets,
+  ]);
 
   return (
     <div
       ref={containerRef}
       className={className}
       role="region"
-      aria-label="Animated cubes"
+      aria-label="Interactive sentence cubes"
     >
       <div className="sr-only" aria-live="polite">
-        <ul>
-          {texts.map((text, index) => (
-            <li key={`${text}-${index}`}>{text}</li>
-          ))}
-        </ul>
+        {sentenceWords.join(" ")}
       </div>
       <canvas
         ref={canvasRef}
