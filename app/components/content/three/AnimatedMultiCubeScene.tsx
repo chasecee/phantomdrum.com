@@ -336,6 +336,8 @@ export function AnimatedMultiCubeScene({
 
     let initResizeObserver: ResizeObserver | null = null;
     let cleanupFn: (() => void) | null = null;
+    let rafId: number | null = null;
+    let cancelled = false;
 
     const measureCanvasSize = () => {
       const rect = canvas.getBoundingClientRect();
@@ -347,103 +349,113 @@ export function AnimatedMultiCubeScene({
       };
     };
 
-    const initWorker = () => {
-      const { width, height } = measureCanvasSize();
-      if (width < 2 || height < 2) return;
+    const startWorker = () => {
+      if (cancelled) return;
 
-      if (transferredCanvasRef.current === canvas) return;
-      transferredCanvasRef.current = canvas;
-      const worker = new Worker(
-        new URL("../../../workers/multiCube.worker.ts", import.meta.url),
-        { type: "module", name: "multi-cube-scene" }
-      );
-      workerRef.current = worker;
-      let offscreen: OffscreenCanvas;
-      try {
-        offscreen = canvas.transferControlToOffscreen();
-      } catch {
-        transferredCanvasRef.current = null;
-        worker.terminate();
-        workerRef.current = null;
-        return;
-      }
-      dprRef.current = Math.min(window.devicePixelRatio ?? 1, 1.25);
-      worker.postMessage(
-        {
-          type: "init",
-          canvas: offscreen,
-          config: workerConfig,
-          dimensions: { width, height, dpr: dprRef.current },
-        },
-        [offscreen]
-      );
-      canvasDimensionsRef.current = { width, height, dpr: dprRef.current };
-      workerInitializedRef.current = true;
-      sendTargetsRef.current?.();
-      syncVisibilityToWorker();
-      let resizeTimeout: number | null = null;
-      const handleResize = () => {
-        if (resizeTimeout !== null) return;
-        resizeTimeout = requestAnimationFrame(() => {
-          resizeTimeout = null;
-          if (!workerRef.current) {
-            return;
-          }
-          const { width: measuredWidth, height: measuredHeight } =
-            measureCanvasSize();
-          if (measuredWidth < 2 || measuredHeight < 2) {
-            return;
-          }
-          const currentDpr = Math.min(window.devicePixelRatio ?? 1, 1.25);
-          const previous = canvasDimensionsRef.current;
-          const widthChanged = measuredWidth !== previous.width;
-          const heightChanged = measuredHeight !== previous.height;
-          const dprChanged = Math.abs(currentDpr - previous.dpr) > 0.001;
-          if (!widthChanged && !heightChanged && !dprChanged) {
-            return;
-          }
-          dprRef.current = currentDpr;
-          canvasDimensionsRef.current = {
-            width: measuredWidth,
-            height: measuredHeight,
-            dpr: dprRef.current,
-          };
-          workerRef.current.postMessage({
-            type: "resize",
-            width: measuredWidth,
-            height: measuredHeight,
-            dpr: dprRef.current,
-          });
-        });
-      };
-      const resizeObserver = new ResizeObserver(handleResize);
-      resizeObserver.observe(canvas);
-      resizeObserverRef.current = resizeObserver;
-      window.addEventListener("resize", handleResize, { passive: true });
-      cleanupFn = () => {
-        window.removeEventListener("resize", handleResize);
-        resizeObserver.disconnect();
-        if (resizeTimeout !== null) {
-          cancelAnimationFrame(resizeTimeout);
+      const initWorker = () => {
+        const { width, height } = measureCanvasSize();
+        if (width < 2 || height < 2) return;
+
+        if (transferredCanvasRef.current === canvas) return;
+        transferredCanvasRef.current = canvas;
+        const worker = new Worker(
+          new URL("../../../workers/multiCube.worker.ts", import.meta.url),
+          { type: "module", name: "multi-cube-scene" }
+        );
+        workerRef.current = worker;
+        let offscreen: OffscreenCanvas;
+        try {
+          offscreen = canvas.transferControlToOffscreen();
+        } catch {
+          transferredCanvasRef.current = null;
+          worker.terminate();
+          workerRef.current = null;
+          return;
         }
+        dprRef.current = Math.min(window.devicePixelRatio ?? 1, 1.25);
+        worker.postMessage(
+          {
+            type: "init",
+            canvas: offscreen,
+            config: workerConfig,
+            dimensions: { width, height, dpr: dprRef.current },
+          },
+          [offscreen]
+        );
+        canvasDimensionsRef.current = { width, height, dpr: dprRef.current };
+        workerInitializedRef.current = true;
+        sendTargetsRef.current?.();
+        syncVisibilityToWorker();
+        let resizeTimeout: number | null = null;
+        const handleResize = () => {
+          if (resizeTimeout !== null) return;
+          resizeTimeout = requestAnimationFrame(() => {
+            resizeTimeout = null;
+            if (!workerRef.current) {
+              return;
+            }
+            const { width: measuredWidth, height: measuredHeight } =
+              measureCanvasSize();
+            if (measuredWidth < 2 || measuredHeight < 2) {
+              return;
+            }
+            const currentDpr = Math.min(window.devicePixelRatio ?? 1, 1.25);
+            const previous = canvasDimensionsRef.current;
+            const widthChanged = measuredWidth !== previous.width;
+            const heightChanged = measuredHeight !== previous.height;
+            const dprChanged = Math.abs(currentDpr - previous.dpr) > 0.001;
+            if (!widthChanged && !heightChanged && !dprChanged) {
+              return;
+            }
+            dprRef.current = currentDpr;
+            canvasDimensionsRef.current = {
+              width: measuredWidth,
+              height: measuredHeight,
+              dpr: dprRef.current,
+            };
+            workerRef.current.postMessage({
+              type: "resize",
+              width: measuredWidth,
+              height: measuredHeight,
+              dpr: dprRef.current,
+            });
+          });
+        };
+        const resizeObserver = new ResizeObserver(handleResize);
+        resizeObserver.observe(canvas);
+        resizeObserverRef.current = resizeObserver;
+        window.addEventListener("resize", handleResize, { passive: true });
+        cleanupFn = () => {
+          window.removeEventListener("resize", handleResize);
+          resizeObserver.disconnect();
+          if (resizeTimeout !== null) {
+            cancelAnimationFrame(resizeTimeout);
+          }
+        };
       };
+
+      initResizeObserver = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (
+          entry &&
+          entry.contentRect.width > 0 &&
+          entry.contentRect.height > 0
+        ) {
+          initWorker();
+          initResizeObserver?.disconnect();
+        }
+      });
+      initResizeObserver.observe(canvas);
+      initWorker();
     };
 
-    initResizeObserver = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (
-        entry &&
-        entry.contentRect.width > 0 &&
-        entry.contentRect.height > 0
-      ) {
-        initWorker();
-        initResizeObserver?.disconnect();
-      }
-    });
-    initResizeObserver.observe(canvas);
-    initWorker();
+    rafId = window.requestAnimationFrame(startWorker);
 
     return () => {
+      cancelled = true;
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
       initResizeObserver?.disconnect();
       cleanupFn?.();
       if (workerRef.current) {

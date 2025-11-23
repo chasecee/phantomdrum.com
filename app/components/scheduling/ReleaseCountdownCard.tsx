@@ -38,9 +38,13 @@ function useCountdown(targetDate: Date): CountdownSnapshot {
     throw new Error("ReleaseCountdownCard received an invalid release date");
   }
 
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => target);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    setNow(Date.now());
     const interval = window.setInterval(() => {
       setNow(Date.now());
     }, SECOND_MS);

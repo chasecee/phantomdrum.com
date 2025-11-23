@@ -3,6 +3,7 @@ import CubeSection from "./components/sections/CubeSection";
 import HeroHalftoneSection from "./components/sections/HeroHalftoneSection";
 import ArtistBio from "./components/content/ArtistBio";
 import QuotesSection from "./components/content/QuotesSection";
+import LatestReviews from "./components/content/LatestReviews";
 import SentenceCubeSection from "./components/sections/SentenceCubeSection";
 import HeroLogoTextTwoColor from "./components/sections/HeroLogoTextTwoColor";
 import HeroMeteors from "./components/sections/HeroMeteors";
@@ -85,7 +86,9 @@ export default function Page() {
         />
 
         <QuotesSection />
+
         <SentenceCubeSection />
+        <LatestReviews />
         <ArtistBio />
       </div>
     </div>

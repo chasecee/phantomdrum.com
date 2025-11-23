@@ -208,66 +208,77 @@ export const CanvasHalftoneWebGL = forwardRef<
     if (!canvas) return;
     if (workerRef.current) return;
 
-    const worker = new Worker(
-      new URL("../workers/halftoneWebgl.worker.ts", import.meta.url),
-      { type: "module", name: "halftone-webgl" }
-    );
-    workerRef.current = worker;
-    let offscreen: OffscreenCanvas;
-    try {
-      offscreen = canvas.transferControlToOffscreen();
-    } catch (error) {
-      console.error("Failed to transfer canvas to worker", error);
-      worker.terminate();
-      workerRef.current = null;
-      return;
-    }
+    let cancelled = false;
 
-    const devicePixelRatio = clampDevicePixelRatio(
-      window.devicePixelRatio ?? 1
-    );
-    devicePixelRatioRef.current = devicePixelRatio;
-    const resolvedImageSrc = resolveImageSrc(lastImageConfigRef.current.src);
-    lastImageConfigRef.current = {
-      src: resolvedImageSrc,
-      fit: lastImageConfigRef.current.fit,
-    };
-    const {
-      width: initialWidth,
-      height: initialHeight,
-      padding: initialPadding,
-    } = canvasSizeRef.current;
+    const startWorker = () => {
+      if (cancelled || workerRef.current) return;
+      const worker = new Worker(
+        new URL("../workers/halftoneWebgl.worker.ts", import.meta.url),
+        { type: "module", name: "halftone-webgl" }
+      );
+      workerRef.current = worker;
+      let offscreen: OffscreenCanvas;
+      try {
+        offscreen = canvas.transferControlToOffscreen();
+      } catch (error) {
+        console.error("Failed to transfer canvas to worker", error);
+        worker.terminate();
+        workerRef.current = null;
+        return;
+      }
 
-    worker.postMessage(
-      {
-        type: "init",
-        canvas: offscreen,
-        config: {
-          width: initialWidth,
-          height: initialHeight,
-          dpr: devicePixelRatio,
-          imageSrc: resolvedImageSrc,
-          fitMode: lastImageConfigRef.current.fit,
-          padding: initialPadding,
+      const devicePixelRatio = clampDevicePixelRatio(
+        window.devicePixelRatio ?? 1
+      );
+      devicePixelRatioRef.current = devicePixelRatio;
+      const resolvedImageSrc = resolveImageSrc(lastImageConfigRef.current.src);
+      lastImageConfigRef.current = {
+        src: resolvedImageSrc,
+        fit: lastImageConfigRef.current.fit,
+      };
+      const {
+        width: initialWidth,
+        height: initialHeight,
+        padding: initialPadding,
+      } = canvasSizeRef.current;
+
+      worker.postMessage(
+        {
+          type: "init",
+          canvas: offscreen,
+          config: {
+            width: initialWidth,
+            height: initialHeight,
+            dpr: devicePixelRatio,
+            imageSrc: resolvedImageSrc,
+            fitMode: lastImageConfigRef.current.fit,
+            padding: initialPadding,
+          },
+          params: lastParamsRef.current,
         },
-        params: lastParamsRef.current,
-      },
-      [offscreen]
-    );
+        [offscreen]
+      );
 
-    workerReadyRef.current = true;
-    syncParamsToRenderer();
-    if (!suspendWhenHidden) {
-      postVisibility(true);
-    } else {
-      postVisibility(visibilityRef.current);
-    }
+      workerReadyRef.current = true;
+      syncParamsToRenderer();
+      if (!suspendWhenHidden) {
+        postVisibility(true);
+      } else {
+        postVisibility(visibilityRef.current);
+      }
+    };
+
+    const frame = window.requestAnimationFrame(startWorker);
 
     return () => {
-      workerReadyRef.current = false;
-      worker.postMessage({ type: "dispose" });
-      worker.terminate();
-      workerRef.current = null;
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+      if (workerRef.current) {
+        workerReadyRef.current = false;
+        workerRef.current.postMessage({ type: "dispose" });
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
     };
   }, [
     postVisibility,

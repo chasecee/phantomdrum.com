@@ -6,12 +6,12 @@ import { optimize } from "svgo";
 import { normalizeHalftoneValue } from "../app/lib/halftoneAssetKey.js";
 
 const DEFAULTS = {
-  width: 1080,
-  height: 810,
+  width: 900,
+  height: 600,
   dotRadius: 2,
-  dotSpacing: 6,
-  warp: 0.5,
-  crop: 0.1,
+  dotSpacing: 4,
+  warp: 0.1,
+  crop: 0.2,
   maxCropRatio: 0.45,
   warpAxes: ["x", "y", "xy"],
   axis: "xy",

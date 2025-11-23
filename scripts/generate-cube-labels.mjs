@@ -28,21 +28,31 @@ function loadConfig() {
   }
 
   const tsContent = fs.readFileSync(CONFIG_TS_PATH, "utf-8");
-  
-  const fontPathMatch = tsContent.match(/export const fontPath = ["']([^"']+)["']/);
+
+  const fontPathMatch = tsContent.match(
+    /export const fontPath = ["']([^"']+)["']/
+  );
   const fontSizeMatch = tsContent.match(/export const fontSize = (\d+)/);
-  const sentencePacksMatch = tsContent.match(/export const sentencePacks = (\[[\s\S]*?\]) as const/);
-  const cubeLabelsMatch = tsContent.match(/export const cubeLabels = (\[[\s\S]*?\]) as const/);
-  
-  const fontPath = fontPathMatch ? fontPathMatch[1] : "assets/fonts/space-mono-v17-latin-700.ttf";
+  const sentencePacksMatch = tsContent.match(
+    /export const sentencePacks = (\[[\s\S]*?\]) as const/
+  );
+  const cubeLabelsMatch = tsContent.match(
+    /export const cubeLabels = (\[[\s\S]*?\]) as const/
+  );
+
+  const fontPath = fontPathMatch
+    ? fontPathMatch[1]
+    : "assets/fonts/space-mono-v17-latin-700.ttf";
   const fontSize = fontSizeMatch ? parseInt(fontSizeMatch[1], 10) : 120;
-  
+
   let sentencePacks = [];
   if (sentencePacksMatch) {
     try {
       sentencePacks = eval(sentencePacksMatch[1]);
     } catch (e) {
-      throw new Error(`Failed to parse sentencePacks from ${CONFIG_TS_PATH}: ${e.message}`);
+      throw new Error(
+        `Failed to parse sentencePacks from ${CONFIG_TS_PATH}: ${e.message}`
+      );
     }
   }
 
@@ -51,7 +61,9 @@ function loadConfig() {
     try {
       legacyCubeLabels = eval(cubeLabelsMatch[1]);
     } catch (e) {
-      throw new Error(`Failed to parse cubeLabels from ${CONFIG_TS_PATH}: ${e.message}`);
+      throw new Error(
+        `Failed to parse cubeLabels from ${CONFIG_TS_PATH}: ${e.message}`
+      );
     }
   }
 
@@ -138,13 +150,16 @@ function prepareGlyphPath(font, text, fontSize) {
 }
 
 function buildMultiLineGeometry(font, text, fontSize) {
-  const lines = text.split(/<br\s*\/?>/i).map((line) => line.trim()).filter(Boolean);
+  const lines = text
+    .split(/<br\s*\/?>/i)
+    .map((line) => line.trim())
+    .filter(Boolean);
   if (lines.length === 0) return null;
   if (lines.length === 1) {
     return buildGeometryAsset(prepareGlyphPath(font, lines[0], fontSize));
   }
 
-  const lineHeight = fontSize * 0.66;
+  const lineHeight = fontSize * 0.33;
   const lineGeometries = [];
   let maxWidth = 0;
   let totalHeight = (lines.length - 1) * lineHeight;
@@ -153,7 +168,7 @@ function buildMultiLineGeometry(font, text, fontSize) {
     const glyphPath = prepareGlyphPath(font, line, fontSize);
     const asset = buildGeometryAsset(glyphPath);
     if (!asset) return;
-    
+
     totalHeight += asset.height;
     lineGeometries.push({
       ...asset,
@@ -174,7 +189,7 @@ function buildMultiLineGeometry(font, text, fontSize) {
     const positions = lineGeo.positions;
     const uvs = lineGeo.uvs;
     const indices = lineGeo.indices;
-    
+
     const lineCenterY = currentY - lineGeo.height / 2;
 
     for (let i = 0; i < positions.length; i += 3) {
@@ -204,7 +219,12 @@ function buildMultiLineGeometry(font, text, fontSize) {
     positions: combinedPositions,
     uvs: combinedUvs.length > 0 ? combinedUvs : undefined,
     indices: combinedIndices.length > 0 ? combinedIndices : undefined,
-    indexType: combinedIndices.length > 0 ? (combinedIndices.length > 0 && Math.max(...combinedIndices) > 65535 ? "Uint32Array" : "Uint16Array") : null,
+    indexType:
+      combinedIndices.length > 0
+        ? combinedIndices.length > 0 && Math.max(...combinedIndices) > 65535
+          ? "Uint32Array"
+          : "Uint16Array"
+        : null,
     width: maxWidth,
     height: totalHeight,
   };
@@ -225,12 +245,78 @@ function formatIntArray(array) {
   return `[${Array.from(array).join(",")}]`;
 }
 
+const RESERVED_KEYWORDS = new Set([
+  "super",
+  "class",
+  "function",
+  "return",
+  "if",
+  "else",
+  "for",
+  "while",
+  "do",
+  "switch",
+  "case",
+  "break",
+  "continue",
+  "try",
+  "catch",
+  "finally",
+  "throw",
+  "new",
+  "this",
+  "typeof",
+  "instanceof",
+  "void",
+  "delete",
+  "in",
+  "of",
+  "with",
+  "default",
+  "export",
+  "import",
+  "from",
+  "as",
+  "let",
+  "const",
+  "var",
+  "extends",
+  "implements",
+  "interface",
+  "enum",
+  "namespace",
+  "module",
+  "declare",
+  "abstract",
+  "async",
+  "await",
+  "yield",
+  "static",
+  "public",
+  "private",
+  "protected",
+  "readonly",
+  "get",
+  "set",
+  "constructor",
+  "null",
+  "undefined",
+  "true",
+  "false",
+  "NaN",
+  "Infinity",
+]);
+
 function slugToIdentifier(slug) {
   const base = slug.replace(/[^a-zA-Z0-9]/g, "_");
   const normalized = /^[0-9]/.test(base) ? `_${base}` : base;
-  return normalized.replace(/_+([a-zA-Z0-9])/g, (_, char) =>
+  let identifier = normalized.replace(/_+([a-zA-Z0-9])/g, (_, char) =>
     char.toUpperCase()
   );
+  if (RESERVED_KEYWORDS.has(identifier.toLowerCase())) {
+    identifier = `_${identifier}`;
+  }
+  return identifier;
 }
 
 function buildGeometryAsset(glyphPath) {

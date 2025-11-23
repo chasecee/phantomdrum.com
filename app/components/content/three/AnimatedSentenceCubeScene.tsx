@@ -1,13 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { Rotation } from "./types";
+import { normalizeSentenceForSharing } from "@/app/lib/sentenceUtils";
 
 const DEFAULT_COLORS = ["#A85A90", "#C82A2A", "#C84A2D", "#E67E22", "#F1C40F"];
 const DEFAULT_TEXT_COLOR = "#C4A070";
 const TOUCH_DRAG_THRESHOLD_PX = 18;
 const MIN_LIST_LENGTH = 3;
-const MAX_LISTS = 4;
 const TWO_PI = Math.PI * 2;
 
 type FillMode = "fill" | "outline";
@@ -31,6 +39,11 @@ type WorkerConfig = {
   fillMode: FillMode;
   strokeWidth: number | null;
   matchTextColor: boolean;
+  activeColors?: {
+    background?: string;
+    outline?: string;
+    text?: string;
+  };
 };
 
 export interface AnimatedSentenceCubeProps {
@@ -49,7 +62,15 @@ export interface AnimatedSentenceCubeProps {
   fillMode?: FillMode;
   strokeWidth?: number | null;
   matchTextColor?: boolean;
+  activeBackgroundColor?: string;
+  activeOutlineColor?: string;
+  activeTextColor?: string;
   onSentenceChange?: (words: string[], sentence: string) => void;
+}
+
+export interface AnimatedSentenceCubeHandle {
+  capture: () => Promise<ImageData>;
+  spinToIndices: (indices: number[]) => void;
 }
 
 const normalizeListEntries = (entries: string[]) => {
@@ -67,32 +88,42 @@ const normalizeListEntries = (entries: string[]) => {
 
 const normalizeLists = (lists: string[][]) =>
   lists
-    .slice(0, MAX_LISTS)
     .map((list) => normalizeListEntries(list))
     .filter((list) => list.length >= MIN_LIST_LENGTH);
 
-export function AnimatedSentenceCubeScene({
-  lists,
-  className,
-  size = 3,
-  heightRatio = 0.22,
-  widthRatio = 1.1,
-  spacing = 0.3,
-  colors = DEFAULT_COLORS,
-  textColor = DEFAULT_TEXT_COLOR,
-  textSize = 0.8,
-  cameraPosition = [0, 0, 18],
-  cameraFov = 18,
-  maxWidth = null,
-  fillMode = "fill",
-  strokeWidth = null,
-  matchTextColor = false,
-  onSentenceChange,
-}: AnimatedSentenceCubeProps) {
+export const AnimatedSentenceCubeScene = forwardRef<
+  AnimatedSentenceCubeHandle,
+  AnimatedSentenceCubeProps
+>(function AnimatedSentenceCubeScene(
+  {
+    lists,
+    className,
+    size = 3,
+    heightRatio = 0.22,
+    widthRatio = 1.1,
+    spacing = 0.3,
+    colors = DEFAULT_COLORS,
+    textColor = DEFAULT_TEXT_COLOR,
+    textSize = 0.8,
+    cameraPosition = [0, 0, 18],
+    cameraFov = 18,
+    maxWidth = null,
+    fillMode = "fill",
+    strokeWidth = null,
+    matchTextColor = false,
+    activeBackgroundColor,
+    activeOutlineColor,
+    activeTextColor,
+    onSentenceChange,
+  },
+  ref
+) {
   const normalizedLists = useMemo(() => normalizeLists(lists), [lists]);
   const [sentenceWords, setSentenceWords] = useState<string[]>(() =>
     normalizedLists.map((list) => list[0] ?? "")
   );
+  const [isOffscreenCanvasSupported, setIsOffscreenCanvasSupported] =
+    useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
@@ -130,7 +161,7 @@ export function AnimatedSentenceCubeScene({
   }, [onSentenceChange]);
 
   const publishSentence = useCallback((words: string[]) => {
-    const sentence = words.join(" ").replace(/\s+/g, " ").trim();
+    const sentence = normalizeSentenceForSharing(words.join(" "));
     onSentenceChangeRef.current?.(words, sentence);
   }, []);
 
@@ -168,6 +199,14 @@ export function AnimatedSentenceCubeScene({
       fillMode,
       strokeWidth: strokeWidth ?? null,
       matchTextColor,
+      activeColors:
+        activeBackgroundColor || activeOutlineColor || activeTextColor
+          ? {
+              background: activeBackgroundColor,
+              outline: activeOutlineColor,
+              text: activeTextColor,
+            }
+          : undefined,
     }),
     [
       normalizedLists,
@@ -184,6 +223,9 @@ export function AnimatedSentenceCubeScene({
       fillMode,
       strokeWidth,
       matchTextColor,
+      activeBackgroundColor,
+      activeOutlineColor,
+      activeTextColor,
     ]
   );
 
@@ -205,6 +247,7 @@ export function AnimatedSentenceCubeScene({
 
   const sendTargetsRef = useRef<(() => void) | null>(null);
   useEffect(() => {
+    const cubeCount = normalizedLists.length;
     sendTargetsRef.current = () => {
       const worker = workerRef.current;
       if (!worker || !workerInitializedRef.current) return;
@@ -217,14 +260,16 @@ export function AnimatedSentenceCubeScene({
         dragRotationsRef.current.length === rotationsPayload.length
           ? dragRotationsRef.current.slice()
           : Array(rotationsPayload.length).fill(0);
+      const activeFaceIndices = selectedIndicesRef.current.slice(0, cubeCount);
       worker.postMessage({
         type: "targets",
         rotations: rotationsPayload,
         dragRotations: dragPayload,
         scale: targetScaleRef.current,
+        activeFaceIndices,
       });
     };
-  }, []);
+  }, [normalizedLists.length]);
 
   const throttledSendTargetsRef = useRef<number | null>(null);
   const throttledSendTargets = useCallback(() => {
@@ -316,7 +361,7 @@ export function AnimatedSentenceCubeScene({
     targetScaleRef.current = 1;
     updateSentenceFromIndices();
     sendTargetsRef.current?.();
-  }, [normalizedLists.length, updateSentenceFromIndices]);
+  }, [normalizedLists, updateSentenceFromIndices]);
 
   useEffect(() => {
     if (!workerInitializedRef.current || !workerRef.current) return;
@@ -331,10 +376,13 @@ export function AnimatedSentenceCubeScene({
     if (typeof window === "undefined") return;
     const canvas = canvasRef.current;
     if (!canvas) return;
+    if (!isOffscreenCanvasSupported) return;
     if (transferredCanvasRef.current === canvas) return;
 
     let initResizeObserver: ResizeObserver | null = null;
     let cleanupFn: (() => void) | null = null;
+    let rafId: number | null = null;
+    let cancelled = false;
 
     const measureCanvasSize = () => {
       const rect = canvas.getBoundingClientRect();
@@ -346,104 +394,124 @@ export function AnimatedSentenceCubeScene({
       };
     };
 
-    const initWorker = () => {
-      const { width, height } = measureCanvasSize();
-      if (width < 2 || height < 2) return;
+    const startWorker = () => {
+      if (cancelled) return;
 
-      if (transferredCanvasRef.current === canvas) return;
-      transferredCanvasRef.current = canvas;
-      const worker = new Worker(
-        new URL("../../../workers/sentenceCube.worker.ts", import.meta.url),
-        { type: "module", name: "sentence-cube-scene" }
-      );
-      workerRef.current = worker;
-      let offscreen: OffscreenCanvas;
-      try {
-        offscreen = canvas.transferControlToOffscreen();
-      } catch {
-        transferredCanvasRef.current = null;
-        worker.terminate();
-        workerRef.current = null;
-        return;
-      }
-      dprRef.current = Math.min(window.devicePixelRatio ?? 1, 1.25);
-      const config = workerConfigRef.current ?? workerConfig;
-      worker.postMessage(
-        {
-          type: "init",
-          canvas: offscreen,
-          config,
-          dimensions: { width, height, dpr: dprRef.current },
-        },
-        [offscreen]
-      );
-      canvasDimensionsRef.current = { width, height, dpr: dprRef.current };
-      workerInitializedRef.current = true;
-      sendTargetsRef.current?.();
-      syncVisibilityToWorker();
-      let resizeTimeout: number | null = null;
-      const handleResize = () => {
-        if (resizeTimeout !== null) return;
-        resizeTimeout = requestAnimationFrame(() => {
-          resizeTimeout = null;
-          if (!workerRef.current) {
-            return;
+      const initWorker = () => {
+        const { width, height } = measureCanvasSize();
+        if (width < 2 || height < 2) return;
+
+        const transferToOffscreen = canvas.transferControlToOffscreen;
+        if (typeof transferToOffscreen !== "function") {
+          if (!cancelled) {
+            setIsOffscreenCanvasSupported(false);
           }
-          const { width: measuredWidth, height: measuredHeight } =
-            measureCanvasSize();
-          if (measuredWidth < 2 || measuredHeight < 2) {
-            return;
-          }
-          const currentDpr = Math.min(window.devicePixelRatio ?? 1, 1.25);
-          const previous = canvasDimensionsRef.current;
-          const widthChanged = measuredWidth !== previous.width;
-          const heightChanged = measuredHeight !== previous.height;
-          const dprChanged = Math.abs(currentDpr - previous.dpr) > 0.001;
-          if (!widthChanged && !heightChanged && !dprChanged) {
-            return;
-          }
-          dprRef.current = currentDpr;
-          canvasDimensionsRef.current = {
-            width: measuredWidth,
-            height: measuredHeight,
-            dpr: dprRef.current,
-          };
-          workerRef.current.postMessage({
-            type: "resize",
-            width: measuredWidth,
-            height: measuredHeight,
-            dpr: dprRef.current,
-          });
-        });
-      };
-      const resizeObserver = new ResizeObserver(handleResize);
-      resizeObserver.observe(canvas);
-      resizeObserverRef.current = resizeObserver;
-      window.addEventListener("resize", handleResize, { passive: true });
-      cleanupFn = () => {
-        window.removeEventListener("resize", handleResize);
-        resizeObserver.disconnect();
-        if (resizeTimeout !== null) {
-          cancelAnimationFrame(resizeTimeout);
+          return;
         }
+        if (transferredCanvasRef.current === canvas) return;
+        transferredCanvasRef.current = canvas;
+        const worker = new Worker(
+          new URL("../../../workers/sentenceCube.worker.ts", import.meta.url),
+          { type: "module", name: "sentence-cube-scene" }
+        );
+        workerRef.current = worker;
+        let offscreen: OffscreenCanvas;
+        try {
+          offscreen = transferToOffscreen.call(canvas);
+        } catch {
+          transferredCanvasRef.current = null;
+          worker.terminate();
+          workerRef.current = null;
+          if (!cancelled) {
+            setIsOffscreenCanvasSupported(false);
+          }
+          return;
+        }
+        dprRef.current = Math.min(window.devicePixelRatio ?? 1, 1.25);
+        const config = workerConfigRef.current ?? workerConfig;
+        worker.postMessage(
+          {
+            type: "init",
+            canvas: offscreen,
+            config,
+            dimensions: { width, height, dpr: dprRef.current },
+          },
+          [offscreen]
+        );
+        canvasDimensionsRef.current = { width, height, dpr: dprRef.current };
+        workerInitializedRef.current = true;
+        sendTargetsRef.current?.();
+        syncVisibilityToWorker();
+        let resizeTimeout: number | null = null;
+        const handleResize = () => {
+          if (resizeTimeout !== null) return;
+          resizeTimeout = requestAnimationFrame(() => {
+            resizeTimeout = null;
+            if (!workerRef.current) {
+              return;
+            }
+            const { width: measuredWidth, height: measuredHeight } =
+              measureCanvasSize();
+            if (measuredWidth < 2 || measuredHeight < 2) {
+              return;
+            }
+            const currentDpr = Math.min(window.devicePixelRatio ?? 1, 1.25);
+            const previous = canvasDimensionsRef.current;
+            const widthChanged = measuredWidth !== previous.width;
+            const heightChanged = measuredHeight !== previous.height;
+            const dprChanged = Math.abs(currentDpr - previous.dpr) > 0.001;
+            if (!widthChanged && !heightChanged && !dprChanged) {
+              return;
+            }
+            dprRef.current = currentDpr;
+            canvasDimensionsRef.current = {
+              width: measuredWidth,
+              height: measuredHeight,
+              dpr: dprRef.current,
+            };
+            workerRef.current.postMessage({
+              type: "resize",
+              width: measuredWidth,
+              height: measuredHeight,
+              dpr: dprRef.current,
+            });
+          });
+        };
+        const resizeObserver = new ResizeObserver(handleResize);
+        resizeObserver.observe(canvas);
+        resizeObserverRef.current = resizeObserver;
+        window.addEventListener("resize", handleResize, { passive: true });
+        cleanupFn = () => {
+          window.removeEventListener("resize", handleResize);
+          resizeObserver.disconnect();
+          if (resizeTimeout !== null) {
+            cancelAnimationFrame(resizeTimeout);
+          }
+        };
       };
+
+      initResizeObserver = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (
+          entry &&
+          entry.contentRect.width > 0 &&
+          entry.contentRect.height > 0
+        ) {
+          initWorker();
+          initResizeObserver?.disconnect();
+        }
+      });
+      initResizeObserver.observe(canvas);
+      initWorker();
     };
 
-    initResizeObserver = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (
-        entry &&
-        entry.contentRect.width > 0 &&
-        entry.contentRect.height > 0
-      ) {
-        initWorker();
-        initResizeObserver?.disconnect();
-      }
-    });
-    initResizeObserver.observe(canvas);
-    initWorker();
+    rafId = window.requestAnimationFrame(startWorker);
 
     return () => {
+      cancelled = true;
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
       initResizeObserver?.disconnect();
       cleanupFn?.();
       if (workerRef.current) {
@@ -461,7 +529,11 @@ export function AnimatedSentenceCubeScene({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [syncVisibilityToWorker, throttledSendTargets]);
+  }, [
+    syncVisibilityToWorker,
+    throttledSendTargets,
+    isOffscreenCanvasSupported,
+  ]);
 
   const snapToFace = useCallback((index: number) => {
     const faceStep = faceStepRef.current[index];
@@ -475,10 +547,48 @@ export function AnimatedSentenceCubeScene({
     const faceCount = activeListsRef.current[index]?.length ?? 0;
     if (faceCount > 0) {
       const normalizedIndex =
-        ((-snappedSteps % faceCount) + faceCount) % faceCount;
+        ((snappedSteps % faceCount) + faceCount) % faceCount;
       selectedIndicesRef.current[index] = normalizedIndex;
     }
   }, []);
+
+  const spinToIndices = useCallback(
+    (indices: number[]) => {
+      if (!workerRef.current || !workerInitializedRef.current) return;
+      if (indices.length !== activeListsRef.current.length) return;
+
+      indices.forEach((targetIndex, cubeIndex) => {
+        const list = activeListsRef.current[cubeIndex];
+        if (!list || targetIndex < 0 || targetIndex >= list.length) return;
+
+        const faceStep = faceStepRef.current[cubeIndex];
+        if (!faceStep) return;
+
+        const currentRotation = targetRotationsRef.current[cubeIndex];
+        if (!currentRotation) return;
+
+        const faceCount = activeListsRef.current[cubeIndex]?.length ?? 0;
+        if (!faceCount) return;
+
+        const currentSteps = Math.round(currentRotation.x / faceStep);
+        const currentIndex =
+          ((currentSteps % faceCount) + faceCount) % faceCount;
+        let deltaFaces = targetIndex - currentIndex;
+        deltaFaces = ((deltaFaces % faceCount) + faceCount) % faceCount; // normalize positive
+        const backwardFaces = deltaFaces - faceCount;
+        const useForward = Math.abs(deltaFaces) <= Math.abs(backwardFaces);
+        const rotationDelta =
+          (useForward ? deltaFaces : backwardFaces) * faceStep;
+        currentRotation.x += rotationDelta;
+        selectedIndicesRef.current[cubeIndex] = targetIndex;
+      });
+
+      dragRotationsRef.current = Array(indices.length).fill(0);
+      sendTargetsRef.current?.();
+      updateSentenceFromIndices();
+    },
+    [updateSentenceFromIndices]
+  );
 
   const finalizeDrag = useCallback(() => {
     if (draggedCubeIndexRef.current === null) {
@@ -491,6 +601,7 @@ export function AnimatedSentenceCubeScene({
   }, [snapToFace, updateSentenceFromIndices]);
 
   useEffect(() => {
+    if (!isOffscreenCanvasSupported) return;
     const container = containerRef.current;
     if (!container) return;
 
@@ -567,6 +678,7 @@ export function AnimatedSentenceCubeScene({
         resetTouchTracking();
         return;
       }
+      event.preventDefault();
       activeTouchIdRef.current = touch.identifier;
       pendingTouchDragRef.current = {
         cubeIndex,
@@ -588,12 +700,14 @@ export function AnimatedSentenceCubeScene({
           Math.abs(deltaY) >= TOUCH_DRAG_THRESHOLD_PX &&
           Math.abs(deltaY) > Math.abs(deltaX)
         ) {
+          event.preventDefault();
           beginDrag(pending.cubeIndex, touch.clientY);
           pendingTouchDragRef.current = null;
         } else if (Math.abs(deltaX) > Math.abs(deltaY)) {
           resetTouchTracking();
           return;
         } else {
+          event.preventDefault();
           return;
         }
       }
@@ -623,7 +737,9 @@ export function AnimatedSentenceCubeScene({
     container.addEventListener("mousedown", handleMouseDown);
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
-    container.addEventListener("touchstart", handleTouchStart);
+    container.addEventListener("touchstart", handleTouchStart, {
+      passive: false,
+    });
     container.addEventListener("touchmove", handleTouchMove, {
       passive: false,
     });
@@ -646,9 +762,51 @@ export function AnimatedSentenceCubeScene({
   }, [
     finalizeDrag,
     getCubeIndexFromX,
+    isOffscreenCanvasSupported,
     normalizedLists.length,
     throttledSendTargets,
   ]);
+
+  const capture = useCallback((): Promise<ImageData> => {
+    return new Promise((resolve, reject) => {
+      if (!workerRef.current || !workerInitializedRef.current) {
+        reject(new Error("Worker not initialized"));
+        return;
+      }
+      const requestId = `capture-${Date.now()}-${Math.random()}`;
+      const handleMessage = (event: MessageEvent) => {
+        if (
+          event.data.type === "captureComplete" &&
+          event.data.requestId === requestId
+        ) {
+          workerRef.current?.removeEventListener("message", handleMessage);
+          resolve(
+            new ImageData(
+              new Uint8ClampedArray(event.data.imageData.data),
+              event.data.width,
+              event.data.height
+            )
+          );
+        } else if (
+          event.data.type === "captureError" &&
+          event.data.requestId === requestId
+        ) {
+          workerRef.current?.removeEventListener("message", handleMessage);
+          reject(new Error(event.data.error));
+        }
+      };
+      workerRef.current.addEventListener("message", handleMessage);
+      workerRef.current.postMessage({
+        type: "capture",
+        requestId,
+      });
+    });
+  }, []);
+
+  useImperativeHandle(ref, () => ({
+    capture,
+    spinToIndices,
+  }));
 
   return (
     <div
@@ -660,11 +818,29 @@ export function AnimatedSentenceCubeScene({
       <div className="sr-only" aria-live="polite">
         {sentenceWords.join(" ")}
       </div>
-      <canvas
-        ref={canvasRef}
-        style={{ width: "100%", height: "100%", display: "block" }}
-        aria-hidden="true"
-      />
+      {isOffscreenCanvasSupported ? (
+        <canvas
+          ref={canvasRef}
+          style={{ width: "100%", height: "100%", display: "block" }}
+          aria-hidden="true"
+        />
+      ) : (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            padding: "1rem",
+          }}
+        >
+          Sentence cubes need a browser with OffscreenCanvas support.
+        </div>
+      )}
     </div>
   );
-}
+});

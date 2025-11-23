@@ -7,11 +7,14 @@ import {
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
+  RGBAFormat,
   Scene,
   SRGBColorSpace,
+  UnsignedByteType,
   Vector2,
   Vector3,
   WebGLRenderer,
+  WebGLRenderTarget,
 } from "three";
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
@@ -36,6 +39,18 @@ type SentenceCubeConfig = {
   fillMode: "fill" | "outline";
   strokeWidth: number | null;
   matchTextColor: boolean;
+  activeColors?: ActiveColors;
+};
+
+type ActiveColors = {
+  background?: string;
+  outline?: string;
+  text?: string;
+};
+
+type ColumnLabelInstance = {
+  mesh: Mesh;
+  baseColor: Color;
 };
 
 type Dimensions = { width: number; height: number; dpr: number };
@@ -54,6 +69,7 @@ type TargetsMessage = {
   rotations: Rotation[];
   dragRotations: number[];
   scale: number;
+  activeFaceIndices?: number[];
 };
 
 type ResizeMessage = {
@@ -67,13 +83,16 @@ type DisposeMessage = { type: "dispose" };
 
 type VisibilityMessage = { type: "visibility"; isVisible: boolean };
 
+type CaptureMessage = { type: "capture"; requestId: string };
+
 type WorkerMessage =
   | InitMessage
   | ConfigMessage
   | TargetsMessage
   | ResizeMessage
   | DisposeMessage
-  | VisibilityMessage;
+  | VisibilityMessage
+  | CaptureMessage;
 
 type ColumnInstance = {
   group: Group;
@@ -84,12 +103,18 @@ type ColumnInstance = {
     material: LineMaterial;
     geometry: LineSegmentsGeometry;
   };
-  labelMeshes: Mesh[];
+  labelMeshes: ColumnLabelInstance[];
   currentRotation: Rotation;
   currentScale: number;
   faceCount: number;
   faceOffset: number;
   angleStep: number;
+  activeFaceIndex: number;
+  baseBodyColor: Color;
+  activeBodyColor: Color | null;
+  baseOutlineColor: Color;
+  activeOutlineColor: Color | null;
+  activeTextColor: Color | null;
 };
 
 const MIN_FACE_COUNT = 3;
@@ -112,6 +137,7 @@ const state = {
   isVisible: false,
   isAnimating: false,
   idleFrames: 0,
+  activeFaceIndices: [] as number[],
 };
 
 const buildRotationsArray = (length: number) =>
@@ -136,6 +162,66 @@ const renderOnce = () => {
   state.renderer.render(state.scene, state.camera);
 };
 
+const captureCanvas = (requestId: string) => {
+  if (!state.renderer || !state.dimensions || !state.scene || !state.camera) {
+    self.postMessage({
+      type: "captureError",
+      requestId,
+      error: "Renderer not initialized",
+    });
+    return;
+  }
+  snapSceneToTargets();
+  const { width, height, dpr } = state.dimensions;
+  const canvasWidth = Math.round(width * dpr);
+  const canvasHeight = Math.round(height * dpr);
+  const renderTarget = new WebGLRenderTarget(canvasWidth, canvasHeight, {
+    format: RGBAFormat,
+    type: UnsignedByteType,
+    colorSpace: SRGBColorSpace,
+  });
+  const originalRenderTarget = state.renderer.getRenderTarget();
+  state.renderer.setRenderTarget(renderTarget);
+  state.renderer.render(state.scene, state.camera);
+  const pixels = new Uint8Array(canvasWidth * canvasHeight * 4);
+  state.renderer.readRenderTargetPixels(
+    renderTarget,
+    0,
+    0,
+    canvasWidth,
+    canvasHeight,
+    pixels
+  );
+  state.renderer.setRenderTarget(originalRenderTarget);
+  renderTarget.dispose();
+
+  const flippedPixels = new Uint8Array(canvasWidth * canvasHeight * 4);
+  for (let y = 0; y < canvasHeight; y++) {
+    const srcRow = y * canvasWidth * 4;
+    const dstRow = (canvasHeight - 1 - y) * canvasWidth * 4;
+    flippedPixels.set(
+      pixels.subarray(srcRow, srcRow + canvasWidth * 4),
+      dstRow
+    );
+  }
+
+  const imageData = new ImageData(
+    new Uint8ClampedArray(flippedPixels),
+    canvasWidth,
+    canvasHeight
+  );
+  self.postMessage(
+    {
+      type: "captureComplete",
+      requestId,
+      imageData,
+      width: canvasWidth,
+      height: canvasHeight,
+    },
+    [imageData.data.buffer]
+  );
+};
+
 const snapSceneToTargets = () => {
   if (!state.scene || state.columns.length === 0) return;
   state.columns.forEach((column, index) => {
@@ -158,7 +244,7 @@ const snapSceneToTargets = () => {
 
 const clearColumns = () => {
   state.columns.forEach((column) => {
-    column.labelMeshes.forEach((mesh) => {
+    column.labelMeshes.forEach(({ mesh }) => {
       const material = mesh.material;
       if (Array.isArray(material)) {
         material.forEach((item) => item.dispose());
@@ -296,6 +382,35 @@ const buildOutline = (
   };
 };
 
+const toColor = (value?: string): Color | null =>
+  value ? new Color(value) : null;
+
+const applyColumnActiveState = (column: ColumnInstance, faceIndex: number) => {
+  if (!column || column.faceCount <= 0) return;
+  const normalizedIndex =
+    ((faceIndex % column.faceCount) + column.faceCount) % column.faceCount;
+  column.activeFaceIndex = normalizedIndex;
+
+  column.labelMeshes.forEach(({ mesh, baseColor }, index) => {
+    const material = mesh.material as MeshBasicMaterial;
+    if (index === normalizedIndex && column.activeTextColor) {
+      material.color.copy(column.activeTextColor);
+    } else {
+      material.color.copy(baseColor);
+    }
+  });
+
+  column.bodyMaterial.color.copy(
+    column.activeBodyColor ?? column.baseBodyColor
+  );
+
+  if (column.outline) {
+    column.outline.material.color.copy(
+      column.activeOutlineColor ?? column.baseOutlineColor
+    );
+  }
+};
+
 const rebuildColumns = () => {
   if (!state.scene || !state.config) return;
   clearColumns();
@@ -312,7 +427,12 @@ const rebuildColumns = () => {
     fillMode,
     strokeWidth,
     matchTextColor,
+    activeColors,
   } = state.config;
+  state.activeFaceIndices = columns.map(
+    (_, index) => state.activeFaceIndices[index] ?? 0
+  );
+
   if (!columns.length) {
     state.rotations = [];
     state.dragRotations = [];
@@ -345,6 +465,9 @@ const rebuildColumns = () => {
     const colorHex =
       (typeof colorValue === "string" ? colorValue.trim() : "#FFFFFF") ||
       "#FFFFFF";
+    const activeBodyColor = toColor(activeColors?.background);
+    const activeOutlineColor = toColor(activeColors?.outline);
+    const activeTextColor = toColor(activeColors?.text);
 
     const columnGroup = new Group();
     columnGroup.position.set(
@@ -363,6 +486,7 @@ const rebuildColumns = () => {
       polygonOffsetUnits: 1.5,
       toneMapped: false,
     });
+    const baseBodyColor = bodyMaterial.color.clone();
 
     const bodyMesh = new Mesh(bodyGeometry, bodyMaterial);
     bodyMesh.renderOrder = 0;
@@ -380,8 +504,11 @@ const rebuildColumns = () => {
         columnGroup.add(outline.line);
       }
     }
+    const baseOutlineColor = outline
+      ? outline.material.color.clone()
+      : baseBodyColor.clone();
 
-    const labelMeshes: Mesh[] = [];
+    const labelMeshes: ColumnLabelInstance[] = [];
     faces.forEach((text, faceIndex) => {
       const slug = computeLabelSlug(text);
       const asset = slug ? getCubeLabelAsset(slug) : null;
@@ -389,16 +516,16 @@ const rebuildColumns = () => {
         return;
       }
       const normalizedTextSize = Math.max(textSize, 0.1);
-      const faceWidth = reelLength * 0.95 * normalizedTextSize;
-      const baseVerticalAllowance = faceDistance * 1.9 * normalizedTextSize;
+      const faceWidth = reelLength * normalizedTextSize;
+      const baseVerticalAllowance = faceDistance * normalizedTextSize;
       const isMultiLine = asset.height > baseVerticalAllowance * 1.5;
       const verticalAllowance = isMultiLine
-        ? Math.max(baseVerticalAllowance * 2.5, asset.height * 1.1)
+        ? Math.max(baseVerticalAllowance * 1.2, asset.height)
         : baseVerticalAllowance;
       let labelScale = 1;
       if (asset.width > 0 && asset.height > 0) {
         labelScale = Math.min(
-          (maxWidth ?? faceWidth * 0.9) / asset.width,
+          (maxWidth ?? faceWidth) / asset.width,
           verticalAllowance / asset.height
         );
       }
@@ -422,10 +549,13 @@ const rebuildColumns = () => {
       labelMesh.scale.set(labelScale, labelScale, 1);
       labelMesh.renderOrder = 2;
       columnGroup.add(labelMesh);
-      labelMeshes.push(labelMesh);
+      labelMeshes.push({
+        mesh: labelMesh,
+        baseColor: labelMaterial.color.clone(),
+      });
     });
 
-    state.columns.push({
+    const columnInstance: ColumnInstance = {
       group: columnGroup,
       bodyGeometry,
       bodyMaterial,
@@ -436,7 +566,15 @@ const rebuildColumns = () => {
       faceCount,
       faceOffset,
       angleStep,
-    });
+      activeFaceIndex: state.activeFaceIndices[index] ?? 0,
+      baseBodyColor,
+      activeBodyColor,
+      baseOutlineColor,
+      activeOutlineColor,
+      activeTextColor,
+    };
+    applyColumnActiveState(columnInstance, state.activeFaceIndices[index] ?? 0);
+    state.columns.push(columnInstance);
   });
 
   state.rotations = buildRotationsArray(columns.length);
@@ -507,6 +645,7 @@ const updateFrame = () => {
 
 const handleTargets = (message: TargetsMessage) => {
   const { rotations, dragRotations, scale } = message;
+  const activeFaceIndices = message.activeFaceIndices;
   state.scaleTarget = scale;
   if (rotations.length !== state.rotations.length) {
     state.rotations = rotations.map((rotation) => ({ ...rotation }));
@@ -539,6 +678,15 @@ const handleTargets = (message: TargetsMessage) => {
         column.currentRotation.z
       );
       column.group.scale.setScalar(scale);
+    });
+  }
+  if (
+    Array.isArray(activeFaceIndices) &&
+    activeFaceIndices.length === state.columns.length
+  ) {
+    state.activeFaceIndices = activeFaceIndices.slice();
+    state.columns.forEach((column, index) => {
+      applyColumnActiveState(column, state.activeFaceIndices[index]);
     });
   }
   if (state.isVisible) {
@@ -638,6 +786,10 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
     }
     case "dispose": {
       dispose();
+      break;
+    }
+    case "capture": {
+      captureCanvas(message.requestId);
       break;
     }
     default:
