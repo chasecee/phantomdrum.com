@@ -31,46 +31,62 @@ export async function applyHalftoneFilter(
   });
   const tileSize = computeHalftoneTileSize(normalizedSpacing, shape);
 
-  const maskImage = await loadImage(maskPath);
+  const { image: maskImage, url: maskUrl } = await loadImage(maskPath);
 
-  const canvas = document.createElement("canvas");
-  canvas.width = imageData.width;
-  canvas.height = imageData.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    throw new Error("Failed to get canvas context");
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = imageData.width;
+    canvas.height = imageData.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("Failed to get canvas context");
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+
+    const pattern = ctx.createPattern(maskImage, "repeat");
+    if (!pattern) {
+      throw new Error("Failed to create pattern");
+    }
+
+    const maskCanvas = document.createElement("canvas");
+    maskCanvas.width = imageData.width;
+    maskCanvas.height = imageData.height;
+    const maskCtx = maskCanvas.getContext("2d");
+    if (!maskCtx) {
+      throw new Error("Failed to get mask canvas context");
+    }
+
+    maskCtx.fillStyle = pattern;
+    maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
+
+    ctx.globalCompositeOperation = "destination-in";
+    ctx.drawImage(maskCanvas, 0, 0);
+
+    return ctx.getImageData(0, 0, imageData.width, imageData.height);
+  } finally {
+    URL.revokeObjectURL(maskUrl);
   }
-
-  ctx.putImageData(imageData, 0, 0);
-
-  const pattern = ctx.createPattern(maskImage, "repeat");
-  if (!pattern) {
-    throw new Error("Failed to create pattern");
-  }
-
-  const maskCanvas = document.createElement("canvas");
-  maskCanvas.width = imageData.width;
-  maskCanvas.height = imageData.height;
-  const maskCtx = maskCanvas.getContext("2d");
-  if (!maskCtx) {
-    throw new Error("Failed to get mask canvas context");
-  }
-
-  maskCtx.fillStyle = pattern;
-  maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
-
-  ctx.globalCompositeOperation = "destination-in";
-  ctx.drawImage(maskCanvas, 0, 0);
-
-  return ctx.getImageData(0, 0, imageData.width, imageData.height);
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
+async function loadImage(
+  src: string
+): Promise<{ image: HTMLImageElement; url: string }> {
+  const response = await fetch(src, { cache: "force-cache" });
+  if (!response.ok) {
+    throw new Error(`Failed to load image: ${src}`);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
+    img.onload = () => {
+      resolve({ image: img, url });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error(`Failed to decode image: ${src}`));
+    };
+    img.src = url;
   });
 }

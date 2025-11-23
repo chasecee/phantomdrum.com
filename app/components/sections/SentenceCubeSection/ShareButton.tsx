@@ -44,6 +44,13 @@ export function ShareButton({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const resolvedResetLabel = resetLabel ?? "Reset";
 
+  const canUseClipboard = useCallback(() => {
+    if (typeof window === "undefined") return false;
+    if (!window.isSecureContext) return false;
+    if (typeof navigator === "undefined") return false;
+    return typeof navigator.clipboard?.writeText === "function";
+  }, []);
+
   const resolveBlob = useCallback(
     async (options: CompositeOptions = {}) => {
       const requestedFormat = options.outputFormat ?? "image/png";
@@ -131,15 +138,21 @@ export function ShareButton({
         }
       }
 
-      await navigator.clipboard.writeText(shareUrl);
-      setSuccessMessage("Link copied to clipboard!");
-      setTimeout(() => setSuccessMessage(null), 3000);
+      if (canUseClipboard()) {
+        await navigator.clipboard.writeText(shareUrl);
+        setSuccessMessage("Link copied to clipboard!");
+        setTimeout(() => setSuccessMessage(null), 3000);
+        return;
+      }
+      setSuccessMessage(
+        `Clipboard unavailable on this origin. Share link: ${shareUrl}`
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to share");
     } finally {
       setIsSharing(false);
     }
-  }, [resolveBlob, initialShare, sentence, sentenceWords]);
+  }, [resolveBlob, initialShare, sentence, sentenceWords, canUseClipboard]);
 
   const handleReset = useCallback(() => {
     if (isDownloading || isSharing) {

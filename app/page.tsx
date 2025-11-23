@@ -54,7 +54,6 @@ export default function Page() {
           <HeroLogoTextTwoColor />
         </div>
         <CubeSection />
-        <ScrollArrow />
         <ScheduleGate
           releaseDate={releaseSchedule.releaseDate}
           labels={releaseSchedule.labels}
