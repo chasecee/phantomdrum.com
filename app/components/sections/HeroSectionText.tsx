@@ -1,12 +1,9 @@
 import Image from "next/image";
 import styles from "./HeroSection.module.css";
-import HeroLogoText from "./HeroLogoText";
 export default function HeroSectionText() {
   return (
     <div className="relative aspect-1/2 w-full">
-      <div className="relative top-6 z-10 mix-blend-difference-off px-6">
-        <HeroLogoText />
-      </div>
+      <div className="relative top-6 z-10 mix-blend-difference-off px-6"></div>
 
       <div className="absolute inset-0 z-0 overflow-hidden">
         <div

@@ -64,12 +64,12 @@ export async function getSharesIndex(
   }
 
   try {
-    const shareIds = await redis.zrange<string>(
+    const shareIds = await redis.zrange(
       SHARES_INDEX_KEY,
       -limit,
       -1,
       { rev: true }
-    );
+    ) as string[];
 
     if (shareIds.length === 0) {
       return [];

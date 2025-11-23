@@ -1,4 +1,3 @@
-import HeroLogoText from "../components/sections/HeroLogoText";
 import { HalftoneScrollSection } from "./HalftoneScrollSection";
 import type { HalftoneParamsPreset } from "./halftoneTypes";
 import ArtistBio from "../components/content/ArtistBio";
@@ -77,11 +76,6 @@ export default function HalftoneWebGLDemoPage() {
             maskRepeat: "no-repeat",
           }}
         >
-          <div className="px-6 sticky top-6  z-1 mix-blend-plus-lighter">
-            <HalftoneEffect dotRadius={2} dotSpacing={4}>
-              <HeroLogoText />
-            </HalftoneEffect>
-          </div>
           <HalftoneScrollSection
             config={{
               baseLayerIndex: 1,
