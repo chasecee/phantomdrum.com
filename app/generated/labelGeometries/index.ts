@@ -1,11 +1,10 @@
 import * as pure from "./pure";
-import * as itSBarely from "./it-s-barely";
 import * as iCanTBelieveItSNot from "./i-can-t-believe-it-s-not";
 import * as thisAlbumIs from "./this-album-is";
 import * as aShiningExampleOf from "./a-shining-example-of";
+import * as truly from "./truly";
 import * as mega from "./mega";
 import * as huge from "./huge";
-import * as fat from "./fat";
 import * as _super from "./super";
 import * as wildly from "./wildly";
 import * as overTheTop from "./over-the-top";
@@ -17,12 +16,12 @@ import * as tender from "./tender";
 import * as melty from "./melty";
 import * as tangy from "./tangy";
 import * as sampleHeavy from "./sample-heavy";
-import * as funkDriven from "./funk-driven";
 import * as drumRidden from "./drum-ridden";
 import * as loopy from "./loopy";
 import * as synthLed from "./synth-led";
 import * as neverEnding from "./never-ending";
 import * as barelyAudible from "./barely-audible";
+import * as hyped from "./hyped";
 import * as feelsLikeHome from "./feels-like-home";
 import * as highTech from "./high-tech";
 import * as enyaDriven from "./enya-driven";
@@ -43,13 +42,12 @@ import * as bigOlBeats from "./big-ol-beats";
 
 export const labelGeometries = {
   "pure": { positions: pure.positions, uvs: pure.uvs, indices: pure.indices, width: pure.width, height: pure.height },
-  "it-s-barely": { positions: itSBarely.positions, uvs: itSBarely.uvs, indices: itSBarely.indices, width: itSBarely.width, height: itSBarely.height },
   "i-can-t-believe-it-s-not": { positions: iCanTBelieveItSNot.positions, uvs: iCanTBelieveItSNot.uvs, indices: iCanTBelieveItSNot.indices, width: iCanTBelieveItSNot.width, height: iCanTBelieveItSNot.height },
   "this-album-is": { positions: thisAlbumIs.positions, uvs: thisAlbumIs.uvs, indices: thisAlbumIs.indices, width: thisAlbumIs.width, height: thisAlbumIs.height },
   "a-shining-example-of": { positions: aShiningExampleOf.positions, uvs: aShiningExampleOf.uvs, indices: aShiningExampleOf.indices, width: aShiningExampleOf.width, height: aShiningExampleOf.height },
+  "truly": { positions: truly.positions, uvs: truly.uvs, indices: truly.indices, width: truly.width, height: truly.height },
   "mega": { positions: mega.positions, uvs: mega.uvs, indices: mega.indices, width: mega.width, height: mega.height },
   "huge": { positions: huge.positions, uvs: huge.uvs, indices: huge.indices, width: huge.width, height: huge.height },
-  "fat": { positions: fat.positions, uvs: fat.uvs, indices: fat.indices, width: fat.width, height: fat.height },
   "super": { positions: _super.positions, uvs: _super.uvs, indices: _super.indices, width: _super.width, height: _super.height },
   "wildly": { positions: wildly.positions, uvs: wildly.uvs, indices: wildly.indices, width: wildly.width, height: wildly.height },
   "over-the-top": { positions: overTheTop.positions, uvs: overTheTop.uvs, indices: overTheTop.indices, width: overTheTop.width, height: overTheTop.height },
@@ -61,12 +59,12 @@ export const labelGeometries = {
   "melty": { positions: melty.positions, uvs: melty.uvs, indices: melty.indices, width: melty.width, height: melty.height },
   "tangy": { positions: tangy.positions, uvs: tangy.uvs, indices: tangy.indices, width: tangy.width, height: tangy.height },
   "sample-heavy": { positions: sampleHeavy.positions, uvs: sampleHeavy.uvs, indices: sampleHeavy.indices, width: sampleHeavy.width, height: sampleHeavy.height },
-  "funk-driven": { positions: funkDriven.positions, uvs: funkDriven.uvs, indices: funkDriven.indices, width: funkDriven.width, height: funkDriven.height },
   "drum-ridden": { positions: drumRidden.positions, uvs: drumRidden.uvs, indices: drumRidden.indices, width: drumRidden.width, height: drumRidden.height },
   "loopy": { positions: loopy.positions, uvs: loopy.uvs, indices: loopy.indices, width: loopy.width, height: loopy.height },
   "synth-led": { positions: synthLed.positions, uvs: synthLed.uvs, indices: synthLed.indices, width: synthLed.width, height: synthLed.height },
   "never-ending": { positions: neverEnding.positions, uvs: neverEnding.uvs, indices: neverEnding.indices, width: neverEnding.width, height: neverEnding.height },
   "barely-audible": { positions: barelyAudible.positions, uvs: barelyAudible.uvs, indices: barelyAudible.indices, width: barelyAudible.width, height: barelyAudible.height },
+  "hyped": { positions: hyped.positions, uvs: hyped.uvs, indices: hyped.indices, width: hyped.width, height: hyped.height },
   "feels-like-home": { positions: feelsLikeHome.positions, uvs: feelsLikeHome.uvs, indices: feelsLikeHome.indices, width: feelsLikeHome.width, height: feelsLikeHome.height },
   "high-tech": { positions: highTech.positions, uvs: highTech.uvs, indices: highTech.indices, width: highTech.width, height: highTech.height },
   "enya-driven": { positions: enyaDriven.positions, uvs: enyaDriven.uvs, indices: enyaDriven.indices, width: enyaDriven.width, height: enyaDriven.height },

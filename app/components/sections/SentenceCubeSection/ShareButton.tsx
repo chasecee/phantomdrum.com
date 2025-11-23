@@ -68,7 +68,7 @@ export function ShareButton({
         imageData,
         {
           dotRadius: 2,
-          dotSpacing: 4,
+          dotSpacing: 2,
           shape: "octagon",
         },
         options
@@ -118,11 +118,6 @@ export function ShareButton({
             title: sentence || "Sentence Cube",
             text: `${sentence}`,
             url: shareUrl,
-            files: [
-              new File([blob], `sentence-cube-${Date.now()}.png`, {
-                type: "image/png",
-              }),
-            ],
           };
 
           if (navigator.canShare(shareData)) {

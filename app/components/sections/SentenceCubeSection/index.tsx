@@ -39,8 +39,8 @@ export default function SentenceCubeSection() {
   const [lists] = useState<string[][]>(
     () => defaultPack?.lists.map((list) => [...list]) ?? []
   );
-  const [cameraFov, setCameraFov] = useState(23);
-  const [cameraZoom, setCameraZoom] = useState(26);
+  const [cameraFov, setCameraFov] = useState(40);
+  const [cameraZoom, setCameraZoom] = useState(14);
   const [sentence, setSentence] = useState("");
   const [sentenceWords, setSentenceWords] = useState<string[]>([]);
   const sceneRef = useRef<AnimatedSentenceCubeHandle>(null);
@@ -330,7 +330,7 @@ export default function SentenceCubeSection() {
         <div className="mx-auto w-full max-w-5xl aspect-3/2 relative">
           <HalftoneEffect
             dotRadius={{ base: 1, md: 2 }}
-            dotSpacing={{ base: 2, md: 4 }}
+            dotSpacing={{ base: 1, md: 4 }}
             shape="octagon"
             className="CUBE_SECTION absolute inset-0"
           >

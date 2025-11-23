@@ -56,7 +56,7 @@ export default function HeroLogoText() {
 
   return (
     <div
-      className="mt-[40svh] aspect-2/1 z-10 w-full -translate-y-[20%] relative"
+      className="mt-[60vw] aspect-2/1 z-10 w-full -translate-y-[20%] relative"
       style={
         {
           containerType: "size",
@@ -79,19 +79,11 @@ export default function HeroLogoText() {
         shape="octagon"
         className="HERO_BACKGROUND pointer-events-none"
       >
-        <div
-          className="relative pb-[25cqh] h-[150cqh] text-[10cqw] tracking-[0.05em] scale-[.9] -skew-y-[.5deg] -skew-x-[.5deg] origin-[50%_50%] text-center  leading-[0.8] font-bold"
-          // style={{
-          //   maskImage: "linear-gradient(to top, black 98%, transparent 100%)",
-          //   maskSize: "100% 100%",
-          //   maskPosition: "50% 0%",
-          //   maskRepeat: "repeat",
-          // }}
-        >
+        <div className="relative pb-[25cqh] h-[150cqh] text-[10cqw] tracking-[0.05em] scale-[.9] -skew-y-[.5deg] -skew-x-[.5deg] origin-[50%_50%] text-center  leading-[0.8] font-bold">
           {LAYERS.map((layer) => (
             <div
               key={layer.id}
-              className="sticky bottom-[60svh] h-(--layer-height) w-[90%] mx-auto whitespace-nowrap "
+              className="sticky bottom-[91vw] h-(--layer-height) w-[90%] mx-auto whitespace-nowrap "
               style={
                 {
                   color: `var(${layer.colorVar})`,

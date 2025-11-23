@@ -13,7 +13,7 @@ export default function Quote({ text, logo, className }: QuoteProps) {
         className || ""
       }`}
     >
-      <blockquote className="text-[8cqw] flex text-center flex-col items-center justify-center max-w-[80cqw] leading-[1.1] text-balance tracking-tight whitespace-pre-line mb-4 font-serif font-bold italic">
+      <blockquote className="text-[6cqw] flex text-center flex-col items-center justify-center max-w-[80cqw] leading-[1.1] text-balance tracking-tight whitespace-pre-line mb-4 font-serif font-bold italic">
         &quot;{text}&quot;
       </blockquote>
       <div className="max-w-[25cqw] opacity-50">{logo}</div>

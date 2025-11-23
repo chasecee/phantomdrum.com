@@ -12,9 +12,7 @@ import ListenSection from "./components/content/ListenSection";
 import PreSaveSection from "./components/content/PreSaveSection";
 import ScheduleGate from "./components/scheduling/ScheduleGate";
 import ReleaseCountdownCard from "./components/scheduling/ReleaseCountdownCard";
-import ScrollArrow from "./components/sections/ScrollArrow";
 import { releaseSchedule } from "../config/releaseSchedule";
-const HERO_SCALE_MULTIPLIER = 0.18;
 
 export const dynamic = "force-dynamic";
 
@@ -35,15 +33,7 @@ export default function Page() {
         <div
           style={
             {
-              maskSize: "100% 100%",
-              maskPosition: "bottom",
-              maskRepeat: "no-repeat",
               containerType: "inline-size",
-              "--aspect-width": "1042",
-              "--aspect-height": "600",
-              "--scale-multiplier": `${HERO_SCALE_MULTIPLIER}`,
-              "--aspect-ratio":
-                "calc(var(--aspect-width)/var(--aspect-height))",
             } as CSSProperties
           }
         >

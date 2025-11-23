@@ -9,15 +9,12 @@ export const sentencePacks = [
     "lists": [
       [
         "PURE",
-        "IT'S<br/>BARELY",
         "I CAN'T<br/>BELIEVE<br/>IT'S NOT",
         "THIS<br/>ALBUM<br/>IS",
-        "A<br/>SHINING<br/>EXAMPLE<br/>OF"
-      ],
-      [
+        "A<br/>SHINING<br/>EXAMPLE<br/>OF",
+        "TRULY",
         "MEGA",
         "HUGE",
-        "FAT",
         "SUPER",
         "WILDLY",
         "OVER<br/>THE<br/>TOP"
@@ -33,12 +30,12 @@ export const sentencePacks = [
       ],
       [
         "SAMPLE<br/>HEAVY",
-        "FUNK<br/>DRIVEN",
         "DRUM<br/>RIDDEN",
         "LOOPY",
         "SYNTH<br/>LED",
         "NEVER<br/>ENDING",
         "BARELY<br/>AUDIBLE",
+        "HYPED",
         "FEELS<br/>LIKE<br/>HOME",
         "HIGH<br/>TECH",
         "ENYA<br/>DRIVEN",

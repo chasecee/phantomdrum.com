@@ -5,7 +5,7 @@ const NOISE_BG_MAX_WIDTH = 1128;
 
 const DEFAULT_HALFTONE_PARAMS = {
   dotRadius: 2,
-  dotSpacing: 4,
+  dotSpacing: 2,
   shape: "octagon" as const,
 };
 

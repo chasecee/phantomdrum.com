@@ -12,7 +12,7 @@ import {
 import type { Rotation } from "./types";
 import { normalizeSentenceForSharing } from "@/app/lib/sentenceUtils";
 
-const DEFAULT_COLORS = ["#A85A90", "#C82A2A", "#C84A2D", "#E67E22", "#F1C40F"];
+const DEFAULT_COLORS = ["#A85A90", "#C82A2A", "#C84A2D", "#E67E22"];
 const DEFAULT_TEXT_COLOR = "#C4A070";
 const TOUCH_DRAG_THRESHOLD_PX = 18;
 const MIN_LIST_LENGTH = 3;
@@ -678,7 +678,6 @@ export const AnimatedSentenceCubeScene = forwardRef<
         resetTouchTracking();
         return;
       }
-      event.preventDefault();
       activeTouchIdRef.current = touch.identifier;
       pendingTouchDragRef.current = {
         cubeIndex,
@@ -706,8 +705,10 @@ export const AnimatedSentenceCubeScene = forwardRef<
         } else if (Math.abs(deltaX) > Math.abs(deltaY)) {
           resetTouchTracking();
           return;
-        } else {
+        } else if (Math.abs(deltaY) > 0) {
           event.preventDefault();
+          return;
+        } else {
           return;
         }
       }
@@ -720,7 +721,9 @@ export const AnimatedSentenceCubeScene = forwardRef<
       const ended = findTouch(event.changedTouches, activeTouchIdRef.current);
       if (!ended) return;
       resetTouchTracking();
-      endDrag();
+      if (isDraggingRef.current) {
+        endDrag();
+      }
     };
 
     const handleTouchCancel = (event: TouchEvent) => {
@@ -730,7 +733,9 @@ export const AnimatedSentenceCubeScene = forwardRef<
       );
       if (!cancelled) return;
       resetTouchTracking();
-      endDrag();
+      if (isDraggingRef.current) {
+        endDrag();
+      }
     };
 
     container.style.cursor = "grab";

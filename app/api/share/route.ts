@@ -2,6 +2,7 @@ import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeSentenceForSharing } from "@/app/lib/sentenceUtils";
 import { loadShareMetadata } from "@/app/lib/shareMetadata";
+import { addShareToIndex } from "@/app/lib/shareIndex";
 
 function slugify(text: string): string {
   return text
@@ -91,12 +92,15 @@ export async function POST(request: NextRequest) {
         type: "application/json",
       });
       try {
-        await put(`shares/meta/${shareId}.json`, metadataBlob, {
-          access: "public",
-          addRandomSuffix: false,
-          contentType: "application/json",
-          allowOverwrite: true,
-        });
+        await Promise.all([
+          put(`shares/meta/${shareId}.json`, metadataBlob, {
+            access: "public",
+            addRandomSuffix: false,
+            contentType: "application/json",
+            allowOverwrite: true,
+          }),
+          addShareToIndex(metadataPayload),
+        ]);
       } catch (metadataError) {
         console.error("Failed to write share metadata:", metadataError);
       }

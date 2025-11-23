@@ -15,11 +15,11 @@ export default function SmallQuote({
 }: SmallQuoteProps) {
   return (
     <div
-      className={`flex items-center justify-between gap-2 flex-col text-center ${
+      className={`flex items-center justify-between gap-1 flex-col text-center ${
         className || ""
       }`}
     >
-      <p className="m-0 flex-1 italic text-[4cqw] font-serif text-pretty font-bold text-white">
+      <p className="m-0 flex-1 italic text-[3.5cqw] font-serif text-pretty font-bold text-white">
         &quot;{text}&quot;
       </p>
       {(metaText || metaLink) && (
