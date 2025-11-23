@@ -153,18 +153,10 @@ export default function LatestReviews({
     <section className="text-white px-6 py-[10cqw]">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-8">
         <div className="text-center space-y-2">
-          <p className="text-[3cqw] uppercase">Latest Reviews</p>
+          <p className="text-[clamp(1rem,3cqw,3rem)] uppercase text-white">
+            Latest Reviews
+          </p>
         </div>
-        {isLoading && (
-          <p className="text-center text-xs uppercase tracking-[0.3em] text-white/50">
-            Loading reviews...
-          </p>
-        )}
-        {error && (
-          <p className="sentence-cube-message sentence-cube-message--error">
-            {error}
-          </p>
-        )}
 
         <div className="grid w-full grid-cols-1 gap-10">
           {reviewItems.length ? (
@@ -173,6 +165,11 @@ export default function LatestReviews({
             <SmallQuote text="Silence is golden." metaText="Latest review" />
           )}
         </div>
+        {error && (
+          <p className="sentence-cube-message sentence-cube-message--error">
+            {error}
+          </p>
+        )}
         {hasMore && (
           <button
             type="button"

@@ -323,7 +323,9 @@ export default function SentenceCubeSection() {
     <section ref={sectionRef} className="relative w-full px-6 text-white">
       <div className="mx-auto max-w-(--container-width) space-y-10">
         <div className="text-center">
-          <p className="text-[3cqw] uppercase">LEAVE A REVIEW</p>
+          <p className="text-[clamp(1rem,3cqw,3rem)] uppercase text-white">
+            LEAVE A REVIEW
+          </p>
         </div>
         <div className="mx-auto w-full max-w-5xl aspect-3/2 relative">
           <HalftoneEffect

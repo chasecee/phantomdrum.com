@@ -39,7 +39,7 @@ export async function compositeWithNoiseBackground(
   const halftone = halftoneParams || DEFAULT_HALFTONE_PARAMS;
   const halftonedImageData = await applyHalftoneFilter(imageData, halftone);
 
-  const { image: noiseImage, url: noiseUrl } = await loadImage(NOISE_BG_URL);
+  const noiseImage = await loadImage(NOISE_BG_URL);
   const bgWidth = Math.min(width, NOISE_BG_MAX_WIDTH);
   const bgHeight = (noiseImage.height / noiseImage.width) * bgWidth;
   const bgX = (width - bgWidth) / 2;
@@ -75,43 +75,34 @@ export async function compositeWithNoiseBackground(
     format === "image/jpeg"
       ? Math.min(Math.max(options.quality ?? 0.9, 0.1), 1.0)
       : undefined;
-  try {
-    return await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error("Failed to create blob"));
-          }
-        },
-        format,
-        quality
-      );
-    });
-  } finally {
-    URL.revokeObjectURL(noiseUrl);
-  }
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error("Failed to create blob"));
+        }
+      },
+      format,
+      quality
+    );
+  });
 }
 
-async function loadImage(
-  src: string
-): Promise<{ image: HTMLImageElement; url: string }> {
-  const response = await fetch(src, { cache: "force-cache" });
-  if (!response.ok) {
-    throw new Error(`Failed to load image: ${src}`);
-  }
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
+async function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      resolve({ image: img, url });
+      if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+        resolve(img);
+      } else {
+        reject(new Error(`Image failed to decode: ${src}`));
+      }
     };
     img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error(`Failed to decode image: ${src}`));
+      reject(new Error(`Failed to load image: ${src}`));
     };
-    img.src = url;
+    img.src = src;
   });
 }
