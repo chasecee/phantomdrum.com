@@ -324,7 +324,7 @@ body {
 
 @layer utilities {
   .sentence-cube-btn {
-    @apply cursor-pointer uppercase w-[40vw] text-[2cqw]  text-white border-[.5cqw] tracking-[0.2em] border-white/20 rounded transition-colors duration-300 px-6 py-3;
+    @apply cursor-pointer uppercase w-full md:w-[40vw] text-[clamp(1rem,2cqw,2rem)] whitespace-nowrap text-white border-[.5cqw] tracking-[0.2em] border-white/20 rounded transition-colors duration-300 px-6 py-3;
     background: rgba(255, 255, 255, 0.05);
   }
   .sentence-cube-btn--primary {
@@ -338,13 +338,13 @@ body {
     background: rgba(185, 28, 28, 0.15);
   }
   .sentence-cube-message {
-    @apply text-sm text-center uppercase tracking-[0.3em];
+    @apply text-[clamp(0.8rem,2cqw,2rem)] -skew-y-1 text-center uppercase tracking-[0.3em] text-black py-2 px-6;
   }
   .sentence-cube-message--error {
-    @apply text-red-400;
+    @apply bg-red-400;
   }
   .sentence-cube-message--success {
-    @apply text-green-400;
+    @apply bg-green-400;
   }
 }
 :root {
