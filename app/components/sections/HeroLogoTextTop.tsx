@@ -56,7 +56,7 @@ export default function HeroLogoText() {
 
   return (
     <div
-      className="mt-[80cqw] aspect-2/1 -translate-y-[10cqw] z-10 w-full relative"
+      className="mt-[80cqw] lg:mt-[50svh] -translate-y-[10cqw] aspect-2/1 z-10 w-full relative"
       style={
         {
           containerType: "size",
@@ -83,7 +83,7 @@ export default function HeroLogoText() {
           {LAYERS.map((layer) => (
             <div
               key={layer.id}
-              className="sticky bottom-[91vw] h-(--layer-height) w-[90%] mx-auto whitespace-nowrap "
+              className="sticky bottom-[91vw] lg:bottom-[60svh] h-(--layer-height) w-[90%] mx-auto whitespace-nowrap "
               style={
                 {
                   color: `var(${layer.colorVar})`,

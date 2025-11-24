@@ -310,13 +310,13 @@ body {
     z-index: 0;
     @apply block w-full uppercase scale-100 font-mono backface-hidden transition-transform duration-300;
     font-weight: 900;
-    font-size: 8vw;
+    font-size: clamp(1rem, 8cqw, 4rem);
   }
   .button-background {
     position: absolute;
     inset: 0;
-    border: 2vw solid currentColor;
-    border-radius: 10vw;
+    border: 2cqw solid currentColor;
+    border-radius: 10cqw;
     @apply transition-all duration-300;
     z-index: 0;
   }

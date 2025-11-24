@@ -7,7 +7,7 @@ import LatestReviews from "./components/content/LatestReviews";
 import SentenceCubeSection from "./components/sections/SentenceCubeSection";
 import HeroLogoTextTwoColor from "./components/sections/HeroLogoTextBottom";
 import HeroMeteors from "./components/sections/HeroMeteors";
-import HeroLogoTextTwoColorReversed from "./components/sections/HeroLogoTextTwoColorReversed";
+import HeroLogoTextTwoColorReversed from "./components/sections/HeroLogoTextTop";
 import ListenSection from "./components/content/ListenSection";
 import PreSaveSection from "./components/content/PreSaveSection";
 import ScheduleGate from "./components/scheduling/ScheduleGate";
@@ -29,7 +29,7 @@ export default function Page() {
 
   return (
     <div className="w-full">
-      <div className="relative max-w-[1500px] mx-auto bg-linear-to-b from-slate-950/60 via-amber-900/20 to-transparent">
+      <div className="relative max-w-[1200px] mx-auto lg:bg-transparentbg-linear-to-b from-slate-950/60 via-amber-900/20 to-transparent">
         <div
           style={
             {
