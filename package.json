@@ -1,7 +1,6 @@
 {
   "name": "phantomdrum.com",
   "version": "0.1.0",
-  "private": true,
   "scripts": {
     "generate:halftone": "node ./scripts/generate-halftone-masks.mjs",
     "generate:halftone-mask": "node ./scripts/generate-warpped-mask.mjs",
