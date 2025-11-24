@@ -300,34 +300,36 @@ export const useHalftoneScene = (
   const updateCanvasSize = useCallback(() => {
     const node = contentRef.current;
     if (!node) return;
-    const measuredWidth = Math.max(1, Math.round(node.offsetWidth));
-    if (!measuredWidth) return;
-    const measuredHeight = Math.max(
-      1,
-      Math.round(measuredWidth * normalized.aspectRatio)
-    );
-    const paddingPx = Math.round(measuredWidth * normalized.padding);
-    const innerWidth = Math.max(1, measuredWidth - paddingPx * 2);
-    const innerHeight = Math.max(1, measuredHeight - paddingPx * 2);
+    requestAnimationFrame(() => {
+      const measuredWidth = Math.max(1, Math.round(node.offsetWidth));
+      if (!measuredWidth) return;
+      const measuredHeight = Math.max(
+        1,
+        Math.round(measuredWidth * normalized.aspectRatio)
+      );
+      const paddingPx = Math.round(measuredWidth * normalized.padding);
+      const innerWidth = Math.max(1, measuredWidth - paddingPx * 2);
+      const innerHeight = Math.max(1, measuredHeight - paddingPx * 2);
 
-    setCanvasDimensions((prev) => {
-      if (prev.width === measuredWidth && prev.height === measuredHeight) {
-        return prev;
-      }
-      return {
-        width: measuredWidth,
-        height: measuredHeight,
-      };
-    });
+      setCanvasDimensions((prev) => {
+        if (prev.width === measuredWidth && prev.height === measuredHeight) {
+          return prev;
+        }
+        return {
+          width: measuredWidth,
+          height: measuredHeight,
+        };
+      });
 
-    setContentDimensions((prev) => {
-      if (prev.width === innerWidth && prev.height === innerHeight) {
-        return prev;
-      }
-      return {
-        width: innerWidth,
-        height: innerHeight,
-      };
+      setContentDimensions((prev) => {
+        if (prev.width === innerWidth && prev.height === innerHeight) {
+          return prev;
+        }
+        return {
+          width: innerWidth,
+          height: innerHeight,
+        };
+      });
     });
   }, [normalized.aspectRatio, normalized.padding]);
 

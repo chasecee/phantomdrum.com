@@ -104,6 +104,7 @@ export function AnimatedMultiCubeScene({
   const dragStartRotationsRef = useRef<number[]>([]);
   const draggedCubeIndexRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
+  const dragContainerWidthRef = useRef<number>(1);
   const pendingTouchDragRef = useRef<{
     cubeIndex: number;
     startX: number;
@@ -597,13 +598,14 @@ export function AnimatedMultiCubeScene({
       }
       dragStartRotationsRef.current = dragRotationsRef.current.slice();
       container.style.cursor = "grabbing";
+      dragContainerWidthRef.current = container.offsetWidth || 1;
     };
 
     const updateDrag = (clientX: number) => {
       if (!isDraggingRef.current || draggedCubeIndexRef.current === null) {
         return;
       }
-      const width = container.offsetWidth || 1;
+      const width = dragContainerWidthRef.current || 1;
       const delta = ((clientX - dragStartXRef.current) / width) * Math.PI * 2;
       const cubeIndex = draggedCubeIndexRef.current;
       const startRotation = dragStartRotationsRef.current[cubeIndex] ?? 0;
