@@ -10,17 +10,9 @@ import HeroLogoTextTwoColor from "./components/sections/HeroLogoTextBottom";
 import HeroMeteors from "./components/sections/HeroMeteors";
 import HeroLogoTextTwoColorReversed from "./components/sections/HeroLogoTextTop";
 import ListenSection from "./components/content/ListenSection";
-import PreSaveSection from "./components/content/PreSaveSection";
-import ScheduleGate from "./components/scheduling/ScheduleGate";
 import ReleaseCountdownCard from "./components/scheduling/ReleaseCountdownCard";
-import { releaseSchedule } from "../config/releaseSchedule";
 
 export default function Page() {
-  const releaseDateIso = releaseSchedule.releaseDate.toISOString();
-  const releaseLabels = {
-    before: releaseSchedule.labels.before ?? "Pre-release",
-    after: releaseSchedule.labels.after ?? "Post-release",
-  };
   const releaseArtwork = {
     src: "/img/optimized/album-art.webp",
     alt: "Phantom Drum Initialize cover art",
@@ -43,35 +35,15 @@ export default function Page() {
           <HeroLogoTextTwoColor />
         </div>
         <CubeSection />
-        <ScheduleGate
-          releaseDate={releaseSchedule.releaseDate}
-          labels={releaseSchedule.labels}
-          before={
-            <div className="space-y-10">
-              <ReleaseCountdownCard
-                releaseDateIso={releaseDateIso}
-                label={releaseLabels.before}
-                metaLabel="Album"
-                title="INITIALIZE"
-                cover={releaseArtwork}
-              />
-              <PreSaveSection />
-            </div>
-          }
-          after={
-            <div className="space-y-10">
-              <ReleaseCountdownCard
-                releaseDateIso={releaseDateIso}
-                label={releaseLabels.after}
-                metaLabel="Album"
-                title="INITIALIZE"
-                cover={releaseArtwork}
-                variant="released"
-              />
-              <ListenSection />
-            </div>
-          }
-        />
+        <div className="space-y-10">
+          <ReleaseCountdownCard
+            label="LIVE ON ALL PLATFORMS"
+            metaLabel="Album"
+            title="INITIALIZE"
+            cover={releaseArtwork}
+          />
+          <ListenSection />
+        </div>
 
         <QuotesSection />
 
