@@ -20,7 +20,7 @@ const brygada1918 = Brygada_1918({
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.phantomdrum.com";
-const ogImageUrl = `${BASE_URL}/img/album-art.jpg`;
+const ogImageUrl = `${BASE_URL}/img/og-image.jpg`;
 
 export const metadata: Metadata = {
   title: "phantom drum",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
       {
         url: ogImageUrl,
         width: 1200,
-        height: 1200,
+        height: 630,
         alt: "Phantom Drum INITIALIZE cover art",
       },
     ],

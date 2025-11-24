@@ -4,6 +4,7 @@
   "scripts": {
     "generate:halftone": "node ./scripts/generate-halftone-masks.mjs",
     "generate:halftone-mask": "node ./scripts/generate-warpped-mask.mjs",
+    "generate:og-image": "node ./scripts/generate-og-image.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
