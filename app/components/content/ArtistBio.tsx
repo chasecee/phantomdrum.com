@@ -1,6 +1,6 @@
 export default function ArtistBio() {
   return (
-    <section className="relative mx-auto w-full  px-8  pb-[50vw]">
+    <section className="relative mx-auto w-full  px-8  pt-[10vw] pb-[20vw]">
       <div className="relative text-[clamp(1.2rem,5cqi,2.3rem)] max-w-[42ch]  mx-auto [&>p]:leading-[1.45] [&>p]:text-pretty font-serif space-y-12">
         <p>
           <strong>Phantom Drum</strong> is built on moody synth layers, chopped
