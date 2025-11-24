@@ -12,8 +12,8 @@ export default function ArtistBio() {
           the line between chaos and comfort.
         </p>
         <p>
-          How many layers can a dang beat have? INITIALIZE seeks to answer this
-          question through samples, synthesizers and drum machines.
+          How many layers can a dang beat have? <em>INITIALIZE</em> seeks to
+          answer this question through samples, synthesizers and drum machines.
         </p>
         <p>
           Ultimately, this work is a study in density. Phantom Drum blends the
