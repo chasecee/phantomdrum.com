@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import { useCallback, useState } from "react";
 import type { AnimatedSentenceCubeHandle } from "../../content/three/AnimatedSentenceCubeScene";
 import {
@@ -62,8 +60,8 @@ export function ShareButton({
       return compositeWithNoiseBackground(
         imageData,
         {
-          dotRadius: 2,
-          dotSpacing: 2,
+          dotRadius: 1.5,
+          dotSpacing: 4,
           shape: "octagon",
         },
         options

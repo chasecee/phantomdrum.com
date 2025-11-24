@@ -31,12 +31,15 @@ export const metadata: Metadata = {
     description:
       "Phantom Drum is built on moody synth layers, chopped vocals, organic funk patterns and dusty records. The debut INITIALIZE is an instrumental deep-dive into mood and texture.",
     url: BASE_URL,
+    siteName: "Phantom Drum",
     images: [
       {
         url: ogImageUrl,
         width: 1200,
         height: 630,
         alt: "Phantom Drum INITIALIZE cover art",
+        type: "image/jpeg",
+        secureUrl: ogImageUrl,
       },
     ],
     type: "website",
@@ -46,7 +49,12 @@ export const metadata: Metadata = {
     title: "Phantom Drum - Debut Album Out Now",
     description:
       "Phantom Drum is built on moody synth layers, chopped vocals, organic funk patterns and dusty records. The debut INITIALIZE is an instrumental deep-dive into mood and texture.",
-    images: [ogImageUrl],
+    images: [
+      {
+        url: ogImageUrl,
+        alt: "Phantom Drum INITIALIZE cover art",
+      },
+    ],
   },
 };
 

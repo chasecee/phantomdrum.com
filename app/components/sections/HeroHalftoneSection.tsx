@@ -1,18 +1,10 @@
-"use client";
-
-import { useRef } from "react";
 import { HalftoneScene } from "../halftone/HalftoneScene";
 import { experienceHalftoneSceneConfig } from "../halftone/sceneConfig";
 import HalftoneEffect from "../content/HalftoneEffect";
 
 export default function HeroHalftoneSection() {
-  const anchorRef = useRef<HTMLDivElement>(null);
-
   return (
-    <div
-      className="relative h-[100cqw] lg:h-[100svh] max-w-[1080px] mx-auto z-2 fade-in-slow"
-      ref={anchorRef}
-    >
+    <div className="relative h-[100cqw] lg:h-svh max-w-[1080px] mx-auto z-2 fade-in-slow">
       <HalftoneEffect
         dotRadius={1.5}
         dotSpacing={5}

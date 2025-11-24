@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { Suspense } from "react";
 import CubeSection from "./components/sections/CubeSection";
 import HeroHalftoneSection from "./components/sections/HeroHalftoneSection";
 import ArtistBio from "./components/content/ArtistBio";
@@ -13,8 +14,6 @@ import PreSaveSection from "./components/content/PreSaveSection";
 import ScheduleGate from "./components/scheduling/ScheduleGate";
 import ReleaseCountdownCard from "./components/scheduling/ReleaseCountdownCard";
 import { releaseSchedule } from "../config/releaseSchedule";
-
-export const dynamic = "force-dynamic";
 
 export default function Page() {
   const releaseDateIso = releaseSchedule.releaseDate.toISOString();
@@ -76,7 +75,9 @@ export default function Page() {
 
         <QuotesSection />
 
-        <SentenceCubeSection />
+        <Suspense fallback={null}>
+          <SentenceCubeSection />
+        </Suspense>
         <LatestReviews />
         <ArtistBio />
         <ListenSection />

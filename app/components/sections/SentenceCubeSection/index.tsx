@@ -188,8 +188,8 @@ export default function SentenceCubeSection() {
       const blob = await compositeWithNoiseBackground(
         imageData,
         {
-          dotRadius: 2,
-          dotSpacing: 4,
+          dotRadius: 1.5,
+          dotSpacing: 2.5,
           shape: "octagon",
         },
         {
