@@ -18,6 +18,10 @@ const brygada1918 = Brygada_1918({
   display: "swap",
 });
 
+const BASE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.phantomdrum.com";
+const ogImageUrl = `${BASE_URL}/img/album-art.jpg`;
+
 export const metadata: Metadata = {
   title: "phantom drum",
   description:
@@ -26,9 +30,10 @@ export const metadata: Metadata = {
     title: "Phantom Drum - Debut Album Out Now",
     description:
       "Phantom Drum is built on moody synth layers, chopped vocals, organic funk patterns and dusty records. The debut INITIALIZE is an instrumental deep-dive into mood and texture.",
+    url: BASE_URL,
     images: [
       {
-        url: "/img/album-art.jpg",
+        url: ogImageUrl,
         width: 1200,
         height: 1200,
         alt: "Phantom Drum INITIALIZE cover art",
@@ -38,10 +43,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "phantom drum",
+    title: "Phantom Drum - Debut Album Out Now",
     description:
       "Phantom Drum is built on moody synth layers, chopped vocals, organic funk patterns and dusty records. The debut INITIALIZE is an instrumental deep-dive into mood and texture.",
-    images: ["/img/album-art.jpg"],
+    images: [ogImageUrl],
   },
 };
 
