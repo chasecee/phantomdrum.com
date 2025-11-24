@@ -387,8 +387,6 @@ export default function SentenceCubeSection() {
                 sentence={sentence}
                 sentenceWords={sentenceWords}
                 initialShare={submittedShare ?? undefined}
-                onReset={resetSubmission}
-                resetLabel="Reset"
               />
             </div>
           )}

@@ -26,8 +26,6 @@ interface ShareButtonProps {
     imageUrl: string;
     words?: string[];
   };
-  onReset?: () => void;
-  resetLabel?: string;
 }
 
 export function ShareButton({
@@ -35,14 +33,11 @@ export function ShareButton({
   sentence,
   sentenceWords,
   initialShare,
-  onReset,
-  resetLabel,
 }: ShareButtonProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const resolvedResetLabel = resetLabel ?? "Reset";
 
   const canUseClipboard = useCallback(() => {
     if (typeof window === "undefined") return false;
@@ -77,6 +72,18 @@ export function ShareButton({
     [initialShare, sceneRef]
   );
 
+  const sanitizeFilename = useCallback((text: string): string => {
+    return (
+      text
+        .replace(/<br\s*\/?>/gi, "-")
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9]+/gi, "-")
+        .replace(/^-+|-+$/g, "")
+        .toLowerCase()
+        .slice(0, 100) || "sentence-cube"
+    );
+  }, []);
+
   const handleDownload = useCallback(async () => {
     setIsDownloading(true);
     setError(null);
@@ -86,7 +93,8 @@ export function ShareButton({
       const link = document.createElement("a");
       link.href = url;
       const extension = "png";
-      link.download = `sentence-cube-${Date.now()}.${extension}`;
+      const filename = sanitizeFilename(sentence);
+      link.download = `${filename}.${extension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -96,7 +104,7 @@ export function ShareButton({
     } finally {
       setIsDownloading(false);
     }
-  }, [resolveBlob]);
+  }, [resolveBlob, sentence, sanitizeFilename]);
 
   const handleShare = useCallback(async () => {
     setIsSharing(true);
@@ -149,15 +157,6 @@ export function ShareButton({
     }
   }, [resolveBlob, initialShare, sentence, sentenceWords, canUseClipboard]);
 
-  const handleReset = useCallback(() => {
-    if (isDownloading || isSharing) {
-      return;
-    }
-    setError(null);
-    setSuccessMessage(null);
-    onReset?.();
-  }, [isDownloading, isSharing, onReset]);
-
   return (
     <div className="flex flex-col items-center gap-4 w-full">
       <div className="flex w-full flex-wrap items-center justify-center gap-4">
@@ -177,16 +176,6 @@ export function ShareButton({
         >
           {isSharing ? "Processing..." : "Share Link"}
         </button>
-        {onReset && (
-          <button
-            type="button"
-            onClick={handleReset}
-            disabled={isDownloading || isSharing}
-            className="sentence-cube-btn sentence-cube-btn--danger disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {resolvedResetLabel}
-          </button>
-        )}
       </div>
       {error && (
         <div className="sentence-cube-message sentence-cube-message--error">
