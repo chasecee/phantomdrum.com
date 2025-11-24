@@ -20,7 +20,29 @@ const brygada1918 = Brygada_1918({
 
 export const metadata: Metadata = {
   title: "phantom drum",
-  description: "phantom drum",
+  description:
+    "Phantom Drum is built on moody synth layers, chopped vocals, organic funk patterns and dusty records. The debut INITIALIZE is an instrumental deep-dive into mood and texture.",
+  openGraph: {
+    title: "Phantom Drum - Debut Album Out Now",
+    description:
+      "Phantom Drum is built on moody synth layers, chopped vocals, organic funk patterns and dusty records. The debut INITIALIZE is an instrumental deep-dive into mood and texture.",
+    images: [
+      {
+        url: "/img/album-art.jpg",
+        width: 1200,
+        height: 1200,
+        alt: "Phantom Drum INITIALIZE cover art",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "phantom drum",
+    description:
+      "Phantom Drum is built on moody synth layers, chopped vocals, organic funk patterns and dusty records. The debut INITIALIZE is an instrumental deep-dive into mood and texture.",
+    images: ["/img/album-art.jpg"],
+  },
 };
 
 export default function RootLayout({
