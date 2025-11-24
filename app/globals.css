@@ -294,7 +294,7 @@ body {
   isolation: isolate;
   mix-blend-mode: difference;
   overflow: hidden;
-  padding: 7vw 5vw;
+  padding: 7cqw 5cqw;
   line-height: 1;
   @apply transition-colors duration-300 relative flex items-center justify-center text-center;
   &:hover {
