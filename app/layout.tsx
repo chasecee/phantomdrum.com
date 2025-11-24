@@ -20,7 +20,7 @@ const brygada1918 = Brygada_1918({
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.phantomdrum.com";
-const ogImageUrl = `${BASE_URL}/img/og-image.jpg`;
+const ogImageUrl = new URL("/img/og-image.jpg", BASE_URL).toString();
 
 export const metadata: Metadata = {
   title: "phantom drum",
