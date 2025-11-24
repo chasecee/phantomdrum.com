@@ -50,7 +50,7 @@ export default function HeroLogoText() {
 
   return (
     <div
-      className="aspect-2/1 mb-[10vw] z-10  brightness-125 w-full relative contrast-150"
+      className="aspect-2/1 mb-[10cqw] z-10  brightness-125 w-full relative contrast-150"
       style={
         {
           containerType: "size",

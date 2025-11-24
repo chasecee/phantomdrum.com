@@ -324,7 +324,7 @@ body {
 
 @layer utilities {
   .sentence-cube-btn {
-    @apply cursor-pointer uppercase w-full md:w-[40vw] text-[clamp(1rem,2cqw,2rem)] whitespace-nowrap text-white border-[.5cqw] tracking-[0.2em] border-white/20 rounded transition-colors duration-300 px-6 py-3;
+    @apply cursor-pointer uppercase w-full md:w-[40vw] text-[clamp(1rem,2cqw,2rem)] whitespace-nowrap text-white tracking-[0.2em] border-white/20 rounded transition-colors duration-300 px-6 py-6;
     background: rgba(255, 255, 255, 0.05);
   }
   .sentence-cube-btn--primary {

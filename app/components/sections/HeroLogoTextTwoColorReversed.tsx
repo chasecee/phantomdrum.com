@@ -5,7 +5,7 @@ const NUM_LAYERS = 10;
 
 const BASE_COLORS = ["#e67e22", "#c82a2a", "#c84a2d"];
 
-const FIRST_LAYER_COLOR: string | null = "#fff";
+const FIRST_LAYER_COLOR: string | null = "#ffffff";
 
 const OPACITY_RANGE: [number, number] = [1, 1];
 
@@ -40,7 +40,7 @@ const LAYERS = Array.from({ length: NUM_LAYERS }, (_, i) => ({
   offsetX: `${(i - 0.5) * OFFSET_X_MULTIPLIER}cqi`,
   offsetY: `${(i - 0.5) * OFFSET_Y_MULTIPLIER}cqh`,
   scaleOffset: `${1 + (NUM_LAYERS - 1 - i + 0.5) * 0.05}`,
-  layerHeight: `${(i + 1) * 14}cqh`,
+  layerHeight: `${(i + 1) * 15}cqh`,
   animationName: i === 0 ? "flickerIn" : "fadeInUp",
   animationDelay: i === 0 ? "0s" : `${i * ANIMATION_STAGGER_DELAY}s`,
   animationDuration: i === 0 ? ".25s" : `${ANIMATION_DURATION}s`,
@@ -56,7 +56,7 @@ export default function HeroLogoText() {
 
   return (
     <div
-      className="mt-[60vw] aspect-2/1 z-10 w-full -translate-y-[20%] relative"
+      className="mt-[80cqw] aspect-2/1 -translate-y-[10cqw] z-10 w-full relative"
       style={
         {
           containerType: "size",

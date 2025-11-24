@@ -5,7 +5,7 @@ import ArtistBio from "./components/content/ArtistBio";
 import QuotesSection from "./components/content/QuotesSection";
 import LatestReviews from "./components/content/LatestReviews";
 import SentenceCubeSection from "./components/sections/SentenceCubeSection";
-import HeroLogoTextTwoColor from "./components/sections/HeroLogoTextTwoColor";
+import HeroLogoTextTwoColor from "./components/sections/HeroLogoTextBottom";
 import HeroMeteors from "./components/sections/HeroMeteors";
 import HeroLogoTextTwoColorReversed from "./components/sections/HeroLogoTextTwoColorReversed";
 import ListenSection from "./components/content/ListenSection";
@@ -79,6 +79,7 @@ export default function Page() {
         <SentenceCubeSection />
         <LatestReviews />
         <ArtistBio />
+        <ListenSection />
       </div>
     </div>
   );

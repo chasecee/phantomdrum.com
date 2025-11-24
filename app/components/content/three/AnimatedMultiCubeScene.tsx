@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, RefObject, useMemo, useCallback } from "react";
+import { useRef, useEffect, RefObject, useMemo, useCallback, useState } from "react";
 import { getScrollTrigger } from "@/app/lib/gsap";
 import type { Rotation } from "./types";
 
@@ -93,6 +93,7 @@ export function AnimatedMultiCubeScene({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
+  const [canvasKey] = useState(() => Date.now());
   const workerInitializedRef = useRef(false);
   const transferredCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const workerConfigRef = useRef<WorkerConfig | null>(null);
@@ -331,8 +332,19 @@ export function AnimatedMultiCubeScene({
     if (typeof window === "undefined") return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    if (transferredCanvasRef.current === canvas) return;
     if (!workerConfig) return;
+    
+    if (transferredCanvasRef.current === canvas) {
+      return;
+    }
+    
+      if (workerRef.current) {
+        workerRef.current.postMessage({ type: "dispose" });
+        workerRef.current.terminate();
+        workerRef.current = null;
+        workerInitializedRef.current = false;
+      }
+      transferredCanvasRef.current = null;
 
     let initResizeObserver: ResizeObserver | null = null;
     let cleanupFn: (() => void) | null = null;
@@ -353,10 +365,12 @@ export function AnimatedMultiCubeScene({
       if (cancelled) return;
 
       const initWorker = () => {
+        if (cancelled) return;
+        if (transferredCanvasRef.current === canvas) return;
+        
         const { width, height } = measureCanvasSize();
         if (width < 2 || height < 2) return;
 
-        if (transferredCanvasRef.current === canvas) return;
         transferredCanvasRef.current = canvas;
         const worker = new Worker(
           new URL("../../../workers/multiCube.worker.ts", import.meta.url),
@@ -365,8 +379,15 @@ export function AnimatedMultiCubeScene({
         workerRef.current = worker;
         let offscreen: OffscreenCanvas;
         try {
+          if (cancelled) {
+            worker.terminate();
+            workerRef.current = null;
+            transferredCanvasRef.current = null;
+            return;
+          }
           offscreen = canvas.transferControlToOffscreen();
-        } catch {
+        } catch (error) {
+          console.error("Failed to transfer canvas to offscreen:", error);
           transferredCanvasRef.current = null;
           worker.terminate();
           workerRef.current = null;
@@ -736,6 +757,7 @@ export function AnimatedMultiCubeScene({
         </ul>
       </div>
       <canvas
+        key={canvasKey}
         ref={canvasRef}
         style={{ width: "100%", height: "100%", display: "block" }}
         aria-hidden="true"

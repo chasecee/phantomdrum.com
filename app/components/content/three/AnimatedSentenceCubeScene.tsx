@@ -127,6 +127,7 @@ export const AnimatedSentenceCubeScene = forwardRef<
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
+  const [canvasKey] = useState(() => Date.now());
   const workerInitializedRef = useRef(false);
   const transferredCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const workerConfigRef = useRef<WorkerConfig | null>(null);
@@ -377,7 +378,18 @@ export const AnimatedSentenceCubeScene = forwardRef<
     const canvas = canvasRef.current;
     if (!canvas) return;
     if (!isOffscreenCanvasSupported) return;
-    if (transferredCanvasRef.current === canvas) return;
+    
+    if (transferredCanvasRef.current === canvas) {
+      return;
+    }
+    
+      if (workerRef.current) {
+        workerRef.current.postMessage({ type: "dispose" });
+        workerRef.current.terminate();
+        workerRef.current = null;
+        workerInitializedRef.current = false;
+      }
+      transferredCanvasRef.current = null;
 
     let initResizeObserver: ResizeObserver | null = null;
     let cleanupFn: (() => void) | null = null;
@@ -398,6 +410,9 @@ export const AnimatedSentenceCubeScene = forwardRef<
       if (cancelled) return;
 
       const initWorker = () => {
+        if (cancelled) return;
+        if (transferredCanvasRef.current === canvas) return;
+        
         const { width, height } = measureCanvasSize();
         if (width < 2 || height < 2) return;
 
@@ -408,7 +423,6 @@ export const AnimatedSentenceCubeScene = forwardRef<
           }
           return;
         }
-        if (transferredCanvasRef.current === canvas) return;
         transferredCanvasRef.current = canvas;
         const worker = new Worker(
           new URL("../../../workers/sentenceCube.worker.ts", import.meta.url),
@@ -417,8 +431,15 @@ export const AnimatedSentenceCubeScene = forwardRef<
         workerRef.current = worker;
         let offscreen: OffscreenCanvas;
         try {
+          if (cancelled) {
+            worker.terminate();
+            workerRef.current = null;
+            transferredCanvasRef.current = null;
+            return;
+          }
           offscreen = transferToOffscreen.call(canvas);
-        } catch {
+        } catch (error) {
+          console.error("Failed to transfer canvas to offscreen:", error);
           transferredCanvasRef.current = null;
           worker.terminate();
           workerRef.current = null;
@@ -825,6 +846,7 @@ export const AnimatedSentenceCubeScene = forwardRef<
       </div>
       {isOffscreenCanvasSupported ? (
         <canvas
+          key={canvasKey}
           ref={canvasRef}
           style={{ width: "100%", height: "100%", display: "block" }}
           aria-hidden="true"
