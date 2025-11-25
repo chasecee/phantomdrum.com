@@ -20,7 +20,7 @@ const LAYER_COLORS = generateLayerColors(
   NUM_LAYERS,
   calculateOpacity,
   null
-).reverse();
+);
 
 if (FIRST_LAYER_COLOR !== null) {
   const lastOpacity = calculateOpacity(NUM_LAYERS - 1, NUM_LAYERS);

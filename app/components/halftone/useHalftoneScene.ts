@@ -399,7 +399,7 @@ export const useHalftoneScene = (
           start: normalized.scroll.start,
           end: normalized.scroll.end,
           scrub: normalized.scroll.scrub,
-          invalidateOnRefresh: true,
+          invalidateOnRefresh: false,
           markers: normalized.scroll.markers,
         },
       });

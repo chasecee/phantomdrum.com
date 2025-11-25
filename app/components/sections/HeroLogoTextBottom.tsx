@@ -69,7 +69,7 @@ export default function HeroLogoText() {
           {LAYERS.map((layer) => (
             <div
               key={layer.id}
-              className="sticky top-[100vw] h-(--layer-height) w-[90%] mx-auto whitespace-nowrap "
+              className="sticky top-[50cqw] h-(--layer-height) w-[90%] mx-auto whitespace-nowrap "
               style={
                 {
                   color: `var(${layer.colorVar})`,
