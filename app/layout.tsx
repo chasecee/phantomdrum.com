@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Mono, Brygada_1918 } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import DevBreakpoint from "./components/DevBreakpoint";
 
@@ -70,6 +71,7 @@ export default function RootLayout({
       >
         {children}
         {process.env.NODE_ENV === "development" && <DevBreakpoint />}
+        <Analytics />
       </body>
     </html>
   );
