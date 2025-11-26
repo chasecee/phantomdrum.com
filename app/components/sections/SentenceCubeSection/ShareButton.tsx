@@ -61,7 +61,7 @@ export function ShareButton({
         imageData,
         {
           dotRadius: 1.5,
-          dotSpacing: 4,
+          dotSpacing: 2.5,
           shape: "octagon",
         },
         options

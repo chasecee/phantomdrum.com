@@ -716,22 +716,23 @@ export const AnimatedSentenceCubeScene = forwardRef<
         if (!pending) return;
         const deltaX = touch.clientX - pending.startX;
         const deltaY = touch.clientY - pending.startY;
-        if (
-          Math.abs(deltaY) >= TOUCH_DRAG_THRESHOLD_PX &&
-          Math.abs(deltaY) > Math.abs(deltaX)
-        ) {
-          event.preventDefault();
-          beginDrag(pending.cubeIndex, touch.clientY);
-          pendingTouchDragRef.current = null;
-        } else if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        const absDeltaX = Math.abs(deltaX);
+        const absDeltaY = Math.abs(deltaY);
+        
+        if (absDeltaX > absDeltaY && absDeltaX >= TOUCH_DRAG_THRESHOLD_PX) {
           resetTouchTracking();
           return;
-        } else if (Math.abs(deltaY) > 0) {
+        }
+        
+        if (absDeltaY > absDeltaX) {
           event.preventDefault();
-          return;
-        } else {
+          if (absDeltaY >= TOUCH_DRAG_THRESHOLD_PX) {
+            beginDrag(pending.cubeIndex, touch.clientY);
+            pendingTouchDragRef.current = null;
+          }
           return;
         }
+        return;
       }
 
       event.preventDefault();
