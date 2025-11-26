@@ -330,7 +330,7 @@ export default function SentenceCubeSection() {
         <div className="mx-auto w-full max-w-5xl aspect-3/2 relative">
           <HalftoneEffect
             dotRadius={{ base: 1, md: 2 }}
-            dotSpacing={{ base: 1, md: 4 }}
+            dotSpacing={{ base: 2, md: 4 }}
             shape="octagon"
             className="CUBE_SECTION absolute inset-0"
           >
