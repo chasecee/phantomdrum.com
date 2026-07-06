@@ -4,10 +4,18 @@ export interface ShareResponse {
   imageUrl: string;
 }
 
+export const buildApiUrl = (path: string, apiBaseUrl?: string) => {
+  if (!apiBaseUrl) {
+    return path;
+  }
+  const base = apiBaseUrl.replace(/\/+$/, "");
+  return `${base}${path}`;
+};
+
 export async function uploadShareImage(
   imageBlob: Blob,
   sentence: string,
-  options?: { words?: string[] }
+  options?: { words?: string[]; apiBaseUrl?: string }
 ): Promise<ShareResponse> {
   const formData = new FormData();
   if (options?.words) {
@@ -16,7 +24,7 @@ export async function uploadShareImage(
   formData.append("image", imageBlob, "sentence-cube.png");
   formData.append("sentence", sentence);
 
-  const response = await fetch("/api/share", {
+  const response = await fetch(buildApiUrl("/api/share", options?.apiBaseUrl), {
     method: "POST",
     body: formData,
   });

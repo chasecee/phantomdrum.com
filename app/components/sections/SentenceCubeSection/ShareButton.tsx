@@ -18,6 +18,7 @@ interface ShareButtonProps {
   sceneRef: React.RefObject<AnimatedSentenceCubeHandle | null>;
   sentence: string;
   sentenceWords?: string[];
+  apiBaseUrl?: string;
   initialShare?: {
     blob: Blob;
     shareUrl: string;
@@ -30,6 +31,7 @@ export function ShareButton({
   sceneRef,
   sentence,
   sentenceWords,
+  apiBaseUrl,
   initialShare,
 }: ShareButtonProps) {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -115,6 +117,7 @@ export function ShareButton({
         (
           await uploadShareImage(blob, sentence, {
             words: sentenceWords ?? initialShare?.words,
+            apiBaseUrl,
           })
         ).shareUrl;
 
@@ -153,7 +156,14 @@ export function ShareButton({
     } finally {
       setIsSharing(false);
     }
-  }, [resolveBlob, initialShare, sentence, sentenceWords, canUseClipboard]);
+  }, [
+    resolveBlob,
+    initialShare,
+    sentence,
+    sentenceWords,
+    canUseClipboard,
+    apiBaseUrl,
+  ]);
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">

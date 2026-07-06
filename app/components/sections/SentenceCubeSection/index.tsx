@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import sentencePacks from "@/config/sentencePacks.generated";
 import {
   AnimatedSentenceCubeScene,
@@ -9,11 +9,12 @@ import {
 } from "../../content/three/AnimatedSentenceCubeScene";
 import HalftoneEffect from "../../content/HalftoneEffect";
 import { compositeWithNoiseBackground } from "@/app/lib/imageComposition";
-import { uploadShareImage } from "@/app/lib/shareApi";
+import { buildApiUrl, uploadShareImage } from "@/app/lib/shareApi";
 import { ShareButton } from "./ShareButton";
 import { generateRandomIndices } from "./utils";
 
 const DEFAULT_PACK_ID = "default";
+type SentencePack = (typeof sentencePacks)[number];
 
 const normalizeFaceTextForComparison = (text: string) =>
   text
@@ -32,11 +33,33 @@ const mapWordsToIndices = (words: string[], lists: string[][]) =>
     return match >= 0 ? match : 0;
   });
 
-export default function SentenceCubeSection() {
+const parseSentencePacks = (payload: unknown): SentencePack[] => {
+  if (Array.isArray(payload)) {
+    return payload as SentencePack[];
+  }
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "sentencePacks" in payload &&
+    Array.isArray((payload as { sentencePacks?: unknown }).sentencePacks)
+  ) {
+    return (payload as { sentencePacks: SentencePack[] }).sentencePacks;
+  }
+  return [];
+};
+
+interface SentenceCubeSectionProps {
+  variant?: "default" | "embed";
+}
+
+export default function SentenceCubeSection({
+  variant = "default",
+}: SentenceCubeSectionProps) {
+  const isEmbed = variant === "embed";
   const defaultPack =
     sentencePacks.find((pack) => pack.id === DEFAULT_PACK_ID) ??
     sentencePacks[0];
-  const [lists] = useState<string[][]>(
+  const [lists, setLists] = useState<string[][]>(
     () => defaultPack?.lists.map((list) => [...list]) ?? []
   );
   const [cameraFov, setCameraFov] = useState(40);
@@ -62,8 +85,51 @@ export default function SentenceCubeSection() {
   const shareHandledRef = useRef<string | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const shareParam = searchParams.get("share");
+  const dataSource = isEmbed ? searchParams.get("dataSource") : null;
+  const apiBaseUrl = (isEmbed && searchParams.get("apiBase")) || undefined;
+  const replaceWithUpdatedSearchParams = useCallback(
+    (updater: (params: URLSearchParams) => void) => {
+      const params = new URLSearchParams(searchParams.toString());
+      updater(params);
+      const nextQuery = params.toString();
+      const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+      router.replace(nextUrl, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+
+  useEffect(() => {
+    if (!dataSource) return;
+    let isActive = true;
+    const loadPacks = async () => {
+      try {
+        const response = await fetch(dataSource);
+        if (!response.ok) {
+          throw new Error(`Failed to load sentence packs: ${response.status}`);
+        }
+        const packs = parseSentencePacks(await response.json());
+        const pack =
+          packs.find((entry) => entry.id === DEFAULT_PACK_ID) ?? packs[0];
+        if (isActive && pack?.lists?.length) {
+          hasSpunRef.current = false;
+          seedRef.current = null;
+          randomIndicesRef.current = null;
+          currentIndicesRef.current = [];
+          setLists(pack.lists.map((list) => [...list]));
+        }
+      } catch (error) {
+        console.error("Failed to load remote sentence packs:", error);
+      }
+    };
+    void loadPacks();
+    return () => {
+      isActive = false;
+    };
+  }, [dataSource]);
+
   const resetSubmission = useCallback(() => {
     setSubmittedShare(null);
     setSubmitError(null);
@@ -104,10 +170,14 @@ export default function SentenceCubeSection() {
 
     const attemptLoadShare = async () => {
       try {
-        const response = await fetch(`/api/share/${shareParam}`);
+        const response = await fetch(
+          buildApiUrl(`/api/share/${shareParam}`, apiBaseUrl)
+        );
         if (!response.ok) {
           shareHandledRef.current = shareParam;
-          router.replace("/", { scroll: false });
+          replaceWithUpdatedSearchParams((params) => {
+            params.delete("share");
+          });
           return;
         }
         const metadata = await response.json();
@@ -176,7 +246,16 @@ export default function SentenceCubeSection() {
         clearInterval(retryInterval);
       }
     };
-  }, [shareParam, lists, router, resetSubmission, submitState]);
+  }, [
+    shareParam,
+    lists,
+    router,
+    pathname,
+    apiBaseUrl,
+    replaceWithUpdatedSearchParams,
+    resetSubmission,
+    submitState,
+  ]);
 
   const handleSubmit = useCallback(async () => {
     if (submitState === "submitting" || !sceneRef.current) return;
@@ -200,12 +279,7 @@ export default function SentenceCubeSection() {
       );
       const response = await uploadShareImage(blob, sentence, {
         words: sentenceWords,
-      });
-      setSubmittedShare({
-        shareUrl: response.shareUrl,
-        imageUrl: response.imageUrl,
-        blob,
-        words: sentenceWords,
+        apiBaseUrl,
       });
       setSubmittedShare({
         shareUrl: response.shareUrl,
@@ -214,7 +288,9 @@ export default function SentenceCubeSection() {
         words: sentenceWords,
       });
       setSubmitState("success");
-      router.replace(`/?share=${response.shareId}`, { scroll: false });
+      replaceWithUpdatedSearchParams((params) => {
+        params.set("share", response.shareId);
+      });
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("sentence-cube:review-submitted", {
@@ -228,7 +304,14 @@ export default function SentenceCubeSection() {
       setSubmitError(message);
       setSubmitState("idle");
     }
-  }, [sceneRef, sentence, sentenceWords, submitState, router]);
+  }, [
+    sceneRef,
+    sentence,
+    sentenceWords,
+    submitState,
+    apiBaseUrl,
+    replaceWithUpdatedSearchParams,
+  ]);
 
   const getDistinctRandomIndices = useCallback(() => {
     const current = currentIndicesRef.current;
@@ -320,14 +403,33 @@ export default function SentenceCubeSection() {
   }
 
   return (
-    <section ref={sectionRef} className="relative w-full px-6 text-white">
-      <div className="mx-auto max-w-(--container-width) space-y-10">
+    <section
+      ref={sectionRef}
+      className={
+        isEmbed
+          ? "relative flex min-h-dvh w-full flex-col justify-center px-4 py-6 text-white"
+          : "relative w-full px-6 text-white"
+      }
+    >
+      <div
+        className={
+          isEmbed
+            ? "flex w-full flex-1 flex-col justify-center gap-6"
+            : "mx-auto max-w-(--container-width) space-y-10"
+        }
+      >
         <div className="text-center">
           <p className="text-[clamp(1rem,3cqw,3rem)] uppercase text-white">
             LEAVE A REVIEW
           </p>
         </div>
-        <div className="mx-auto w-full max-w-5xl aspect-3/2 relative">
+        <div
+          className={
+            isEmbed
+              ? "relative mx-auto aspect-3/2 max-h-[70dvh] w-full"
+              : "mx-auto w-full max-w-5xl aspect-3/2 relative"
+          }
+        >
           <HalftoneEffect
             dotRadius={{ base: 1, md: 2 }}
             dotSpacing={{ base: 2, md: 4 }}
@@ -337,7 +439,7 @@ export default function SentenceCubeSection() {
             <AnimatedSentenceCubeScene
               ref={sceneRef}
               lists={lists}
-              className="w-full h-full "
+              className="h-full w-full"
               size={3.4}
               heightRatio={2.3}
               widthRatio={0.25}
@@ -386,6 +488,7 @@ export default function SentenceCubeSection() {
                 sceneRef={sceneRef}
                 sentence={sentence}
                 sentenceWords={sentenceWords}
+                apiBaseUrl={apiBaseUrl}
                 initialShare={submittedShare ?? undefined}
               />
             </div>
