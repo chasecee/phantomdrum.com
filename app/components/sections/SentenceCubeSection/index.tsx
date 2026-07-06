@@ -407,14 +407,14 @@ export default function SentenceCubeSection({
       ref={sectionRef}
       className={
         isEmbed
-          ? "relative flex min-h-dvh w-full flex-col justify-center px-4 py-6 text-white"
+          ? "relative flex h-dvh w-full flex-col overflow-hidden px-4 py-4 text-white"
           : "relative w-full px-6 text-white"
       }
     >
       <div
         className={
           isEmbed
-            ? "flex w-full flex-1 flex-col justify-center gap-6"
+            ? "flex h-full w-full flex-col gap-3"
             : "mx-auto max-w-(--container-width) space-y-10"
         }
       >
@@ -426,7 +426,7 @@ export default function SentenceCubeSection({
         <div
           className={
             isEmbed
-              ? "relative mx-auto aspect-3/2 max-h-[70dvh] w-full"
+              ? "relative mx-auto aspect-3/2 w-full max-w-[calc((100dvh-12rem)*1.5)]"
               : "mx-auto w-full max-w-5xl aspect-3/2 relative"
           }
         >
@@ -489,6 +489,7 @@ export default function SentenceCubeSection({
                 sentence={sentence}
                 sentenceWords={sentenceWords}
                 apiBaseUrl={apiBaseUrl}
+                hideShare={isEmbed}
                 initialShare={submittedShare ?? undefined}
               />
             </div>

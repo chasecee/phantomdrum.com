@@ -19,6 +19,7 @@ interface ShareButtonProps {
   sentence: string;
   sentenceWords?: string[];
   apiBaseUrl?: string;
+  hideShare?: boolean;
   initialShare?: {
     blob: Blob;
     shareUrl: string;
@@ -32,6 +33,7 @@ export function ShareButton({
   sentence,
   sentenceWords,
   apiBaseUrl,
+  hideShare = false,
   initialShare,
 }: ShareButtonProps) {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -176,14 +178,16 @@ export function ShareButton({
         >
           {isDownloading ? "Processing..." : "Download"}
         </button>
-        <button
-          type="button"
-          onClick={handleShare}
-          disabled={isDownloading || isSharing}
-          className="sentence-cube-btn sentence-cube-btn--ghost disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isSharing ? "Processing..." : "Share Link"}
-        </button>
+        {hideShare ? null : (
+          <button
+            type="button"
+            onClick={handleShare}
+            disabled={isDownloading || isSharing}
+            className="sentence-cube-btn sentence-cube-btn--ghost disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSharing ? "Processing..." : "Share Link"}
+          </button>
+        )}
       </div>
       {error && (
         <div className="sentence-cube-message sentence-cube-message--error">
