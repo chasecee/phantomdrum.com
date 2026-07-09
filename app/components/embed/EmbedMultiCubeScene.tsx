@@ -53,6 +53,7 @@ export interface EmbedMultiCubeProps {
 }
 
 const clamp01 = (value: number) => Math.min(Math.max(value, 0), 1);
+const easeInOutSine = (value: number) => -(Math.cos(Math.PI * clamp01(value)) - 1) / 2;
 
 export function EmbedMultiCubeScene({
   texts,
@@ -444,9 +445,9 @@ export function EmbedMultiCubeScene({
     const tick = (now: number) => {
       if (!active) return;
       const elapsed = (now - startTime) % (cycleMs * 2);
-      const progress =
+      const linearProgress =
         elapsed < cycleMs ? elapsed / cycleMs : 1 - (elapsed - cycleMs) / cycleMs;
-      applyProgress(progress);
+      applyProgress(easeInOutSine(linearProgress));
       rafId = requestAnimationFrame(tick);
     };
 

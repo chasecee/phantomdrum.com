@@ -1,4 +1,6 @@
 ---
+import "@/app/embed.css";
+
 interface Props {
   title?: string;
 }
@@ -17,7 +19,16 @@ const { title = "phantom drum" } = Astro.props;
       html,
       body {
         margin: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
         background: #000;
+      }
+
+      astro-island {
+        display: block;
+        height: 100%;
+        width: 100%;
       }
     </style>
   </head>
