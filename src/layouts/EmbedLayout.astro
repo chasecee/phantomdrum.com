@@ -1,0 +1,27 @@
+---
+interface Props {
+  title?: string;
+}
+
+const { title = "phantom drum" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="robots" content="noindex" />
+    <title>{title}</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #000;
+      }
+    </style>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
