@@ -12,8 +12,8 @@ const CUBE_TEXTS = [
 export default function EmbedStackedCubesSection() {
   return (
     <HalftoneEffect
-      dotRadius={{ base: 1.5, md: 2 }}
-      dotSpacing={{ base: 3.5, md: 4 }}
+      dotRadius={{ base: 2, md: 2 }}
+      dotSpacing={{ base: 4, md: 4 }}
       shape="octagon"
       className="h-full w-full overflow-hidden"
     >
