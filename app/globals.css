@@ -1,6 +1,12 @@
+@import "@fontsource/space-mono/400.css";
+@import "@fontsource/space-mono/700.css";
+@import "@fontsource/brygada-1918/400.css";
+@import "@fontsource/brygada-1918/400-italic.css";
 @import "tailwindcss";
 
 :root {
+  --font-space-mono: "Space Mono", monospace;
+  --font-brygada-1918: "Brygada 1918", serif;
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -315,8 +321,8 @@ body {
   .button-background {
     position: absolute;
     inset: 0;
-    border: 2cqw solid currentColor;
-    border-radius: 10cqw;
+    border: clamp(2px, 2cqw, 8px) solid currentColor;
+    border-radius: clamp(10px, 10cqw, 50px);
     @apply transition-all duration-300;
     z-index: 0;
   }

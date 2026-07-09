@@ -1,0 +1,10 @@
+---
+import Layout from "@/src/layouts/Layout.astro";
+import SentenceCubeSection from "@/app/components/sections/SentenceCubeSection";
+---
+
+<Layout title="Sentence Cubes" noindex={true}>
+  <main class="min-h-dvh w-full">
+    <SentenceCubeSection variant="embed" client:load />
+  </main>
+</Layout>

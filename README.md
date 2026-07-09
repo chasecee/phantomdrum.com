@@ -1,25 +1,25 @@
 # phantomdrum.com
 
-Website for Phantom Drum's album release "INITIALIZE". Built with Next.js, featuring WebGL animations, interactive 3D scenes, and dynamic content sharing.
+Website for Phantom Drum's album release "INITIALIZE". Built with Astro, featuring WebGL animations, interactive 3D scenes, and dynamic content sharing.
 
 ## Tech Stack
 
-- **Framework**: Next.js 16 (App Router)
-- **React**: 19.2.0
+- **Framework**: Astro 7
+- **React**: 19.2.7
 - **3D Graphics**: Three.js
 - **Animations**: GSAP
 - **Styling**: Tailwind CSS 4
 - **Storage**: Vercel Blob Storage, Upstash Redis
-- **TypeScript**: 5
+- **TypeScript**: 6
 
 ## Getting Started
 
 ```bash
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the site.
+Open [http://localhost:4321](http://localhost:4321) to view the site.
 
 ## Environment Variables
 
@@ -28,7 +28,7 @@ Required environment variables:
 - `BLOB_READ_WRITE_TOKEN` - Vercel Blob Storage token for image uploads
 - `UPSTASH_REDIS_REST_URL` - Upstash Redis REST API URL
 - `UPSTASH_REDIS_REST_TOKEN` - Upstash Redis REST API token
-- `NEXT_PUBLIC_SITE_URL` - Public site URL (defaults to https://phantomdrum.com)
+- `PUBLIC_SITE_URL` - Public site URL (defaults to https://phantomdrum.com)
 
 Create a `.env.local` file with these variables for local development.
 
@@ -36,10 +36,10 @@ Create a `.env.local` file with these variables for local development.
 
 ### Development Scripts
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
+- `bun run dev` - Start development server
+- `bun run build` - Build for production
+- `bun run start` - Start production preview server
+- `bun run lint` - Run ESLint
 
 ### Asset Generation Scripts
 

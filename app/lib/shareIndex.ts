@@ -1,14 +1,25 @@
 import { Redis } from "@upstash/redis";
 import type { ShareMetadata } from "./shareMetadata";
 
+const readServerEnv = (key: string): string | undefined => {
+  const viteEnvValue = (import.meta.env as Record<string, string | undefined>)[key];
+  const nodeEnvValue = process.env[key];
+  const value = viteEnvValue ?? nodeEnvValue;
+  if (!value) {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
 const getRedis = () => {
   try {
     const url =
-      process.env.UPSTASH_REDIS_REST_URL ||
-      process.env.STORAGE_KV_REST_API_URL;
+      readServerEnv("UPSTASH_REDIS_REST_URL") ??
+      readServerEnv("STORAGE_KV_REST_API_URL");
     const token =
-      process.env.UPSTASH_REDIS_REST_TOKEN ||
-      process.env.STORAGE_KV_REST_API_TOKEN;
+      readServerEnv("UPSTASH_REDIS_REST_TOKEN") ??
+      readServerEnv("STORAGE_KV_REST_API_TOKEN");
 
     if (url && token) {
       return new Redis({
@@ -17,7 +28,7 @@ const getRedis = () => {
       });
     }
 
-    return Redis.fromEnv();
+    return null;
   } catch {
     return null;
   }

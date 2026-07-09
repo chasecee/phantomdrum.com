@@ -1,7 +1,14 @@
 "use client";
 
-import { useRef, useEffect, RefObject, useMemo, useCallback, useState } from "react";
-import { getScrollTrigger } from "@/app/lib/gsap";
+import {
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+  useState,
+  type RefObject,
+} from "react";
+import { getGSAP, getScrollTrigger } from "@/app/lib/gsap";
 import type { Rotation } from "./types";
 
 const DEFAULT_COLORS = ["#A85A90", "#C82A2A", "#C84A2D", "#E67E22", "#F1C40F"];
@@ -28,10 +35,12 @@ type WorkerConfig = {
 
 export interface AnimatedMultiCubeProps {
   texts: string[];
-  trigger: RefObject<HTMLElement>;
-  start: string;
-  end: string;
+  trigger?: RefObject<HTMLElement | null>;
+  start?: string;
+  end?: string;
   scrub?: number | boolean;
+  autoPlay?: boolean;
+  autoPlayDuration?: number;
   from?: {
     rotation?: Rotation;
     scale?: number;
@@ -66,9 +75,11 @@ const TOUCH_DRAG_THRESHOLD_PX = 18;
 export function AnimatedMultiCubeScene({
   texts,
   trigger,
-  start,
-  end,
+  start = "top bottom",
+  end = "bottom top",
   scrub = 1,
+  autoPlay = false,
+  autoPlayDuration = 8,
   from,
   to,
   showMarkers = false,
@@ -497,13 +508,76 @@ export function AnimatedMultiCubeScene({
   }, [workerConfig, syncVisibilityToWorker]);
 
   useEffect(() => {
-    if (
-      typeof window === "undefined" ||
-      !containerRef.current ||
-      !trigger?.current
-    ) {
+    if (typeof window === "undefined" || !containerRef.current) {
       return;
     }
+
+    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+    const staggerOffset = stagger ? Math.max(staggerDelay, 0) : 0;
+    const totalCount = texts.length;
+
+    const applyProgress = (progress: number) => {
+      targetScaleRef.current = lerp(fromScale, toScale, progress);
+      for (let index = 0; index < totalCount; index += 1) {
+        let offsetProgress: number;
+        if (stagger) {
+          const startProgress = index * staggerOffset;
+          const endProgress = 1.0;
+          const progressRange = endProgress - startProgress;
+          if (progressRange > 0) {
+            offsetProgress = clamp01(
+              (progress - startProgress) / progressRange
+            );
+          } else {
+            offsetProgress = progress >= startProgress ? 1.0 : 0.0;
+          }
+        } else {
+          offsetProgress = progress;
+        }
+        const rotation = targetRotationsRef.current[index];
+        if (!rotation) {
+          targetRotationsRef.current[index] = {
+            x: lerp(fromRotationX, toRotationX, offsetProgress),
+            y: lerp(fromRotationY, toRotationY, offsetProgress),
+            z: lerp(fromRotationZ, toRotationZ, offsetProgress),
+          };
+        } else {
+          rotation.x = lerp(fromRotationX, toRotationX, offsetProgress);
+          rotation.y = lerp(fromRotationY, toRotationY, offsetProgress);
+          rotation.z = lerp(fromRotationZ, toRotationZ, offsetProgress);
+        }
+      }
+      throttledSendTargets();
+    };
+
+    if (autoPlay) {
+      let tween: ReturnType<typeof import("gsap").gsap.to> | null = null;
+      let active = true;
+      const init = async () => {
+        if (!active) return;
+        const gsap = await getGSAP();
+        if (!active) return;
+        const state = { progress: 0 };
+        tween = gsap.to(state, {
+          progress: 1,
+          duration: autoPlayDuration,
+          ease: "none",
+          repeat: -1,
+          yoyo: true,
+          onUpdate: () => applyProgress(state.progress),
+        });
+      };
+      init();
+      return () => {
+        active = false;
+        tween?.kill();
+      };
+    }
+
+    if (!trigger?.current) {
+      return;
+    }
+
     let scrollTrigger: ReturnType<
       typeof import("gsap/ScrollTrigger").ScrollTrigger.create
     > | null = null;
@@ -512,9 +586,6 @@ export function AnimatedMultiCubeScene({
       if (!active) return;
       const ScrollTrigger = await getScrollTrigger();
       if (!active || !trigger?.current || !containerRef.current) return;
-      const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-      const staggerOffset = stagger ? Math.max(staggerDelay, 0) : 0;
-      const totalCount = texts.length;
       scrollTrigger = ScrollTrigger.create({
         trigger: trigger.current,
         start,
@@ -523,38 +594,7 @@ export function AnimatedMultiCubeScene({
         invalidateOnRefresh,
         markers: showMarkers,
         onUpdate: (self) => {
-          const progress = self.progress;
-          targetScaleRef.current = lerp(fromScale, toScale, progress);
-          for (let index = 0; index < totalCount; index += 1) {
-            let offsetProgress: number;
-            if (stagger) {
-              const startProgress = index * staggerOffset;
-              const endProgress = 1.0;
-              const progressRange = endProgress - startProgress;
-              if (progressRange > 0) {
-                offsetProgress = clamp01(
-                  (progress - startProgress) / progressRange
-                );
-              } else {
-                offsetProgress = progress >= startProgress ? 1.0 : 0.0;
-              }
-            } else {
-              offsetProgress = progress;
-            }
-            const rotation = targetRotationsRef.current[index];
-            if (!rotation) {
-              targetRotationsRef.current[index] = {
-                x: lerp(fromRotationX, toRotationX, offsetProgress),
-                y: lerp(fromRotationY, toRotationY, offsetProgress),
-                z: lerp(fromRotationZ, toRotationZ, offsetProgress),
-              };
-            } else {
-              rotation.x = lerp(fromRotationX, toRotationX, offsetProgress);
-              rotation.y = lerp(fromRotationY, toRotationY, offsetProgress);
-              rotation.z = lerp(fromRotationZ, toRotationZ, offsetProgress);
-            }
-          }
-          throttledSendTargets();
+          applyProgress(self.progress);
         },
       });
     };
@@ -564,6 +604,8 @@ export function AnimatedMultiCubeScene({
       scrollTrigger?.kill();
     };
   }, [
+    autoPlay,
+    autoPlayDuration,
     trigger,
     start,
     end,

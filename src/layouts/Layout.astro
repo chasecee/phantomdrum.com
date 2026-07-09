@@ -1,0 +1,53 @@
+---
+import Analytics from "@vercel/analytics/astro";
+import DevBreakpoint from "@/app/components/DevBreakpoint";
+import "@/app/globals.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  noindex?: boolean;
+}
+
+const {
+  title = "phantom drum",
+  description = "Phantom Drum is built on moody synth layers, chopped vocals, organic funk patterns and dusty records. The debut INITIALIZE is an instrumental deep-dive into mood and texture.",
+  image = "/img/og-image.jpg",
+  noindex = false,
+} = Astro.props;
+
+const baseUrl = import.meta.env.PUBLIC_SITE_URL ?? "https://phantomdrum.com";
+const canonicalUrl = new URL(Astro.url.pathname, baseUrl).toString();
+const imageUrl = image.startsWith("http") ? image : new URL(image, baseUrl).toString();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    {noindex ? <meta name="robots" content="noindex" /> : null}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Phantom Drum" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={imageUrl} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+    <slot name="head" />
+  </head>
+  <body class="bg-black">
+    <slot />
+    {import.meta.env.DEV ? <DevBreakpoint client:load /> : null}
+    <Analytics />
+  </body>
+</html>

@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 type ReleaseCountdownCardProps = {
   label: string;
   metaLabel?: string;
@@ -26,13 +24,11 @@ export default function ReleaseCountdownCard({
         </div>
 
         <div className="relative mt-5 aspect-square w-full overflow-hidden rounded-2xl border border-white/15">
-          <Image
+          <img
             src={cover.src}
             alt={cover.alt}
-            fill
-            sizes="(min-width: 768px) 320px, 80vw"
-            className="object-cover"
-            priority
+            className="h-full w-full object-cover"
+            loading="eager"
           />
         </div>
 

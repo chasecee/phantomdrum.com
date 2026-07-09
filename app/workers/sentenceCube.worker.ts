@@ -318,6 +318,7 @@ const handleResize = (dimensions: Dimensions) => {
       column.outline.material.resolution.copy(resolution);
     }
   });
+  renderOnce();
 };
 
 const computeLabelSlug = (text: string) =>

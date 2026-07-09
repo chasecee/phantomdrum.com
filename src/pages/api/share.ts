@@ -1,8 +1,19 @@
+import type { APIRoute } from "astro";
 import { put } from "@vercel/blob";
-import { NextRequest, NextResponse } from "next/server";
 import { normalizeSentenceForSharing } from "@/app/lib/sentenceUtils";
 import { loadShareMetadata } from "@/app/lib/shareMetadata";
 import { addShareToIndex } from "@/app/lib/shareIndex";
+
+export const prerender = false;
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "content-type": "application/json",
+    },
+  });
+}
 
 function slugify(text: string): string {
   return text
@@ -13,33 +24,34 @@ function slugify(text: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-export async function POST(request: NextRequest) {
+export const POST: APIRoute = async ({ request }) => {
   try {
-    const formData = await request.formData();
-    const imageFile = formData.get("image") as File;
-    const sentence = formData.get("sentence") as string;
-
-    if (!imageFile) {
-      return NextResponse.json(
-        { error: "Image file is required" },
-        { status: 400 }
+    const blobToken =
+      import.meta.env.BLOB_READ_WRITE_TOKEN ?? process.env.BLOB_READ_WRITE_TOKEN;
+    if (!blobToken) {
+      return json(
+        {
+          error:
+            "Blob storage not configured in runtime. Missing BLOB_READ_WRITE_TOKEN.",
+        },
+        500
       );
     }
 
+    const formData = await request.formData();
+    const imageFile = formData.get("image") as File | null;
+    const sentence = formData.get("sentence") as string | null;
+
+    if (!imageFile) {
+      return json({ error: "Image file is required" }, 400);
+    }
     if (!sentence) {
-      return NextResponse.json(
-        { error: "Sentence is required" },
-        { status: 400 }
-      );
+      return json({ error: "Sentence is required" }, 400);
     }
 
     const normalizedSentence = normalizeSentenceForSharing(sentence);
-
     if (!normalizedSentence) {
-      return NextResponse.json(
-        { error: "Sentence is required" },
-        { status: 400 }
-      );
+      return json({ error: "Sentence is required" }, 400);
     }
 
     const shareId = slugify(normalizedSentence) || "share";
@@ -50,9 +62,8 @@ export async function POST(request: NextRequest) {
         now.getMonth() + 1
       ).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")}`;
       const BLOB_EXTENSION = ".jpg";
-      let existingMetadata: Awaited<
-        ReturnType<typeof loadShareMetadata>
-      > | null = null;
+      let existingMetadata: Awaited<ReturnType<typeof loadShareMetadata>> | null =
+        null;
       try {
         existingMetadata = await loadShareMetadata(shareId);
       } catch {
@@ -61,13 +72,15 @@ export async function POST(request: NextRequest) {
       const defaultImagePath = `shares/${datePath}/${shareId}${BLOB_EXTENSION}`;
       const imagePath = existingMetadata?.imagePath ?? defaultImagePath;
       const blob = await put(imagePath, imageFile, {
+        token: blobToken,
         access: "public",
         addRandomSuffix: false,
         contentType: "image/jpeg",
         allowOverwrite: true,
       });
 
-      const shareUrl = `${request.nextUrl.origin}/share/${shareId}`;
+      const origin = new URL(request.url).origin;
+      const shareUrl = `${origin}/share/${shareId}`;
       const wordsField = formData.get("words") as string | null;
       let words: string[] | undefined;
       if (wordsField) {
@@ -77,7 +90,7 @@ export async function POST(request: NextRequest) {
             words = parsed.map((item) => String(item));
           }
         } catch {
-          // ignore
+          words = undefined;
         }
       }
       const metadataPayload = {
@@ -94,6 +107,7 @@ export async function POST(request: NextRequest) {
       try {
         await Promise.all([
           put(`shares/meta/${shareId}.json`, metadataBlob, {
+            token: blobToken,
             access: "public",
             addRandomSuffix: false,
             contentType: "application/json",
@@ -105,7 +119,7 @@ export async function POST(request: NextRequest) {
         console.error("Failed to write share metadata:", metadataError);
       }
 
-      return NextResponse.json({
+      return json({
         shareId,
         shareUrl,
         imageUrl: blob.url,
@@ -113,29 +127,23 @@ export async function POST(request: NextRequest) {
       });
     } catch (blobError) {
       console.error("Vercel Blob error:", blobError);
-      if (blobError instanceof Error) {
-        if (
-          blobError.message.includes("token") ||
-          blobError.message.includes("BLOB")
-        ) {
-          return NextResponse.json(
-            {
-              error:
-                "Blob storage not configured. Please set BLOB_READ_WRITE_TOKEN environment variable.",
-            },
-            { status: 500 }
-          );
-        }
+      if (
+        blobError instanceof Error &&
+        (blobError.message.includes("token") || blobError.message.includes("BLOB"))
+      ) {
+        return json(
+          {
+            error:
+              "Blob storage not configured. Please set BLOB_READ_WRITE_TOKEN environment variable.",
+          },
+          500
+        );
       }
       throw blobError;
     }
   } catch (error) {
     console.error("Error uploading share:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json(
-      { error: `Failed to upload share: ${errorMessage}` },
-      { status: 500 }
-    );
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return json({ error: `Failed to upload share: ${errorMessage}` }, 500);
   }
-}
+};

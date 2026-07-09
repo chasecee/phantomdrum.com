@@ -1,0 +1,10 @@
+---
+import Layout from "@/src/layouts/Layout.astro";
+import CubeSection from "@/app/components/sections/CubeSection";
+---
+
+<Layout title="Stacked Cubes" noindex={true}>
+  <main class="min-h-dvh w-full">
+    <CubeSection variant="embed" client:load />
+  </main>
+</Layout>

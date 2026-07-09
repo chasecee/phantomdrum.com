@@ -387,6 +387,7 @@ const handleResize = (dimensions: Dimensions) => {
   if (state.column?.edge?.material) {
     state.column.edge.material.resolution.copy(resolution);
   }
+  renderOnce();
 };
 
 const updateFrame = () => {

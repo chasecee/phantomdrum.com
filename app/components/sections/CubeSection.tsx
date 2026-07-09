@@ -1,6 +1,6 @@
 "use client";
 
-import { RefObject, useRef } from "react";
+import { useRef, type RefObject } from "react";
 import { AnimatedMultiCubeScene } from "../content/three/AnimatedMultiCubeScene";
 import HalftoneEffect from "../content/HalftoneEffect";
 
@@ -12,7 +12,12 @@ const CUBE_TEXTS = [
   "BIG OL BEATS",
 ];
 
-export default function CubeSection() {
+interface CubeSectionProps {
+  variant?: "default" | "embed";
+}
+
+export default function CubeSection({ variant = "default" }: CubeSectionProps) {
+  const isEmbed = variant === "embed";
   const multiCubeContainerRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -20,15 +25,28 @@ export default function CubeSection() {
       dotRadius={{ base: 1.5, md: 2 }}
       dotSpacing={{ base: 3.5, md: 5 }}
       shape="octagon"
-      className="CUBE_SECTION"
+      className={
+        isEmbed
+          ? "CUBE_SECTION flex h-dvh w-full items-center justify-center overflow-hidden"
+          : "CUBE_SECTION"
+      }
     >
       <div
         ref={multiCubeContainerRef}
-        className="aspect-square max-h-[100vw] mb-[10vw] w-full relative overflow-hidden"
+        className={
+          isEmbed
+            ? "aspect-square h-full max-h-dvh w-full max-w-dvh relative overflow-hidden"
+            : "aspect-square max-h-[100vw] mb-[10vw] w-full relative overflow-hidden"
+        }
       >
         <AnimatedMultiCubeScene
           texts={CUBE_TEXTS}
-          trigger={multiCubeContainerRef as RefObject<HTMLElement>}
+          trigger={
+            isEmbed
+              ? undefined
+              : (multiCubeContainerRef as RefObject<HTMLElement>)
+          }
+          autoPlay={isEmbed}
           start="30% 80%"
           end="70% 30%"
           from={{ rotation: { x: 0.01, y: 0, z: 0 } }}

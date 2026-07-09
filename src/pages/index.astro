@@ -1,0 +1,56 @@
+---
+import type { CSSProperties } from "react";
+import Layout from "@/src/layouts/Layout.astro";
+import CubeSection from "@/app/components/sections/CubeSection";
+import HeroHalftoneSection from "@/app/components/sections/HeroHalftoneSection";
+import ArtistBio from "@/app/components/content/ArtistBio";
+import QuotesSection from "@/app/components/content/QuotesSection";
+import LatestReviews from "@/app/components/content/LatestReviews";
+import SentenceCubeSection from "@/app/components/sections/SentenceCubeSection";
+import HeroLogoTextTwoColor from "@/app/components/sections/HeroLogoTextBottom";
+import HeroMeteors from "@/app/components/sections/HeroMeteors";
+import HeroLogoTextTwoColorReversed from "@/app/components/sections/HeroLogoTextTop";
+import ListenSection from "@/app/components/content/ListenSection";
+import ReleaseCountdownCard from "@/app/components/scheduling/ReleaseCountdownCard";
+
+const releaseArtwork = {
+  src: "/img/optimized/album-art.webp",
+  alt: "Phantom Drum Initialize cover art",
+};
+---
+
+<Layout>
+  <div class="w-full">
+    <div class="relative max-w-[1200px] mx-auto lg:bg-transparentbg-linear-to-b from-slate-950/60 via-amber-900/20 to-transparent">
+      <div
+        style={
+          {
+            containerType: "inline-size",
+          } as CSSProperties
+        }
+      >
+        <HeroMeteors />
+        <HeroLogoTextTwoColorReversed />
+
+        <HeroHalftoneSection client:load />
+        <HeroLogoTextTwoColor />
+      </div>
+      <CubeSection client:visible />
+      <div class="space-y-10">
+        <ReleaseCountdownCard
+          label="LIVE ON ALL PLATFORMS"
+          metaLabel="Album"
+          title="INITIALIZE"
+          cover={releaseArtwork}
+        />
+        <ListenSection />
+      </div>
+
+      <QuotesSection />
+      <SentenceCubeSection client:visible />
+      <LatestReviews client:visible />
+      <ArtistBio />
+      <ListenSection />
+    </div>
+  </div>
+</Layout>

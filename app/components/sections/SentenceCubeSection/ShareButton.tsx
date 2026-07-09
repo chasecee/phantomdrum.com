@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import type { AnimatedSentenceCubeHandle } from "../../content/three/AnimatedSentenceCubeScene";
 import {
-  CompositeOptions,
+  type CompositeOptions,
   compositeWithNoiseBackground,
 } from "@/app/lib/imageComposition";
 import { uploadShareImage } from "@/app/lib/shareApi";

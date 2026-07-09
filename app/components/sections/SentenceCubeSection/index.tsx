@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import sentencePacks from "@/config/sentencePacks.generated";
 import {
   AnimatedSentenceCubeScene,
@@ -84,21 +83,43 @@ export default function SentenceCubeSection({
   } | null>(null);
   const shareHandledRef = useRef<string | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const [search, setSearch] = useState("");
+  const searchParams = useMemo(
+    () => new URLSearchParams(search.startsWith("?") ? search.slice(1) : search),
+    [search]
+  );
   const shareParam = searchParams.get("share");
   const dataSource = isEmbed ? searchParams.get("dataSource") : null;
   const apiBaseUrl = (isEmbed && searchParams.get("apiBase")) || undefined;
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const syncLocation = () => {
+      setSearch(window.location.search);
+    };
+    syncLocation();
+    window.addEventListener("popstate", syncLocation);
+    return () => {
+      window.removeEventListener("popstate", syncLocation);
+    };
+  }, []);
+
   const replaceWithUpdatedSearchParams = useCallback(
     (updater: (params: URLSearchParams) => void) => {
-      const params = new URLSearchParams(searchParams.toString());
+      if (typeof window === "undefined") {
+        return;
+      }
+      const params = new URLSearchParams(window.location.search);
       updater(params);
       const nextQuery = params.toString();
-      const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
-      router.replace(nextUrl, { scroll: false });
+      const nextPathname = window.location.pathname;
+      const nextUrl = nextQuery ? `${nextPathname}?${nextQuery}` : nextPathname;
+      window.history.replaceState({}, "", nextUrl);
+      setSearch(nextQuery ? `?${nextQuery}` : "");
     },
-    [pathname, router, searchParams]
+    []
   );
 
   useEffect(() => {
@@ -249,8 +270,6 @@ export default function SentenceCubeSection({
   }, [
     shareParam,
     lists,
-    router,
-    pathname,
     apiBaseUrl,
     replaceWithUpdatedSearchParams,
     resetSubmission,

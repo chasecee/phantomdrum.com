@@ -236,6 +236,7 @@ const handleResize = (dimensions: Dimensions) => {
       cube.edge.material.resolution.copy(resolution);
     }
   });
+  renderOnce();
 };
 
 const computeLabelSlug = (text: string) =>

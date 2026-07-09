@@ -1,4 +1,3 @@
-import Link from "next/link";
 import HalftoneEffect from "./HalftoneEffect";
 
 export default function ListenSection() {
@@ -12,7 +11,7 @@ export default function ListenSection() {
           className="LISTEN_SECTION "
           applyToChild
         >
-          <Link
+          <a
             href="https://open.spotify.com/album/5GDYFMTp1nIQKuXt4UJ9TN"
             target="_blank"
             rel="noopener noreferrer"
@@ -21,7 +20,7 @@ export default function ListenSection() {
           >
             <div className="button-background"></div>
             <span className="button-text">Spotify</span>
-          </Link>
+          </a>
         </HalftoneEffect>
         <HalftoneEffect
           dotRadius={{ base: 1.5, md: 2 }}
@@ -30,7 +29,7 @@ export default function ListenSection() {
           className="LISTEN_SECTION"
           applyToChild
         >
-          <Link
+          <a
             href="https://music.apple.com/us/album/initialize/1853366939"
             target="_blank"
             rel="noopener noreferrer"
@@ -39,7 +38,7 @@ export default function ListenSection() {
           >
             <div className="button-background"></div>
             <span className="button-text">Apple Music</span>
-          </Link>
+          </a>
         </HalftoneEffect>
       </div>
     </div>
