@@ -3,9 +3,21 @@ import "@/app/embed.css";
 
 interface Props {
   title?: string;
+  scrollable?: boolean;
+  includeGlobals?: boolean;
+  embedDpr?: number | null;
 }
 
-const { title = "phantom drum" } = Astro.props;
+const {
+  title = "phantom drum",
+  scrollable = false,
+  includeGlobals = false,
+  embedDpr = null,
+} = Astro.props;
+
+if (includeGlobals) {
+  await import("@/app/globals.css");
+}
 ---
 
 <!doctype html>
@@ -21,18 +33,30 @@ const { title = "phantom drum" } = Astro.props;
         margin: 0;
         height: 100%;
         width: 100%;
-        overflow: hidden;
         background: #000;
       }
-
-      astro-island {
-        display: block;
-        height: 100%;
-        width: 100%;
-      }
     </style>
+    {scrollable ? (
+      <style>
+        body {
+          overflow: auto;
+        }
+      </style>
+    ) : (
+      <style>
+        body {
+          overflow: hidden;
+        }
+
+        astro-island {
+          display: block;
+          height: 100%;
+          width: 100%;
+        }
+      </style>
+    )}
   </head>
-  <body>
+  <body data-embed-dpr={embedDpr ?? undefined}>
     <slot />
   </body>
 </html>

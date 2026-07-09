@@ -6,6 +6,7 @@ import {
   useCallback,
 } from "react";
 import { HalftoneRendererCore } from "../halftone-webgl/scroll-section/HalftoneRendererCore";
+import { resolveSceneDpr } from "@/app/lib/embedDpr";
 
 export type HalftoneWebGLParams = {
   halftoneSize: number;
@@ -60,7 +61,6 @@ type WorkerParamPayload = {
 };
 
 const degToRad = (value: number) => (value * Math.PI) / 180;
-const clampDevicePixelRatio = (value: number) => Math.min(value || 1, 1.5);
 const resolveImageSrc = (src: string) => {
   if (typeof window === "undefined") return src;
   try {
@@ -225,9 +225,7 @@ export const CanvasHalftoneWebGL = forwardRef<
         return;
       }
 
-      const devicePixelRatio = clampDevicePixelRatio(
-        window.devicePixelRatio ?? 1
-      );
+      const devicePixelRatio = resolveSceneDpr(1.5);
       devicePixelRatioRef.current = devicePixelRatio;
       const resolvedImageSrc = resolveImageSrc(lastImageConfigRef.current.src);
       lastImageConfigRef.current = {
@@ -293,9 +291,7 @@ export const CanvasHalftoneWebGL = forwardRef<
 
     const renderer = new HalftoneRendererCore(canvas);
     fallbackRendererRef.current = renderer;
-    const devicePixelRatio = clampDevicePixelRatio(
-      window.devicePixelRatio ?? 1
-    );
+    const devicePixelRatio = resolveSceneDpr(1.5);
     devicePixelRatioRef.current = devicePixelRatio;
     const resolvedImageSrc = resolveImageSrc(lastImageConfigRef.current.src);
     lastImageConfigRef.current = {
@@ -374,7 +370,7 @@ export const CanvasHalftoneWebGL = forwardRef<
   useEffect(() => {
     if (typeof window === "undefined") return;
     const handleResize = () => {
-      const nextDpr = clampDevicePixelRatio(window.devicePixelRatio ?? 1);
+      const nextDpr = resolveSceneDpr(1.5);
       if (Math.abs(nextDpr - devicePixelRatioRef.current) < 0.01) {
         return;
       }

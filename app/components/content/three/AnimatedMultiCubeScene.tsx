@@ -7,6 +7,7 @@ import {
   type RefObject,
 } from "react";
 import { getGSAP, getScrollTrigger } from "@/app/lib/gsap";
+import { resolveSceneDpr } from "@/app/lib/embedDpr";
 import type { Rotation } from "./types";
 
 const DEFAULT_COLORS = ["#A85A90", "#C82A2A", "#C84A2D", "#E67E22", "#F1C40F"];
@@ -403,7 +404,7 @@ export function AnimatedMultiCubeScene({
           workerRef.current = null;
           return;
         }
-        dprRef.current = Math.min(window.devicePixelRatio ?? 1, 1.25);
+        dprRef.current = resolveSceneDpr(1.25);
         worker.postMessage(
           {
             type: "init",
@@ -430,7 +431,7 @@ export function AnimatedMultiCubeScene({
             if (measuredWidth < 2 || measuredHeight < 2) {
               return;
             }
-            const currentDpr = Math.min(window.devicePixelRatio ?? 1, 1.25);
+            const currentDpr = resolveSceneDpr(1.25);
             const previous = canvasDimensionsRef.current;
             const widthChanged = measuredWidth !== previous.width;
             const heightChanged = measuredHeight !== previous.height;

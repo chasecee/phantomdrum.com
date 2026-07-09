@@ -13,7 +13,7 @@ export default function EmbedStackedCubesSection() {
   return (
     <HalftoneEffect
       dotRadius={{ base: 2, md: 2 }}
-      dotSpacing={{ base: 4, md: 4 }}
+      dotSpacing={{ base: 3.5, md: 3.5 }}
       shape="octagon"
       className="h-full w-full overflow-hidden"
     >
