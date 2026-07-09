@@ -2,7 +2,7 @@ import { HalftoneScrollSection } from "./HalftoneScrollSection";
 import type { HalftoneParamsPreset } from "./halftoneTypes";
 import ArtistBio from "../components/content/ArtistBio";
 import CubeSection from "../components/sections/CubeSection";
-import HalftoneEffect from "../components/content/HalftoneEffect";
+
 export default function HalftoneWebGLDemoPage() {
   const layers = [
     {

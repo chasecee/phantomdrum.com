@@ -1,5 +1,3 @@
-"use client";
-
 import { CanvasHalftoneWebGL } from "../../canvas/CanvasHalftoneWebGL";
 import type {
   CanvasHalftoneWebGLHandle,

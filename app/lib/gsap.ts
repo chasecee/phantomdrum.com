@@ -1,5 +1,3 @@
-"use client";
-
 let gsapInstance: typeof import("gsap").gsap | null = null;
 let scrollTriggerInstance: typeof import("gsap/ScrollTrigger").ScrollTrigger | null = null;
 let isRegistered = false;

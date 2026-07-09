@@ -1,5 +1,3 @@
-"use client";
-
 import { BufferAttribute, BufferGeometry, Float32BufferAttribute } from "three";
 import labelGeometries from "@/app/generated/labelGeometries";
 

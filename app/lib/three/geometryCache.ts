@@ -1,5 +1,3 @@
-"use client";
-
 import { BoxGeometry, CylinderGeometry } from "three";
 
 const boxCache = new Map<string, BoxGeometry>();

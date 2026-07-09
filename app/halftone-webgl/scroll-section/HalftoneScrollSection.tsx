@@ -1,5 +1,3 @@
-"use client";
-
 import type { CSSProperties } from "react";
 import { CanvasHalftoneWebGL } from "../../canvas/CanvasHalftoneWebGL";
 import type { HalftoneScrollSectionProps } from "../halftoneTypes";

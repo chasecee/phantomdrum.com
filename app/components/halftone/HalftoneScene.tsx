@@ -1,5 +1,3 @@
-"use client";
-
 import type { CSSProperties } from "react";
 import { HalftoneLayerCanvas } from "./HalftoneLayerCanvas";
 import { useHalftoneScene } from "./useHalftoneScene";

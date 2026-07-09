@@ -1,5 +1,3 @@
-"use client";
-
 interface SmallQuoteProps {
   text: string;
   metaText?: string;

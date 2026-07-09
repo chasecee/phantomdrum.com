@@ -1,5 +1,3 @@
-"use client";
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import sentencePacks from "@/config/sentencePacks.generated";
 import {

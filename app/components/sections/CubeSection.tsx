@@ -1,5 +1,3 @@
-"use client";
-
 import { useRef, type RefObject } from "react";
 import { AnimatedMultiCubeScene } from "../content/three/AnimatedMultiCubeScene";
 import HalftoneEffect from "../content/HalftoneEffect";
