@@ -9,7 +9,11 @@ const CUBE_TEXTS = [
   "BIG OL BEATS",
 ];
 
-export default function EmbedStackedCubesSection() {
+export default function EmbedStackedCubesSection({
+  drag = false,
+}: {
+  drag?: boolean;
+}) {
   return (
     <HalftoneEffect
       dotRadius={{ base: 2, md: 2 }}
@@ -32,6 +36,7 @@ export default function EmbedStackedCubesSection() {
           fillMode="outline"
           strokeWidth={5}
           matchTextColor
+          drag={drag}
         />
       </div>
     </HalftoneEffect>

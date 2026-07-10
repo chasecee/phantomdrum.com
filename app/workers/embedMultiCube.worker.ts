@@ -58,6 +58,7 @@ type ConfigMessage = {
 type TargetsMessage = {
   type: "targets";
   rotations: Rotation[];
+  dragRotations: number[];
   scale: number;
 };
 
@@ -100,6 +101,7 @@ const state = {
   scene: null as Scene | null,
   cubes: [] as CubeInstance[],
   rotations: [] as Rotation[],
+  dragRotations: [] as number[],
   scaleTarget: 1,
   syncedOnce: false,
   dimensions: null as Dimensions | null,
@@ -144,8 +146,9 @@ const snapSceneToTargets = () => {
   if (!state.scene || state.cubes.length === 0) return;
   state.cubes.forEach((cube, index) => {
     const rotation = state.rotations[index] ?? { x: 0, y: 0, z: 0 };
+    const drag = state.dragRotations[index] ?? 0;
     cube.currentRotation.x = rotation.x;
-    cube.currentRotation.y = rotation.y;
+    cube.currentRotation.y = rotation.y + drag;
     cube.currentRotation.z = rotation.z;
     cube.currentScale = state.scaleTarget;
     cube.group.rotation.set(
@@ -422,6 +425,7 @@ const rebuildCubes = () => {
   });
 
   state.rotations = buildRotationsArray(texts.length);
+  state.dragRotations = Array.from({ length: texts.length }, () => 0);
   state.scaleTarget = 1;
   state.syncedOnce = false;
 };
@@ -443,21 +447,22 @@ const updateFrame = () => {
     const smoothingFactor = smoothing;
     state.cubes.forEach((cube, index) => {
       const target = state.rotations[index] ?? { x: 0, y: 0, z: 0 };
+      const drag = state.dragRotations[index] ?? 0;
       const current = cube.currentRotation;
       if (!state.syncedOnce) {
         current.x = target.x;
-        current.y = target.y;
+        current.y = target.y + drag;
         current.z = target.z;
         cube.currentScale = state.scaleTarget;
       } else {
         current.x += (target.x - current.x) * smoothingFactor;
-        current.y += (target.y - current.y) * smoothingFactor;
+        current.y += (target.y + drag - current.y) * smoothingFactor;
         current.z += (target.z - current.z) * smoothingFactor;
         cube.currentScale +=
           (state.scaleTarget - cube.currentScale) * smoothingFactor;
       }
       const deltaX = Math.abs(target.x - current.x);
-      const deltaY = Math.abs(target.y - current.y);
+      const deltaY = Math.abs(target.y + drag - current.y);
       const deltaZ = Math.abs(target.z - current.z);
       const deltaScale = Math.abs(state.scaleTarget - cube.currentScale);
       maxDelta = Math.max(maxDelta, deltaX, deltaY, deltaZ, deltaScale);
@@ -485,21 +490,30 @@ const updateFrame = () => {
 };
 
 const handleTargets = (message: TargetsMessage) => {
-  const { rotations, scale } = message;
+  const { rotations, dragRotations, scale } = message;
   state.scaleTarget = scale;
   if (rotations.length !== state.rotations.length) {
     state.rotations = rotations.map((rotation) => ({ ...rotation }));
+    state.dragRotations = dragRotations.slice();
     state.syncedOnce = false;
     return;
   }
   rotations.forEach((rotation, index) => {
     state.rotations[index] = { ...rotation };
   });
+  if (dragRotations.length === state.dragRotations.length) {
+    dragRotations.forEach((value, index) => {
+      state.dragRotations[index] = value;
+    });
+  } else {
+    state.dragRotations = dragRotations.slice();
+  }
   if (!state.syncedOnce && state.cubes.length === rotations.length) {
     state.cubes.forEach((cube, index) => {
       const target = state.rotations[index] ?? { x: 0, y: 0, z: 0 };
+      const drag = state.dragRotations[index] ?? 0;
       cube.currentRotation.x = target.x;
-      cube.currentRotation.y = target.y;
+      cube.currentRotation.y = target.y + drag;
       cube.currentRotation.z = target.z;
       cube.currentScale = scale;
       cube.group.rotation.set(
@@ -530,6 +544,7 @@ const dispose = () => {
   state.camera = null;
   state.config = null;
   state.rotations = [];
+  state.dragRotations = [];
   state.scaleTarget = 1;
   state.syncedOnce = false;
   state.isAnimating = false;

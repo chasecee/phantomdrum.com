@@ -3,6 +3,7 @@ import type { Rotation } from "../content/three/types";
 
 const DEFAULT_COLORS = ["#A85A90", "#C82A2A", "#C84A2D", "#E67E22", "#F1C40F"];
 const DEFAULT_TEXT_COLOR = "#C4A070";
+const TOUCH_DRAG_THRESHOLD_PX = 18;
 
 type FillMode = "fill" | "outline";
 
@@ -42,6 +43,7 @@ export interface EmbedMultiCubeProps {
   matchTextColor?: boolean;
   stagger?: boolean;
   staggerDelay?: number;
+  drag?: boolean;
   from?: {
     rotation?: Rotation;
     scale?: number;
@@ -74,6 +76,7 @@ export function EmbedMultiCubeScene({
   matchTextColor = false,
   stagger = false,
   staggerDelay = 0.12,
+  drag = false,
   from,
   to,
 }: EmbedMultiCubeProps) {
@@ -85,7 +88,19 @@ export function EmbedMultiCubeScene({
   const transferredCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const workerConfigRef = useRef<WorkerConfig | null>(null);
   const targetRotationsRef = useRef<Rotation[]>([]);
+  const dragRotationsRef = useRef<number[]>([]);
   const targetScaleRef = useRef<number>(from?.scale ?? 1);
+  const dragStartXRef = useRef(0);
+  const dragStartRotationsRef = useRef<number[]>([]);
+  const draggedCubeIndexRef = useRef<number | null>(null);
+  const isDraggingRef = useRef(false);
+  const dragContainerWidthRef = useRef<number>(1);
+  const pendingTouchDragRef = useRef<{
+    cubeIndex: number;
+    startX: number;
+    startY: number;
+  } | null>(null);
+  const activeTouchIdRef = useRef<number | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const dprRef = useRef<number>(1);
   const canvasDimensionsRef = useRef({
@@ -139,18 +154,48 @@ export function EmbedMultiCubeScene({
     ]
   );
 
+  const getCubeIndexFromY = useCallback(
+    (clientY: number, container: HTMLElement): number | null => {
+      const rect = container.getBoundingClientRect();
+      const relativeY = clientY - rect.top;
+      const normalizedY = relativeY / rect.height;
+      const cubeHeight = size * heightRatio;
+      const spacingUnits = spacing * cubeHeight;
+      const totalHeight =
+        texts.length * cubeHeight +
+        Math.max(texts.length - 1, 0) * spacingUnits;
+      const startY = totalHeight / 2 - cubeHeight / 2;
+      const worldY = (1 - normalizedY) * totalHeight - totalHeight / 2;
+      for (let i = 0; i < texts.length; i++) {
+        const cubeY = startY - i * (cubeHeight + spacingUnits);
+        const halfHeight = cubeHeight / 2;
+        if (worldY >= cubeY - halfHeight && worldY <= cubeY + halfHeight) {
+          return i;
+        }
+      }
+      return null;
+    },
+    [texts.length, size, heightRatio, spacing]
+  );
+
   const sendTargetsRef = useRef<(() => void) | null>(null);
   useEffect(() => {
     sendTargetsRef.current = () => {
       const worker = workerRef.current;
       if (!worker || !workerInitializedRef.current) return;
+      const rotationsPayload = targetRotationsRef.current.map((rotation) => ({
+        x: rotation.x,
+        y: rotation.y,
+        z: rotation.z,
+      }));
+      const dragPayload =
+        dragRotationsRef.current.length === rotationsPayload.length
+          ? dragRotationsRef.current.slice()
+          : Array(rotationsPayload.length).fill(0);
       worker.postMessage({
         type: "targets",
-        rotations: targetRotationsRef.current.map((rotation) => ({
-          x: rotation.x,
-          y: rotation.y,
-          z: rotation.z,
-        })),
+        rotations: rotationsPayload,
+        dragRotations: dragPayload,
         scale: targetScaleRef.current,
       });
     };
@@ -227,6 +272,7 @@ export function EmbedMultiCubeScene({
       y: fromRotationY,
       z: fromRotationZ,
     }));
+    dragRotationsRef.current = Array(count).fill(0);
     targetScaleRef.current = fromScale;
     sendTargetsRef.current?.();
   }, [texts.length, fromRotationX, fromRotationY, fromRotationZ, fromScale]);
@@ -472,11 +518,172 @@ export function EmbedMultiCubeScene({
     throttledSendTargets,
   ]);
 
+  useEffect(() => {
+    if (!drag) return;
+    const container = containerRef.current;
+    if (!container) return;
+
+    const beginDrag = (cubeIndex: number, startX: number) => {
+      if (isDraggingRef.current) return;
+      isDraggingRef.current = true;
+      draggedCubeIndexRef.current = cubeIndex;
+      dragStartXRef.current = startX;
+      if (dragRotationsRef.current.length !== texts.length) {
+        dragRotationsRef.current = Array(texts.length).fill(0);
+      }
+      dragStartRotationsRef.current = dragRotationsRef.current.slice();
+      container.style.cursor = "grabbing";
+      dragContainerWidthRef.current = container.offsetWidth || 1;
+    };
+
+    const updateDrag = (clientX: number) => {
+      if (!isDraggingRef.current || draggedCubeIndexRef.current === null) {
+        return;
+      }
+      const width = dragContainerWidthRef.current || 1;
+      const delta = ((clientX - dragStartXRef.current) / width) * Math.PI * 2;
+      const cubeIndex = draggedCubeIndexRef.current;
+      const startRotation = dragStartRotationsRef.current[cubeIndex] ?? 0;
+      dragRotationsRef.current[cubeIndex] = startRotation + delta;
+      throttledSendTargets();
+    };
+
+    const endDrag = () => {
+      if (!isDraggingRef.current) {
+        return;
+      }
+      isDraggingRef.current = false;
+      draggedCubeIndexRef.current = null;
+      container.style.cursor = "grab";
+    };
+
+    const resetTouchTracking = () => {
+      pendingTouchDragRef.current = null;
+      activeTouchIdRef.current = null;
+    };
+
+    const findTouch = (touches: TouchList, id: number | null) => {
+      if (id === null) return null;
+      for (let index = 0; index < touches.length; index += 1) {
+        const touch = touches.item(index);
+        if (touch && touch.identifier === id) {
+          return touch;
+        }
+      }
+      return null;
+    };
+
+    const handleMouseDown = (event: MouseEvent) => {
+      const cubeIndex = getCubeIndexFromY(event.clientY, container);
+      if (cubeIndex === null) return;
+      beginDrag(cubeIndex, event.clientX);
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      updateDrag(event.clientX);
+    };
+
+    const handleMouseUp = () => {
+      endDrag();
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1 || activeTouchIdRef.current !== null) {
+        return;
+      }
+      const touch = event.touches[0];
+      const cubeIndex = getCubeIndexFromY(touch.clientY, container);
+      if (cubeIndex === null) {
+        resetTouchTracking();
+        return;
+      }
+      activeTouchIdRef.current = touch.identifier;
+      pendingTouchDragRef.current = {
+        cubeIndex,
+        startX: touch.clientX,
+        startY: touch.clientY,
+      };
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const touch = findTouch(event.touches, activeTouchIdRef.current);
+      if (!touch) return;
+
+      if (!isDraggingRef.current) {
+        const pending = pendingTouchDragRef.current;
+        if (!pending) return;
+        const deltaX = touch.clientX - pending.startX;
+        const deltaY = touch.clientY - pending.startY;
+        if (
+          Math.abs(deltaX) >= TOUCH_DRAG_THRESHOLD_PX &&
+          Math.abs(deltaX) > Math.abs(deltaY)
+        ) {
+          beginDrag(pending.cubeIndex, touch.clientX);
+          pendingTouchDragRef.current = null;
+        } else if (Math.abs(deltaY) > Math.abs(deltaX)) {
+          resetTouchTracking();
+          return;
+        } else {
+          return;
+        }
+      }
+
+      event.preventDefault();
+      updateDrag(touch.clientX);
+    };
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      const ended = findTouch(event.changedTouches, activeTouchIdRef.current);
+      if (!ended) return;
+      resetTouchTracking();
+      if (isDraggingRef.current) {
+        endDrag();
+      }
+    };
+
+    const handleTouchCancel = (event: TouchEvent) => {
+      const cancelled = findTouch(
+        event.changedTouches,
+        activeTouchIdRef.current
+      );
+      if (!cancelled) return;
+      resetTouchTracking();
+      if (isDraggingRef.current) {
+        endDrag();
+      }
+    };
+
+    container.style.cursor = "grab";
+    container.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    container.addEventListener("touchstart", handleTouchStart);
+    container.addEventListener("touchmove", handleTouchMove, {
+      passive: false,
+    });
+    container.addEventListener("touchend", handleTouchEnd);
+    container.addEventListener("touchcancel", handleTouchCancel);
+
+    return () => {
+      container.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchmove", handleTouchMove);
+      container.removeEventListener("touchend", handleTouchEnd);
+      container.removeEventListener("touchcancel", handleTouchCancel);
+      container.style.cursor = "";
+      resetTouchTracking();
+      isDraggingRef.current = false;
+      draggedCubeIndexRef.current = null;
+    };
+  }, [drag, getCubeIndexFromY, texts.length, throttledSendTargets]);
+
   return (
     <div
       ref={containerRef}
       className={className}
-      style={{ pointerEvents: "none" }}
+      style={drag ? undefined : { pointerEvents: "none" }}
       aria-hidden="true"
     >
       <canvas
