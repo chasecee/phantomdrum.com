@@ -27,25 +27,24 @@ if (includeGlobals) {
     <meta name="viewport" content="width=device-width" />
     <meta name="robots" content="noindex" />
     <title>{title}</title>
-    <style>
-      html,
-      body {
-        margin: 0;
-        height: 100%;
-        width: 100%;
-        background: #000;
-      }
-    </style>
     {scrollable ? (
       <style>
+        html,
         body {
-          overflow: auto;
+          margin: 0;
+          width: 100%;
+          background: #000;
         }
       </style>
     ) : (
       <style>
+        html,
         body {
+          margin: 0;
+          height: 100%;
+          width: 100%;
           overflow: hidden;
+          background: #000;
         }
 
         astro-island {

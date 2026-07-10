@@ -8,13 +8,16 @@ import HeroMeteors from "@/app/components/sections/HeroMeteors";
 import HeroLogoTextTwoColorReversed from "@/app/components/sections/HeroLogoTextTop";
 import ListenSection from "@/app/components/content/ListenSection";
 import ReleaseCountdownCard from "@/app/components/scheduling/ReleaseCountdownCard";
+import LatestReviews from "@/app/components/content/LatestReviews";
+import ArtistBio from "@/app/components/content/ArtistBio";
 
 const releaseArtwork = {
   src: "/img/optimized/album-art.webp",
   alt: "Phantom Drum Initialize cover art",
 };
 
-const parsedEmbedDpr = Number(Astro.url.searchParams.get("dpr"));
+const dprParam = Astro.url.searchParams.get("dpr");
+const parsedEmbedDpr = dprParam === null ? Number.NaN : Number(dprParam);
 const embedDpr = Number.isFinite(parsedEmbedDpr)
   ? Math.min(Math.max(parsedEmbedDpr, 1), 3)
   : null;
@@ -50,6 +53,8 @@ const embedDpr = Number.isFinite(parsedEmbedDpr)
         />
         <ListenSection />
       </div>
+      <LatestReviews client:visible />
+      <ArtistBio />
     </div>
   </main>
 </EmbedLayout>
