@@ -10,6 +10,7 @@ import ListenSection from "@/app/components/content/ListenSection";
 import ReleaseCountdownCard from "@/app/components/scheduling/ReleaseCountdownCard";
 import LatestReviews from "@/app/components/content/LatestReviews";
 import ArtistBio from "@/app/components/content/ArtistBio";
+import SentenceCubeSection from "@/app/components/sections/SentenceCubeSection";
 
 const releaseArtwork = {
   src: "/img/optimized/album-art.webp",
@@ -53,6 +54,7 @@ const embedDpr = Number.isFinite(parsedEmbedDpr)
         />
         <ListenSection />
       </div>
+      <SentenceCubeSection client:visible />
       <LatestReviews client:visible />
       <ArtistBio />
     </div>
