@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import HalftoneEffect from "../content/HalftoneEffect";
 import { EmbedMultiCubeScene } from "./EmbedMultiCubeScene";
 
@@ -9,11 +10,13 @@ const CUBE_TEXTS = [
   "BIG OL BEATS",
 ];
 
-export default function EmbedStackedCubesSection({
-  drag = false,
-}: {
-  drag?: boolean;
-}) {
+export default function EmbedStackedCubesSection() {
+  const [drag, setDrag] = useState(false);
+
+  useEffect(() => {
+    setDrag(new URLSearchParams(window.location.search).get("drag") === "true");
+  }, []);
+
   return (
     <HalftoneEffect
       dotRadius={{ base: 2, md: 2 }}

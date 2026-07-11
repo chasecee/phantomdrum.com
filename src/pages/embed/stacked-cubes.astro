@@ -1,12 +1,10 @@
 ---
 import EmbedLayout from "@/src/layouts/EmbedLayout.astro";
 import EmbedStackedCubesSection from "@/app/components/embed/EmbedStackedCubesSection";
-
-const drag = Astro.url.searchParams.get("drag") === "true";
 ---
 
 <EmbedLayout title="Stacked Cubes">
   <div class="h-full w-full">
-    <EmbedStackedCubesSection client:load drag={drag} />
+    <EmbedStackedCubesSection client:load />
   </div>
 </EmbedLayout>
