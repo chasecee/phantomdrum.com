@@ -12,9 +12,12 @@ const CUBE_TEXTS = [
 
 export default function EmbedStackedCubesSection() {
   const [drag, setDrag] = useState(false);
+  const [blank, setBlank] = useState(false);
 
   useEffect(() => {
-    setDrag(new URLSearchParams(window.location.search).get("drag") === "true");
+    const params = new URLSearchParams(window.location.search);
+    setDrag(params.get("drag") === "true");
+    setBlank(params.get("blank") === "true");
   }, []);
 
   return (
@@ -40,6 +43,7 @@ export default function EmbedStackedCubesSection() {
           strokeWidth={5}
           matchTextColor
           drag={drag}
+          blank={blank}
         />
       </div>
     </HalftoneEffect>

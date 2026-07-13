@@ -22,6 +22,7 @@ type WorkerConfig = {
   fillMode: FillMode;
   strokeWidth: number | null;
   matchTextColor: boolean;
+  blank: boolean;
 };
 
 export interface EmbedMultiCubeProps {
@@ -41,6 +42,7 @@ export interface EmbedMultiCubeProps {
   fillMode?: FillMode;
   strokeWidth?: number | null;
   matchTextColor?: boolean;
+  blank?: boolean;
   stagger?: boolean;
   staggerDelay?: number;
   drag?: boolean;
@@ -74,6 +76,7 @@ export function EmbedMultiCubeScene({
   fillMode = "fill",
   strokeWidth = null,
   matchTextColor = false,
+  blank = false,
   stagger = false,
   staggerDelay = 0.12,
   drag = false,
@@ -135,6 +138,7 @@ export function EmbedMultiCubeScene({
       fillMode,
       strokeWidth: strokeWidth ?? null,
       matchTextColor,
+      blank,
     }),
     [
       texts,
@@ -151,6 +155,7 @@ export function EmbedMultiCubeScene({
       fillMode,
       strokeWidth,
       matchTextColor,
+      blank,
     ]
   );
 
