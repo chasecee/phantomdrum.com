@@ -39,6 +39,7 @@ type MultiCubeConfig = {
   fillMode: "fill" | "outline";
   strokeWidth: number | null;
   matchTextColor: boolean;
+  blank: boolean;
 };
 
 type Dimensions = { width: number; height: number; dpr: number };
@@ -281,6 +282,7 @@ const rebuildCubes = () => {
     fillMode,
     strokeWidth,
     matchTextColor,
+    blank,
   } = state.config;
   const cubeHeight = size * heightRatio;
   const cubeWidth = size * widthRatio;
@@ -317,7 +319,9 @@ const rebuildCubes = () => {
     const rawColor = colors[index % colors.length];
     const colorHex =
       (typeof rawColor === "string" ? rawColor.trim() : "#FFFFFF") || "#FFFFFF";
-    const materialColor = fillMode === "outline" ? "black" : colorHex;
+    const boxColor = blank
+      ? new Color(colorHex).lerp(new Color(0x000000), 0.9)
+      : new Color(fillMode === "outline" ? "black" : colorHex);
     const cubeGroup = new Group();
     cubeGroup.position.set(
       0,
@@ -326,7 +330,6 @@ const rebuildCubes = () => {
     );
     state.scene?.add(cubeGroup);
 
-    const boxColor = new Color(materialColor);
     const boxMaterial = new MeshBasicMaterial({
       color: boxColor.clone(),
       depthWrite: true,
@@ -392,7 +395,7 @@ const rebuildCubes = () => {
       );
     }
 
-    if (labelAsset) {
+    if (!blank && labelAsset) {
       const labelColor = new Color(finalTextHex);
       textFaces.forEach(({ position, rotation }) => {
         const labelMaterial = new MeshBasicMaterial({
