@@ -44,6 +44,11 @@ const imageUrl = image.startsWith("http") ? image : new URL(image, baseUrl).toSt
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={imageUrl} />
     <slot name="head" />
+    <script async src="/js/pa.js"></script>
+    <script is:inline>
+      window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+      plausible.init({ endpoint: "/js/event" })
+    </script>
   </head>
   <body class="bg-black">
     <slot />
